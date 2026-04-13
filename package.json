@@ -20,6 +20,9 @@
     "@capacitor/haptics": "^8.0.2",
     "@capacitor/push-notifications": "^8.0.3",
     "@capacitor/status-bar": "^8.0.2",
+    "bcryptjs": "^3.0.3",
+    "jose": "^6.2.2",
+    "nanoid": "^5.1.7",
     "next": "16.2.3",
     "react": "19.2.4",
     "react-dom": "19.2.4"
@@ -27,6 +30,7 @@
   "devDependencies": {
     "@opennextjs/cloudflare": "^1.19.1",
     "@tailwindcss/postcss": "^4",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
