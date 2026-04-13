@@ -1,0 +1,18 @@
+name = "miemie-aowu-webapp"
+main = ".open-next/worker.js"
+compatibility_date = "2024-12-18"
+compatibility_flags = ["nodejs_compat"]
+
+assets = { directory = ".open-next/assets", binding = "ASSETS" }
+
+[[d1_databases]]
+binding = "miemie_aowu_db"
+database_name = "miemie-aowu-db"
+database_id = "e29eb320-cda4-47fc-8dde-416e73003315"
+
+[[r2_buckets]]
+binding = "miemie_aowu_photos"
+bucket_name = "miemie-aowu-photos"
+
+[vars]
+NODE_ENV = "production"

@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# OpenNext / Cloudflare build output
+.open-next/
+
+# Wrangler local state
+.wrangler/
+
+# env files
+.env
+.env.local
+.env.*.local
+
+# Capacitor native projects (generated — add ios/ android/ only if you want to track native code)
+# ios/
+# android/
+
+# misc
+.DS_Store
+*.pem
+npm-debug.log*
