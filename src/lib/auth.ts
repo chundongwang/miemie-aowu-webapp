@@ -1,35 +1,82 @@
-import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
 const COOKIE_NAME = "token";
 const TOKEN_TTL = 60 * 60 * 24 * 365; // 1 year in seconds
 
-// ── JWT ──────────────────────────────────────────────────────────────────────
+// ── JWT via Web Crypto HMAC-SHA256 ────────────────────────────────────────────
+// No external dependencies — works natively in Cloudflare Workers / Edge Runtime.
 
-function getSecret(): Uint8Array {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) throw new Error("JWT_SECRET is not set");
-  return new TextEncoder().encode(secret);
+function b64url(buf: ArrayBuffer | Uint8Array): string {
+  const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
+}
+
+function fromB64url(str: string): Uint8Array {
+  const padded = str.replace(/-/g, "+").replace(/_/g, "/");
+  const pad = (4 - (padded.length % 4)) % 4;
+  return Uint8Array.from(atob(padded + "=".repeat(pad)), (c) => c.charCodeAt(0));
+}
+
+async function getHmacKey(secret: string): Promise<CryptoKey> {
+  return crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign", "verify"]
+  );
 }
 
 export async function signToken(userId: string): Promise<string> {
-  return new SignJWT({ sub: userId })
-    .setProtectedHeader({ alg: "HS256" })
-    .setExpirationTime(`${TOKEN_TTL}s`)
-    .setIssuedAt()
-    .sign(getSecret());
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error("JWT_SECRET is not set");
+
+  const header = b64url(new TextEncoder().encode(JSON.stringify({ alg: "HS256", typ: "JWT" })));
+  const payload = b64url(
+    new TextEncoder().encode(
+      JSON.stringify({
+        sub: userId,
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + TOKEN_TTL,
+      })
+    )
+  );
+  const data = `${header}.${payload}`;
+  const key = await getHmacKey(secret);
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data));
+  return `${data}.${b64url(sig)}`;
 }
 
 export async function verifyToken(token: string): Promise<string | null> {
   try {
-    const { payload } = await jwtVerify(token, getSecret());
-    return payload.sub ?? null;
+    const secret = process.env.JWT_SECRET;
+    if (!secret) return null;
+
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+
+    const [header, payload, sig] = parts;
+    const key = await getHmacKey(secret);
+    const valid = await crypto.subtle.verify(
+      "HMAC",
+      key,
+      fromB64url(sig).buffer as ArrayBuffer,
+      new TextEncoder().encode(`${header}.${payload}`)
+    );
+    if (!valid) return null;
+
+    const decoded = JSON.parse(new TextDecoder().decode(fromB64url(payload)));
+    if (decoded.exp && decoded.exp < Math.floor(Date.now() / 1000)) return null;
+    return decoded.sub ?? null;
   } catch {
     return null;
   }
 }
 
-// ── Cookie ───────────────────────────────────────────────────────────────────
+// ── Cookie ────────────────────────────────────────────────────────────────────
 
 export async function setAuthCookie(userId: string): Promise<void> {
   const token = await signToken(userId);
@@ -55,8 +102,7 @@ export async function getAuthUserId(): Promise<string | null> {
   return verifyToken(token);
 }
 
-// ── Password hashing via Web Crypto (PBKDF2) ─────────────────────────────────
-// Works in Cloudflare Workers / Edge Runtime — no Node.js APIs required.
+// ── Password hashing via Web Crypto (PBKDF2) ──────────────────────────────────
 
 const PBKDF2_ITERATIONS = 100_000;
 const PBKDF2_HASH = "SHA-256";
@@ -82,7 +128,6 @@ async function deriveKey(password: string, salt: Uint8Array): Promise<Uint8Array
 export async function hashPassword(password: string): Promise<string> {
   const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
   const hash = await deriveKey(password, salt);
-  // store as "pbkdf2:<base64-salt>:<base64-hash>"
   return `pbkdf2:${btoa(String.fromCharCode(...salt))}:${btoa(String.fromCharCode(...hash))}`;
 }
 
@@ -93,7 +138,6 @@ export async function verifyPassword(password: string, stored: string): Promise<
   const salt = Uint8Array.from(atob(parts[1]), (c) => c.charCodeAt(0));
   const expected = Uint8Array.from(atob(parts[2]), (c) => c.charCodeAt(0));
   const actual = await deriveKey(password, salt);
-  // constant-time comparison
   if (actual.length !== expected.length) return false;
   let diff = 0;
   for (let i = 0; i < actual.length; i++) diff |= actual[i] ^ expected[i];
