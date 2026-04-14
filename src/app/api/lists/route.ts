@@ -3,7 +3,6 @@ import { getDB } from "@/lib/db";
 import { withAuth } from "@/lib/api";
 import { CATEGORIES } from "@/types";
 
-export const runtime = "edge";
 
 export async function GET() {
   return withAuth(async (userId) => {

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPhotoBucket } from "@/lib/db";
 
-export const runtime = "edge";
 
 type Params = { params: Promise<{ key: string[] }> };
 

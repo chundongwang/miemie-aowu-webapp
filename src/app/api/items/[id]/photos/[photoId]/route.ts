@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDB, getPhotoBucket } from "@/lib/db";
 import { withAuth } from "@/lib/api";
 
-export const runtime = "edge";
 
 type Params = { params: Promise<{ id: string; photoId: string }> };
 

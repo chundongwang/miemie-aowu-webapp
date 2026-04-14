@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/db";
 import { withAuth } from "@/lib/api";
 
-export const runtime = "edge";
 
 export async function GET(req: NextRequest) {
   return withAuth(async (userId) => {
