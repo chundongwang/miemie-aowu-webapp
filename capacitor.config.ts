@@ -7,7 +7,7 @@ const config: CapacitorConfig = {
   server: {
     // During development, point to local Next.js server
     // Comment out for production builds
-    // url: "http://localhost:3000",
+    // url: "http://localhost:4200",
     // cleartext: true,
   },
 };
