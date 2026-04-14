@@ -29,7 +29,8 @@ export default function RegisterPage() {
           phone: phone || undefined,
         }),
       });
-      const data = await res.json() as { error?: string };
+      let data: { error?: string } = {};
+      try { data = await res.json() as { error?: string }; } catch { /* non-JSON response */ }
       if (!res.ok) {
         if (data.error?.includes("taken")) setError(t("errorUsernameTaken"));
         else if (data.error?.includes("pattern") || data.error?.includes("lowercase")) setError(t("errorUsernamePattern"));

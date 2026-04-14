@@ -23,7 +23,8 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
-      const data = await res.json() as { error?: string };
+      let data: { error?: string } = {};
+      try { data = await res.json() as { error?: string }; } catch { /* non-JSON response */ }
       if (!res.ok) { setError(t("errorInvalidCredentials")); return; }
       if (data.error) { setError(t("errorLogin")); return; }
       router.push("/lists");
