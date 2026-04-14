@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { getDB } from "@/lib/db";
 import { hashPassword, setAuthCookie } from "@/lib/auth";
+import { withErrorHandling } from "@/lib/api";
 
 export const runtime = "edge";
 
 export async function POST(req: NextRequest) {
+  return withErrorHandling("auth.register", async () => {
   const { username, password, displayName, phone } = await req.json() as {
     username: string; password: string; displayName?: string; phone?: string;
   };
@@ -47,5 +49,6 @@ export async function POST(req: NextRequest) {
 
   await setAuthCookie(id);
 
-  return NextResponse.json({ id, username: username.toLowerCase(), displayName: resolvedDisplayName }, { status: 201 });
+    return NextResponse.json({ id, username: username.toLowerCase(), displayName: resolvedDisplayName }, { status: 201 });
+  });
 }
