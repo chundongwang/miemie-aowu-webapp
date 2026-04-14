@@ -7,6 +7,7 @@ import type { ListDetail } from "@/types";
 import ItemList from "@/components/ItemList";
 import AddItemModal from "@/components/AddItemModal";
 import ShareModal from "@/components/ShareModal";
+import EditListModal from "@/components/EditListModal";
 
 export default function ListDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -16,6 +17,7 @@ export default function ListDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showAddItem, setShowAddItem] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
   function load() {
@@ -71,19 +73,33 @@ export default function ListDetailPage() {
           >
             ‹
           </button>
-          <span className="text-2xl">{list.emoji}</span>
-          <div className="flex-1 min-w-0">
-            <h1 className="font-semibold text-gray-900 truncate">{list.title}</h1>
-            <p className="text-xs text-gray-400">
-              {isOwner && list.recipientDisplayName
-                ? `shared with ${list.recipientDisplayName}`
-                : !isOwner
-                ? `by ${list.ownerDisplayName}`
-                : ""}
-            </p>
-          </div>
+
+          {/* tapping emoji+title opens edit for owner */}
+          {isOwner ? (
+            <button
+              onClick={() => setShowEdit(true)}
+              className="flex items-center gap-2 flex-1 min-w-0 text-left hover:opacity-70 transition-opacity"
+            >
+              <span className="text-2xl">{list.emoji}</span>
+              <div className="min-w-0">
+                <h1 className="font-semibold text-gray-900 truncate">{list.title}</h1>
+                {list.recipientDisplayName && (
+                  <p className="text-xs text-gray-400">shared with {list.recipientDisplayName}</p>
+                )}
+              </div>
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <span className="text-2xl">{list.emoji}</span>
+              <div className="min-w-0">
+                <h1 className="font-semibold text-gray-900 truncate">{list.title}</h1>
+                <p className="text-xs text-gray-400">by {list.ownerDisplayName}</p>
+              </div>
+            </div>
+          )}
+
           {isOwner && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               {list.recipientId ? (
                 <button
                   onClick={revokeShare}
@@ -113,6 +129,7 @@ export default function ListDetailPage() {
           isOwner={isOwner}
           isRecipient={isRecipient}
           secondaryLabel={list.secondaryLabel}
+          listId={id}
         />
       </main>
 
@@ -150,6 +167,13 @@ export default function ListDetailPage() {
       )}
       {showShare && (
         <ShareModal listId={id} onClose={handleModalClose(setShowShare)} />
+      )}
+      {showEdit && (
+        <EditListModal
+          listId={id}
+          current={{ title: list.title, emoji: list.emoji, secondaryLabel: list.secondaryLabel }}
+          onClose={handleModalClose(setShowEdit)}
+        />
       )}
     </div>
   );
