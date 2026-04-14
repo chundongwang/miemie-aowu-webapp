@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import type { ListDetail } from "@/types";
+import type { ListDetail, Item } from "@/types";
 import ItemList from "@/components/ItemList";
 import AddItemModal from "@/components/AddItemModal";
+import EditItemModal from "@/components/EditItemModal";
 import ShareModal from "@/components/ShareModal";
 import EditListModal from "@/components/EditListModal";
 import { useT } from "@/context/LocaleContext";
@@ -19,7 +20,8 @@ export default function ListDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showAddItem, setShowAddItem] = useState(false);
   const [showShare, setShowShare] = useState(false);
-  const [showEdit, setShowEdit] = useState(false);
+  const [showEditList, setShowEditList] = useState(false);
+  const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [notFound, setNotFound] = useState(false);
 
   function load() {
@@ -54,6 +56,17 @@ export default function ListDetailPage() {
     load();
   }
 
+  async function togglePublic() {
+    if (!list) return;
+    const next = !list.isPublic;
+    setList((l) => l ? { ...l, isPublic: next } : l); // optimistic
+    await fetch(`/api/lists/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isPublic: next }),
+    });
+  }
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center text-gray-400 text-sm">{t("loading")}</div>;
   }
@@ -78,7 +91,7 @@ export default function ListDetailPage() {
 
           {isOwner ? (
             <button
-              onClick={() => setShowEdit(true)}
+              onClick={() => setShowEditList(true)}
               className="flex items-center gap-2 flex-1 min-w-0 text-left hover:opacity-70 transition-opacity"
             >
               <span className="text-2xl">{list.emoji}</span>
@@ -101,6 +114,16 @@ export default function ListDetailPage() {
 
           {isOwner && (
             <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={togglePublic}
+                className={`text-xs px-2 py-1 rounded-full border transition-colors ${
+                  list.isPublic
+                    ? "border-green-200 text-green-700 bg-green-50 hover:bg-green-100"
+                    : "border-gray-200 text-gray-500 bg-gray-50 hover:bg-gray-100"
+                }`}
+              >
+                {list.isPublic ? `🌍 ${t("publicBadge")}` : `🔒 ${t("privateBadge")}`}
+              </button>
               {list.recipientId ? (
                 <button
                   onClick={revokeShare}
@@ -131,6 +154,7 @@ export default function ListDetailPage() {
           isRecipient={isRecipient}
           secondaryLabel={list.secondaryLabel}
           listId={id}
+          onEditItem={(item) => setEditingItem(item)}
         />
       </main>
 
@@ -138,10 +162,7 @@ export default function ListDetailPage() {
         <div className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-100 px-4 py-4">
           <div className="max-w-lg mx-auto flex items-center justify-between gap-4">
             <p className="text-sm text-gray-500">{t("wantToCreate")}</p>
-            <Link
-              href="/register"
-              className="shrink-0 bg-black text-white text-sm font-medium px-4 py-2 rounded-lg"
-            >
+            <Link href="/register" className="shrink-0 bg-black text-white text-sm font-medium px-4 py-2 rounded-lg">
               {t("getStarted")}
             </Link>
           </div>
@@ -165,11 +186,18 @@ export default function ListDetailPage() {
       {showShare && (
         <ShareModal listId={id} onClose={handleModalClose(setShowShare)} />
       )}
-      {showEdit && (
+      {showEditList && (
         <EditListModal
           listId={id}
           current={{ title: list.title, emoji: list.emoji, secondaryLabel: list.secondaryLabel }}
-          onClose={handleModalClose(setShowEdit)}
+          onClose={handleModalClose(setShowEditList)}
+        />
+      )}
+      {editingItem && (
+        <EditItemModal
+          item={editingItem}
+          secondaryLabel={list.secondaryLabel}
+          onClose={() => { setEditingItem(null); load(); }}
         />
       )}
     </div>

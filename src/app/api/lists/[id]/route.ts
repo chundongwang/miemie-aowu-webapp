@@ -95,21 +95,22 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (!list) return NextResponse.json({ error: "Not found" }, { status: 404 });
     if (list.owner_id !== userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-    const { title, emoji, secondaryLabel } = await req.json() as {
-      title?: string; emoji?: string; secondaryLabel?: string;
+    const { title, emoji, secondaryLabel, isPublic } = await req.json() as {
+      title?: string; emoji?: string; secondaryLabel?: string; isPublic?: boolean;
     };
 
-    await db
-      .prepare(
-        `UPDATE lists SET
-           title = COALESCE(?, title),
-           emoji = COALESCE(?, emoji),
-           secondary_label = COALESCE(?, secondary_label),
-           updated_at = ?
-         WHERE id = ?`
-      )
-      .bind(title ?? null, emoji ?? null, secondaryLabel ?? null, Date.now(), id)
-      .run();
+    const sets: string[] = [];
+    const binds: unknown[] = [];
+    if (title?.trim())          { sets.push("title = ?");          binds.push(title.trim()); }
+    if (emoji)                  { sets.push("emoji = ?");          binds.push(emoji); }
+    if (secondaryLabel !== undefined) { sets.push("secondary_label = ?"); binds.push(secondaryLabel || null); }
+    if (isPublic !== undefined) { sets.push("is_public = ?");      binds.push(isPublic ? 1 : 0); }
+    if (sets.length === 0)      return NextResponse.json({ ok: true });
+
+    sets.push("updated_at = ?");
+    binds.push(Date.now(), id);
+
+    await db.prepare(`UPDATE lists SET ${sets.join(", ")} WHERE id = ?`).bind(...binds).run();
 
     return NextResponse.json({ ok: true });
   });

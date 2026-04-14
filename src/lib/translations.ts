@@ -96,6 +96,21 @@ export const translations = {
     pasteHintMac: "Or paste an image with ⌘V",
     pasteHintOther: "Or paste an image with Ctrl+V",
 
+    // edit item
+    editItem: "Edit item",
+
+    // public/private
+    publicBadge: "Public",
+    privateBadge: "Private",
+
+    // profile
+    profile: "Profile",
+    currentPassword: "Current password",
+    newPasswordLabel: "New password",
+    leaveBlankToKeep: "leave blank to keep",
+    profileSaved: "Saved!",
+    errorWrongPassword: "Current password is incorrect",
+
     // categories
     categoryCoffee: "Coffee Shops",
     categoryMusic: "Music",
@@ -209,6 +224,18 @@ export const translations = {
     photoButton: "照片",
     pasteHintMac: "或用 ⌘V 粘贴图片",
     pasteHintOther: "或用 Ctrl+V 粘贴图片",
+
+    editItem: "编辑项目",
+
+    publicBadge: "公开",
+    privateBadge: "私密",
+
+    profile: "个人资料",
+    currentPassword: "当前密码",
+    newPasswordLabel: "新密码",
+    leaveBlankToKeep: "留空则不修改",
+    profileSaved: "已保存！",
+    errorWrongPassword: "当前密码不正确",
 
     categoryCoffee: "咖啡馆",
     categoryMusic: "音乐",

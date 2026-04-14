@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
 import type { List } from "@/types";
 import NewListModal from "@/components/NewListModal";
 import { useT } from "@/context/LocaleContext";
@@ -42,6 +43,9 @@ export default function ListsPage() {
           >
             {t("newListButton")}
           </button>
+          <Link href="/profile" className="text-sm text-gray-400 hover:text-gray-600">
+            {t("profile")}
+          </Link>
           <button onClick={logout} className="text-sm text-gray-400 hover:text-gray-600">
             {t("signOut")}
           </button>

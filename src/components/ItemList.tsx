@@ -41,6 +41,7 @@ type RowProps = {
   pending: string | null;
   deleting: string | null;
   onCycle: (item: Item) => void;
+  onEdit: (item: Item) => void;
   onDelete: (id: string) => void;
   onPhotoAdded: (itemId: string, photoId: string, url: string) => void;
   onPhotoRemoved: (itemId: string, photoId: string) => void;
@@ -49,7 +50,7 @@ type RowProps = {
 function SortableRow({
   item, isOwner, isRecipient, secondaryLabel,
   pending, deleting,
-  onCycle, onDelete, onPhotoAdded, onPhotoRemoved,
+  onCycle, onEdit, onDelete, onPhotoAdded, onPhotoRemoved,
 }: RowProps) {
   const t = useT();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -200,14 +201,23 @@ function SortableRow({
       </div>
 
       {isOwner && (
-        <button
-          onClick={() => onDelete(item.id)}
-          disabled={deleting === item.id}
-          className="text-gray-300 hover:text-red-400 text-sm mt-0.5 shrink-0"
-          title={t("deleteItem")}
-        >
-          {deleting === item.id ? "…" : "✕"}
-        </button>
+        <div className="flex items-center gap-1.5 mt-0.5 shrink-0">
+          <button
+            onClick={() => onEdit(item)}
+            className="text-gray-300 hover:text-gray-500 text-sm"
+            title={t("editItem")}
+          >
+            ✎
+          </button>
+          <button
+            onClick={() => onDelete(item.id)}
+            disabled={deleting === item.id}
+            className="text-gray-300 hover:text-red-400 text-sm"
+            title={t("deleteItem")}
+          >
+            {deleting === item.id ? "…" : "✕"}
+          </button>
+        </div>
       )}
 
       <input
@@ -229,9 +239,10 @@ type Props = {
   isOwner: boolean;
   secondaryLabel: string | null;
   listId: string;
+  onEditItem: (item: Item) => void;
 };
 
-export default function ItemList({ items: initialItems, isRecipient, isOwner, secondaryLabel, listId }: Props) {
+export default function ItemList({ items: initialItems, isRecipient, isOwner, secondaryLabel, listId, onEditItem }: Props) {
   const t = useT();
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -324,6 +335,7 @@ export default function ItemList({ items: initialItems, isRecipient, isOwner, se
               pending={pending}
               deleting={deleting}
               onCycle={cycleStatus}
+              onEdit={onEditItem}
               onDelete={deleteItem}
               onPhotoAdded={handlePhotoAdded}
               onPhotoRemoved={handlePhotoRemoved}
