@@ -10,6 +10,7 @@ export type List = {
   emoji: string;
   category: string;
   secondaryLabel: string | null;
+  isPublic: boolean;
   ownerId: string;
   ownerUsername: string;
   ownerDisplayName: string;

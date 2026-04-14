@@ -11,6 +11,7 @@ export default function NewListModal({ onClose }: { onClose: () => void }) {
   const [title, setTitle] = useState("");
   const [emoji, setEmoji] = useState("📋");
   const [category, setCategory] = useState("custom");
+  const [isPublic, setIsPublic] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -27,7 +28,7 @@ export default function NewListModal({ onClose }: { onClose: () => void }) {
       const res = await fetch("/api/lists", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, emoji, category }),
+        body: JSON.stringify({ title, emoji, category, isPublic }),
       });
       const data = await res.json() as { id?: string; error?: string };
       if (!res.ok) { setError(data.error ?? "Failed to create list"); return; }
@@ -83,6 +84,26 @@ export default function NewListModal({ onClose }: { onClose: () => void }) {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-700">Public list</p>
+              <p className="text-xs text-gray-400">Anyone can discover and view this list</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsPublic((v) => !v)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                isPublic ? "bg-black" : "bg-gray-200"
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  isPublic ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            </button>
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}

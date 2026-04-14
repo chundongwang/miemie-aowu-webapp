@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 
 const COOKIE_NAME = "token";
-const TOKEN_TTL = 60 * 60 * 24 * 7; // 7 days in seconds
+const TOKEN_TTL = 60 * 60 * 24 * 365; // 1 year in seconds
 
 function getSecret(): Uint8Array {
   const secret = process.env.JWT_SECRET;
