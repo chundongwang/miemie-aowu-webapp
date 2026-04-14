@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { nanoid } from "nanoid";
 import { getDB, getPhotoBucket } from "@/lib/db";
 import { withAuth } from "@/lib/api";
 
@@ -47,7 +46,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "File must be under 5 MB" }, { status: 400 });
     }
 
-    const photoId = nanoid();
+    const photoId = crypto.randomUUID();
     const r2Key = `${itemId}/${photoId}`;
     const bucket = await getPhotoBucket();
 

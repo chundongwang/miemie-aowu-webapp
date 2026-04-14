@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { nanoid } from "nanoid";
 import { getDB } from "@/lib/db";
 import { withAuth } from "@/lib/api";
 
@@ -32,7 +31,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       .first<{ max_pos: number | null }>();
 
     const position = (maxPos?.max_pos ?? -1) + 1;
-    const itemId = nanoid();
+    const itemId = crypto.randomUUID();
     const now = Date.now();
 
     await db

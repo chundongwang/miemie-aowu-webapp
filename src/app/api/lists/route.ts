@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { nanoid } from "nanoid";
 import { getDB } from "@/lib/db";
 import { withAuth } from "@/lib/api";
 import { CATEGORIES } from "@/types";
@@ -41,7 +40,7 @@ export async function POST(req: NextRequest) {
     }
 
     const cat = CATEGORIES[category] ?? CATEGORIES.custom;
-    const id = nanoid();
+    const id = crypto.randomUUID();
     const now = Date.now();
     const db = await getDB();
 

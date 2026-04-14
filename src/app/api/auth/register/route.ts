@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { nanoid } from "nanoid";
 import { getDB } from "@/lib/db";
 import { hashPassword, setAuthCookie } from "@/lib/auth";
 import { withErrorHandling } from "@/lib/api";
@@ -35,7 +34,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Username already taken" }, { status: 409 });
   }
 
-  const id = nanoid();
+  const id = crypto.randomUUID();
   const passwordHash = await hashPassword(password);
   const resolvedDisplayName = displayName?.trim() || username;
   const now = Date.now();
