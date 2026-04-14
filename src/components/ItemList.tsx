@@ -80,23 +80,34 @@ function SortableRow({
     e.target.value = "";
   }
 
-  async function handleAddPhotoClick() {
-    try {
-      const { Camera, CameraResultType, CameraSource } = await import("@capacitor/camera");
-      const image = await Camera.getPhoto({
-        quality: 85,
-        allowEditing: false,
-        resultType: CameraResultType.DataUrl,
-        source: CameraSource.Prompt,
-      });
-      if (!image.dataUrl) return;
-      const res = await fetch(image.dataUrl);
-      const blob = await res.blob();
-      const file = new File([blob], "photo.jpg", { type: blob.type || "image/jpeg" });
-      await uploadPhoto(file);
-    } catch {
+  function handleAddPhotoClick() {
+    const isNative =
+      typeof window !== "undefined" &&
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).Capacitor?.isNativePlatform?.();
+
+    if (!isNative) {
       fileInputRef.current?.click();
+      return;
     }
+
+    void (async () => {
+      try {
+        const { Camera, CameraResultType, CameraSource } = await import("@capacitor/camera");
+        const image = await Camera.getPhoto({
+          quality: 85,
+          allowEditing: false,
+          resultType: CameraResultType.DataUrl,
+          source: CameraSource.Prompt,
+        });
+        if (!image.dataUrl) return;
+        const res = await fetch(image.dataUrl);
+        const blob = await res.blob();
+        await uploadPhoto(new File([blob], "photo.jpg", { type: blob.type || "image/jpeg" }));
+      } catch {
+        // cancelled or permission denied
+      }
+    })();
   }
 
   async function removePhoto(photoId: string) {
