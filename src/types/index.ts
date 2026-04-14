@@ -30,6 +30,18 @@ export type Item = {
   status: "unseen" | "saved" | "done";
   position: number;
   photos: ItemPhoto[];
+  miemieCount: number;
+  aowuCount: number;
+  createdAt: number;
+};
+
+export type Comment = {
+  id: string;
+  listId: string;
+  itemId: string | null;
+  itemName: string | null;
+  authorName: string;
+  body: string;
   createdAt: number;
 };
 

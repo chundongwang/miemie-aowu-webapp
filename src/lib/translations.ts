@@ -126,6 +126,22 @@ export const translations = {
     beFirst: "Be the first to create one",
     createYours: "Create your own list →",
 
+    // view mode
+    viewModeList: "List",
+    viewModeWaterfall: "Grid",
+
+    // reactions & comments
+    comments: "Comments",
+    addComment: "Add a comment…",
+    yourName: "Your name",
+    postComment: "Post",
+    posting: "Posting…",
+    noComments: "No comments yet.",
+    itemCommentHint: "on {item}",
+
+    // modals
+    unsavedChanges: "You have unsaved changes. Discard them?",
+
     // errors
     errorRequired: "Username and password are required",
     errorUsernamePattern: "Username must be 3-30 lowercase letters, numbers, or underscores",
@@ -249,6 +265,19 @@ export const translations = {
     noPublicLists: "还没有公开列表。",
     beFirst: "成为第一个创建的人",
     createYours: "创建你自己的列表 →",
+
+    viewModeList: "列表",
+    viewModeWaterfall: "瀑布",
+
+    comments: "评论",
+    addComment: "写下评论…",
+    yourName: "你的名字",
+    postComment: "发送",
+    posting: "发送中…",
+    noComments: "还没有评论。",
+    itemCommentHint: "关于 {item}",
+
+    unsavedChanges: "有未保存的修改，确认丢弃？",
 
     errorRequired: "用户名和密码为必填",
     errorUsernamePattern: "用户名须为 3-30 个小写字母、数字或下划线",

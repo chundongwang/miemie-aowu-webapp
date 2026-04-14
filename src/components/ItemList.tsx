@@ -18,8 +18,9 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { Item } from "@/types";
+import type { Item, ItemPhoto, Comment } from "@/types";
 import { useT } from "@/context/LocaleContext";
+import CommentThread from "@/components/CommentThread";
 
 const STATUS_CYCLE: Record<string, string> = { unseen: "saved", saved: "done", done: "unseen" };
 const STATUS_LABEL: Record<string, string> = { unseen: "·", saved: "★", done: "✓" };
@@ -31,7 +32,44 @@ const STATUS_COLOR: Record<string, string> = {
 
 const MAX_PHOTOS = 3;
 
-// ── Single sortable item row ──────────────────────────────────────────────────
+// ── Shared reaction bar ───────────────────────────────────────────────────────
+
+type ReactionBarProps = {
+  item: Item;
+  itemComments: Comment[];
+  onReact: (itemId: string, type: "miemie" | "aowu") => void;
+  showComments: boolean;
+  onToggleComments: () => void;
+};
+
+function ReactionBar({ item, itemComments, onReact, showComments, onToggleComments }: ReactionBarProps) {
+  return (
+    <div className="flex items-center gap-3 mt-2">
+      <button
+        onClick={() => onReact(item.id, "miemie")}
+        className="flex items-center gap-1 text-xs text-gray-400 hover:text-[#2B4B8C] transition-colors"
+      >
+        <span>咩~</span><span>{item.miemieCount}</span>
+      </button>
+      <button
+        onClick={() => onReact(item.id, "aowu")}
+        className="flex items-center gap-1 text-xs text-gray-400 hover:text-[#2B4B8C] transition-colors"
+      >
+        <span>嗷～</span><span>{item.aowuCount}</span>
+      </button>
+      <button
+        onClick={onToggleComments}
+        className={`flex items-center gap-1 text-xs ml-auto transition-colors ${
+          showComments ? "text-[#2B4B8C]" : "text-gray-400 hover:text-gray-600"
+        }`}
+      >
+        <span>💬</span><span>{itemComments.length}</span>
+      </button>
+    </div>
+  );
+}
+
+// ── Sortable row (list mode) ──────────────────────────────────────────────────
 
 type RowProps = {
   item: Item;
@@ -40,23 +78,32 @@ type RowProps = {
   secondaryLabel: string | null;
   pending: string | null;
   deleting: string | null;
+  listId: string;
+  comments: Comment[];
+  userDisplayName: string | null;
   onCycle: (item: Item) => void;
   onEdit: (item: Item) => void;
   onDelete: (id: string) => void;
   onPhotoAdded: (itemId: string, photoId: string, url: string) => void;
   onPhotoRemoved: (itemId: string, photoId: string) => void;
+  onPhotoClick: (url: string) => void;
+  onReact: (itemId: string, type: "miemie" | "aowu") => void;
+  onCommentAdded: (c: Comment) => void;
 };
 
 function SortableRow({
   item, isOwner, isRecipient, secondaryLabel,
-  pending, deleting,
-  onCycle, onEdit, onDelete, onPhotoAdded, onPhotoRemoved,
+  pending, deleting, listId, comments, userDisplayName,
+  onCycle, onEdit, onDelete, onPhotoAdded, onPhotoRemoved, onPhotoClick, onReact, onCommentAdded,
 }: RowProps) {
   const t = useT();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+
+  const itemComments = comments.filter((c) => c.itemId === item.id);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -120,7 +167,7 @@ function SortableRow({
 
   return (
     <li ref={setNodeRef} style={style} className="py-4 flex items-start gap-3">
-      {/* drag handle — owner only */}
+      {/* drag handle */}
       {isOwner && (
         <button
           {...attributes}
@@ -145,9 +192,20 @@ function SortableRow({
       </button>
 
       <div className="flex-1 min-w-0">
-        <p className={`font-medium text-sm ${item.status === "done" ? "line-through text-gray-400" : "text-gray-900"}`}>
-          {item.name}
-        </p>
+        {isOwner ? (
+          <button
+            onClick={() => onEdit(item)}
+            className={`font-medium text-sm text-left hover:opacity-70 transition-opacity ${
+              item.status === "done" ? "line-through text-gray-400" : "text-gray-900"
+            }`}
+          >
+            {item.name}
+          </button>
+        ) : (
+          <p className={`font-medium text-sm ${item.status === "done" ? "line-through text-gray-400" : "text-gray-900"}`}>
+            {item.name}
+          </p>
+        )}
         {item.secondary && (
           <p className="text-xs text-gray-500 mt-0.5">
             {secondaryLabel ? `${secondaryLabel}: ` : ""}{item.secondary}
@@ -157,7 +215,7 @@ function SortableRow({
           <p className="text-xs text-gray-400 italic mt-1">"{item.reason}"</p>
         )}
 
-        {/* photo thumbnails */}
+        {/* photos */}
         {(item.photos.length > 0 || (isOwner && item.photos.length < MAX_PHOTOS)) && (
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             {item.photos.map((photo) => (
@@ -166,7 +224,8 @@ function SortableRow({
                 <img
                   src={photo.url}
                   alt=""
-                  className="w-16 h-16 object-cover rounded-lg border border-gray-100"
+                  className="w-16 h-16 object-cover rounded-lg border border-gray-100 cursor-zoom-in"
+                  onClick={() => onPhotoClick(photo.url)}
                 />
                 {isOwner && (
                   <button
@@ -178,8 +237,6 @@ function SortableRow({
                 )}
               </div>
             ))}
-
-            {/* add photo button for owner */}
             {isOwner && item.photos.length < MAX_PHOTOS && (
               <button
                 onClick={handleAddPhotoClick}
@@ -198,26 +255,42 @@ function SortableRow({
             )}
           </div>
         )}
+
+        {/* reaction bar + comments — logged-in only */}
+        {userDisplayName !== null && (
+          <>
+            <ReactionBar
+              item={item}
+              itemComments={itemComments}
+              onReact={onReact}
+              showComments={showComments}
+              onToggleComments={() => setShowComments((v) => !v)}
+            />
+            {showComments && (
+              <div className="mt-2 pl-3 border-l-2 border-gray-100">
+                <CommentThread
+                  listId={listId}
+                  itemId={item.id}
+                  comments={itemComments}
+                  userDisplayName={userDisplayName}
+                  onCommentAdded={onCommentAdded}
+                  compact
+                />
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {isOwner && (
-        <div className="flex items-center gap-1.5 mt-0.5 shrink-0">
-          <button
-            onClick={() => onEdit(item)}
-            className="text-gray-300 hover:text-gray-500 text-sm"
-            title={t("editItem")}
-          >
-            ✎
-          </button>
-          <button
-            onClick={() => onDelete(item.id)}
-            disabled={deleting === item.id}
-            className="text-gray-300 hover:text-red-400 text-sm"
-            title={t("deleteItem")}
-          >
-            {deleting === item.id ? "…" : "✕"}
-          </button>
-        </div>
+        <button
+          onClick={() => onDelete(item.id)}
+          disabled={deleting === item.id}
+          className="mt-0.5 text-gray-300 hover:text-red-400 text-sm shrink-0"
+          title={t("deleteItem")}
+        >
+          {deleting === item.id ? "…" : "✕"}
+        </button>
       )}
 
       <input
@@ -231,6 +304,125 @@ function SortableRow({
   );
 }
 
+// ── Waterfall card (one card per photo) ──────────────────────────────────────
+
+type CardProps = {
+  item: Item;
+  photo: ItemPhoto | null; // the specific photo for this card
+  isOwner: boolean;
+  isRecipient: boolean;
+  secondaryLabel: string | null;
+  listId: string;
+  comments: Comment[];
+  userDisplayName: string | null;
+  pending: string | null;
+  deleting: string | null;
+  onCycle: (item: Item) => void;
+  onEdit: (item: Item) => void;
+  onDelete: (id: string) => void;
+  onPhotoClick: (url: string) => void;
+  onReact: (itemId: string, type: "miemie" | "aowu") => void;
+  onCommentAdded: (c: Comment) => void;
+};
+
+function WaterfallCard({
+  item, photo, isOwner, isRecipient, secondaryLabel, listId, comments, userDisplayName,
+  pending, deleting, onCycle, onEdit, onDelete, onPhotoClick, onReact, onCommentAdded,
+}: CardProps) {
+  const t = useT();
+  const [showComments, setShowComments] = useState(false);
+  const itemComments = comments.filter((c) => c.itemId === item.id);
+
+  return (
+    <div className="break-inside-avoid mb-3 bg-white rounded-xl overflow-hidden shadow-sm">
+      {/* Single photo for this card */}
+      {photo && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={photo.url}
+          alt=""
+          className="w-full object-cover cursor-zoom-in"
+          onClick={() => onPhotoClick(photo.url)}
+        />
+      )}
+
+      <div className="p-3">
+        {/* name + controls */}
+        <div className="flex items-start justify-between gap-2">
+          {isOwner ? (
+            <button
+              onClick={() => onEdit(item)}
+              className={`font-medium text-sm text-left hover:opacity-70 transition-opacity flex-1 ${
+                item.status === "done" ? "line-through text-gray-400" : "text-gray-900"
+              }`}
+            >
+              {item.name}
+            </button>
+          ) : (
+            <p className={`font-medium text-sm flex-1 ${item.status === "done" ? "line-through text-gray-400" : "text-gray-900"}`}>
+              {item.name}
+            </p>
+          )}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {(isOwner || isRecipient) && (
+              <button
+                onClick={() => onCycle(item)}
+                disabled={pending === item.id}
+                className={`text-base ${STATUS_COLOR[item.status]} ${pending === item.id ? "opacity-40" : ""}`}
+              >
+                {STATUS_LABEL[item.status]}
+              </button>
+            )}
+            {isOwner && (
+              <button
+                onClick={() => onDelete(item.id)}
+                disabled={deleting === item.id}
+                className="text-gray-300 hover:text-red-400 text-xs"
+              >
+                {deleting === item.id ? "…" : "✕"}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {item.secondary && (
+          <p className="text-xs text-gray-500 mt-0.5">
+            {secondaryLabel ? `${secondaryLabel}: ` : ""}{item.secondary}
+          </p>
+        )}
+        {item.reason && (
+          <p className="text-xs text-gray-400 italic mt-1">"{item.reason}"</p>
+        )}
+
+        {/* reaction bar + comments — logged-in only */}
+        {userDisplayName !== null && (
+          <>
+            <ReactionBar
+              item={item}
+              itemComments={itemComments}
+              onReact={onReact}
+              showComments={showComments}
+              onToggleComments={() => setShowComments((v) => !v)}
+            />
+            {showComments && (
+              <div className="mt-2 pt-2 border-t border-gray-100">
+                <CommentThread
+                  listId={listId}
+                  itemId={item.id}
+                  comments={itemComments}
+                  userDisplayName={userDisplayName}
+                  onCommentAdded={onCommentAdded}
+                  compact
+                />
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── ItemList ──────────────────────────────────────────────────────────────────
 
 type Props = {
@@ -239,10 +431,20 @@ type Props = {
   isOwner: boolean;
   secondaryLabel: string | null;
   listId: string;
+  viewMode: "list" | "waterfall";
+  comments: Comment[];
+  userDisplayName: string | null;
   onEditItem: (item: Item) => void;
+  onPhotoClick: (url: string) => void;
+  onCommentAdded: (c: Comment) => void;
+  onReactionsChanged: (totalMiemie: number, totalAowu: number) => void;
 };
 
-export default function ItemList({ items: initialItems, isRecipient, isOwner, secondaryLabel, listId, onEditItem }: Props) {
+export default function ItemList({
+  items: initialItems, isRecipient, isOwner, secondaryLabel, listId,
+  viewMode, comments, userDisplayName,
+  onEditItem, onPhotoClick, onCommentAdded, onReactionsChanged,
+}: Props) {
   const t = useT();
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -256,6 +458,13 @@ export default function ItemList({ items: initialItems, isRecipient, isOwner, se
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor,   { activationConstraint: { delay: 150, tolerance: 5 } })
   );
+
+  function notifyTotals(updatedItems: Item[]) {
+    onReactionsChanged(
+      updatedItems.reduce((s, i) => s + i.miemieCount, 0),
+      updatedItems.reduce((s, i) => s + i.aowuCount,   0),
+    );
+  }
 
   async function cycleStatus(item: Item) {
     if (!isRecipient && !isOwner) return;
@@ -274,10 +483,31 @@ export default function ItemList({ items: initialItems, isRecipient, isOwner, se
   async function deleteItem(itemId: string) {
     if (!confirm(t("removeItemConfirm"))) return;
     setDeleting(itemId);
-    setItems((prev) => prev.filter((i) => i.id !== itemId));
+    const updated = items.filter((i) => i.id !== itemId);
+    setItems(updated);
+    notifyTotals(updated);
     await fetch(`/api/items/${itemId}`, { method: "DELETE" });
     setDeleting(null);
     startTransition(() => router.refresh());
+  }
+
+  async function reactToItem(itemId: string, type: "miemie" | "aowu") {
+    const updated = items.map((i) =>
+      i.id === itemId
+        ? {
+            ...i,
+            miemieCount: i.miemieCount + (type === "miemie" ? 1 : 0),
+            aowuCount:   i.aowuCount   + (type === "aowu"   ? 1 : 0),
+          }
+        : i
+    );
+    setItems(updated);
+    notifyTotals(updated);
+    await fetch(`/api/items/${itemId}/reactions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type }),
+    });
   }
 
   async function handleDragEnd(event: DragEndEvent) {
@@ -321,6 +551,39 @@ export default function ItemList({ items: initialItems, isRecipient, isOwner, se
     );
   }
 
+  const sharedProps = {
+    isOwner, isRecipient, secondaryLabel, listId, comments, userDisplayName,
+    pending, deleting,
+    onCycle: cycleStatus,
+    onEdit: onEditItem,
+    onDelete: deleteItem,
+    onPhotoClick,
+    onReact: reactToItem,
+    onCommentAdded,
+  };
+
+  // ── Waterfall mode (one card per photo; items without photos get one card) ──
+  if (viewMode === "waterfall") {
+    const entries = items.flatMap((item) =>
+      item.photos.length > 0
+        ? item.photos.map((photo) => ({ item, photo }))
+        : [{ item, photo: null as ItemPhoto | null }]
+    );
+    return (
+      <div className="columns-2 gap-3">
+        {entries.map(({ item, photo }) => (
+          <WaterfallCard
+            key={photo ? photo.id : item.id}
+            item={item}
+            photo={photo}
+            {...sharedProps}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  // ── List mode ──
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
@@ -329,14 +592,7 @@ export default function ItemList({ items: initialItems, isRecipient, isOwner, se
             <SortableRow
               key={item.id}
               item={item}
-              isOwner={isOwner}
-              isRecipient={isRecipient}
-              secondaryLabel={secondaryLabel}
-              pending={pending}
-              deleting={deleting}
-              onCycle={cycleStatus}
-              onEdit={onEditItem}
-              onDelete={deleteItem}
+              {...sharedProps}
               onPhotoAdded={handlePhotoAdded}
               onPhotoRemoved={handlePhotoRemoved}
             />

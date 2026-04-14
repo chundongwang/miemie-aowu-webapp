@@ -43,6 +43,28 @@ export async function GET(_req: NextRequest, { params }: Params) {
       .bind(id)
       .all();
 
+    // Fetch reaction counts (graceful fallback if table not yet migrated)
+    const reactionMap = new Map<string, { miemie: number; aowu: number }>();
+    try {
+      const reactionRows = await db
+        .prepare(
+          `SELECT item_id,
+                  SUM(CASE WHEN type='miemie' THEN 1 ELSE 0 END) AS miemie_count,
+                  SUM(CASE WHEN type='aowu'   THEN 1 ELSE 0 END) AS aowu_count
+           FROM reactions
+           WHERE item_id IN (SELECT id FROM items WHERE list_id = ?)
+           GROUP BY item_id`
+        )
+        .bind(id)
+        .all();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const r of reactionRows.results as any[]) {
+        reactionMap.set(r.item_id, { miemie: r.miemie_count ?? 0, aowu: r.aowu_count ?? 0 });
+      }
+    } catch {
+      // reactions table not yet created — treat as zero counts
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const items = itemRows.results.map((r: any) => ({
       id: r.id,
@@ -52,6 +74,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
       reason: r.reason,
       status: r.status,
       position: r.position,
+      miemieCount: reactionMap.get(r.id)?.miemie ?? 0,
+      aowuCount:   reactionMap.get(r.id)?.aowu   ?? 0,
       createdAt: r.created_at,
       photos: r.photos_raw
         ? r.photos_raw.split(",").map((chunk: string) => {

@@ -19,6 +19,13 @@ export default function EditListModal({ listId, current, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const isDirty = title !== current.title || emoji !== current.emoji || secondaryLabel !== (current.secondaryLabel ?? "");
+
+  function handleDismiss() {
+    if (isDirty && !confirm(t("unsavedChanges"))) return;
+    onClose();
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) { setError(t("titleRequired")); return; }
@@ -40,11 +47,11 @@ export default function EditListModal({ listId, current, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center">
-      <div className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-6 pb-10 sm:pb-6">
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center" onClick={handleDismiss}>
+      <div className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-6 pb-10 sm:pb-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-semibold">{t("editList")}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+          <button onClick={handleDismiss} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -63,7 +70,7 @@ export default function EditListModal({ listId, current, onClose }: Props) {
             <input
               autoFocus required value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C]"
             />
           </div>
 
@@ -76,7 +83,7 @@ export default function EditListModal({ listId, current, onClose }: Props) {
               value={secondaryLabel}
               onChange={(e) => setSecondaryLabel(e.target.value)}
               placeholder={t("secondaryFieldPlaceholder")}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C]"
             />
           </div>
 
@@ -84,7 +91,7 @@ export default function EditListModal({ listId, current, onClose }: Props) {
 
           <button
             type="submit" disabled={loading}
-            className="w-full bg-black text-white rounded-xl py-3 text-sm font-medium disabled:opacity-40"
+            className="w-full bg-[#2B4B8C] text-white rounded-xl py-3 text-sm font-medium disabled:opacity-40"
           >
             {loading ? t("saving") : t("saveChanges")}
           </button>
