@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { getLocale } from "@/lib/i18n";
 import { LocaleProvider } from "@/context/LocaleContext";
+import FaviconRotator from "@/components/FaviconRotator";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "咩咩嗷呜",
+  title: "🐑咩咩~嗷呜🐺",
   description: "Curated recommendations, shared with the people you care about.",
 };
 
@@ -30,6 +31,7 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <LocaleProvider locale={locale}>{children}</LocaleProvider>
+        <FaviconRotator />
       </body>
     </html>
   );

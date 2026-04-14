@@ -3,7 +3,7 @@ export type Locale = "en" | "zh";
 export const translations = {
   en: {
     // app
-    appName: "咩咩嗷呜",
+    appName: "🐑咩咩~嗷呜🐺",
 
     // auth
     signIn: "Sign in",
@@ -141,7 +141,7 @@ export const translations = {
   },
 
   zh: {
-    appName: "咩咩嗷呜",
+    appName: "🐑咩咩~嗷呜🐺",
 
     signIn: "登录",
     signOut: "退出登录",
