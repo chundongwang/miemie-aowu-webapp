@@ -3,7 +3,6 @@ import { getDB } from "@/lib/db";
 import { verifyPassword, setAuthCookie } from "@/lib/auth";
 import { withErrorHandling } from "@/lib/api";
 
-export const runtime = "edge";
 
 export async function POST(req: NextRequest) {
   return withErrorHandling("auth.login", async () => {

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/db";
 import { withAuth } from "@/lib/api";
 
-export const runtime = "edge";
 
 const VALID_STATUSES = ["unseen", "saved", "done"];
 type Params = { params: Promise<{ id: string }> };
