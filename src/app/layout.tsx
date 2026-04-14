@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "🐑咩咩~嗷呜🐺",
+  title: "🐑 咩咩~嗷呜 🐺",
   description: "Curated recommendations, shared with the people you care about.",
 };
 
