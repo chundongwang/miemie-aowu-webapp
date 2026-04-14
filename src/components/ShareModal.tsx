@@ -1,0 +1,62 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+type Props = { listId: string; onClose: () => void };
+
+export default function ShareModal({ listId, onClose }: Props) {
+  const router = useRouter();
+  const [username, setUsername] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/lists/${listId}/share`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username }),
+      });
+      const data = await res.json() as { error?: string };
+      if (!res.ok) { setError(data.error ?? "Failed to share"); return; }
+      router.refresh();
+      onClose();
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center">
+      <div className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-6 pb-10 sm:pb-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-semibold">Share list</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Share with (username)
+            </label>
+            <input
+              autoFocus required value={username} onChange={(e) => setUsername(e.target.value)}
+              placeholder="e.g. sarah"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+            />
+          </div>
+          {error && <p className="text-sm text-red-600">{error}</p>}
+          <button
+            type="submit" disabled={loading || !username.trim()}
+            className="w-full bg-black text-white rounded-xl py-3 text-sm font-medium disabled:opacity-40"
+          >
+            {loading ? "Sharing…" : "Share"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
