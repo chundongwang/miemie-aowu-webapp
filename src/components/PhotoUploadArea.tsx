@@ -57,26 +57,38 @@ export default function PhotoUploadArea({ photos, onChange, max = 3 }: Props) {
     e.target.value = "";
   }
 
-  async function handleCameraButton() {
-    // Use Capacitor Camera when running natively, fall back to file input on web
-    try {
-      // Dynamic import so SSR doesn't break
-      const { Camera, CameraResultType, CameraSource } = await import("@capacitor/camera");
-      const image = await Camera.getPhoto({
-        quality: 85,
-        allowEditing: false,
-        resultType: CameraResultType.DataUrl,
-        source: CameraSource.Prompt,
-      });
-      if (!image.dataUrl) return;
-      const res = await fetch(image.dataUrl);
-      const blob = await res.blob();
-      const file = new File([blob], "photo.jpg", { type: blob.type || "image/jpeg" });
-      addFile(file);
-    } catch {
-      // Not on Capacitor or permission denied — fall back to file input
+  function handleCameraButton() {
+    // Check synchronously — browsers only allow input.click() within a direct user gesture.
+    // Any await before the click loses the gesture context and the dialog is silently blocked.
+    const isNative =
+      typeof window !== "undefined" &&
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).Capacitor?.isNativePlatform?.();
+
+    if (!isNative) {
+      // Web: trigger file input immediately (still within the gesture)
       fileInputRef.current?.click();
+      return;
     }
+
+    // Native Capacitor: async is fine here since the native sheet isn't a browser dialog
+    void (async () => {
+      try {
+        const { Camera, CameraResultType, CameraSource } = await import("@capacitor/camera");
+        const image = await Camera.getPhoto({
+          quality: 85,
+          allowEditing: false,
+          resultType: CameraResultType.DataUrl,
+          source: CameraSource.Prompt,
+        });
+        if (!image.dataUrl) return;
+        const res = await fetch(image.dataUrl);
+        const blob = await res.blob();
+        addFile(new File([blob], "photo.jpg", { type: blob.type || "image/jpeg" }));
+      } catch {
+        // permission denied or cancelled — nothing to do
+      }
+    })();
   }
 
   return (
