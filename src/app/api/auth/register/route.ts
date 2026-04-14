@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/db";
 import { hashPassword, setAuthCookie } from "@/lib/auth";
 
-export const runtime = "edge";
+// NOTE: no `export const runtime = "edge"` — testing if that was the culprit
+console.log("[register] module evaluated");
 
 export async function POST(req: NextRequest) {
   try {
