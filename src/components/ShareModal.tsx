@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/context/LocaleContext";
 
 type Props = { listId: string; onClose: () => void };
 
 export default function ShareModal({ listId, onClose }: Props) {
+  const t = useT();
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,7 +24,8 @@ export default function ShareModal({ listId, onClose }: Props) {
         body: JSON.stringify({ username }),
       });
       const data = await res.json() as { error?: string };
-      if (!res.ok) { setError(data.error ?? "Failed to share"); return; }
+      if (!res.ok) { setError(t("errorShare")); return; }
+      if (data.error) { setError(t("errorShare")); return; }
       router.refresh();
       onClose();
     } finally {
@@ -34,17 +37,15 @@ export default function ShareModal({ listId, onClose }: Props) {
     <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center">
       <div className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-6 pb-10 sm:pb-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold">Share list</h2>
+          <h2 className="text-lg font-semibold">{t("shareList")}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Share with (username)
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("shareWithLabel")}</label>
             <input
               autoFocus required value={username} onChange={(e) => setUsername(e.target.value)}
-              placeholder="e.g. sarah"
+              placeholder={t("sharePlaceholder")}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
             />
           </div>
@@ -53,7 +54,7 @@ export default function ShareModal({ listId, onClose }: Props) {
             type="submit" disabled={loading || !username.trim()}
             className="w-full bg-black text-white rounded-xl py-3 text-sm font-medium disabled:opacity-40"
           >
-            {loading ? "Sharing…" : "Share"}
+            {loading ? t("sharing") : t("share")}
           </button>
         </form>
       </div>

@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useT } from "@/context/LocaleContext";
 
 export default function LoginPage() {
+  const t = useT();
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -22,7 +24,8 @@ export default function LoginPage() {
         body: JSON.stringify({ username, password }),
       });
       const data = await res.json() as { error?: string };
-      if (!res.ok) { setError(data.error ?? "Login failed"); return; }
+      if (!res.ok) { setError(t("errorInvalidCredentials")); return; }
+      if (data.error) { setError(t("errorLogin")); return; }
       router.push("/lists");
     } finally {
       setLoading(false);
@@ -32,10 +35,10 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-semibold text-center mb-8">Sign in</h1>
+        <h1 className="text-2xl font-semibold text-center mb-8">{t("signIn")}</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("username")}</label>
             <input
               type="text"
               required
@@ -46,7 +49,7 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("password")}</label>
             <input
               type="password"
               required
@@ -61,12 +64,12 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full bg-black text-white rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-50"
           >
-            {loading ? "Signing in…" : "Sign in"}
+            {loading ? t("signingIn") : t("signIn")}
           </button>
         </form>
         <p className="text-sm text-center text-gray-500 mt-6">
-          No account?{" "}
-          <Link href="/register" className="text-black font-medium underline">Register</Link>
+          {t("noAccount")}{" "}
+          <Link href="/register" className="text-black font-medium underline">{t("register")}</Link>
         </p>
       </div>
     </div>

@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useT } from "@/context/LocaleContext";
 
 export default function RegisterPage() {
+  const t = useT();
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -28,7 +30,13 @@ export default function RegisterPage() {
         }),
       });
       const data = await res.json() as { error?: string };
-      if (!res.ok) { setError(data.error ?? "Registration failed"); return; }
+      if (!res.ok) {
+        if (data.error?.includes("taken")) setError(t("errorUsernameTaken"));
+        else if (data.error?.includes("pattern") || data.error?.includes("lowercase")) setError(t("errorUsernamePattern"));
+        else if (data.error?.includes("8 char")) setError(t("errorPasswordLength"));
+        else setError(t("errorRegister"));
+        return;
+      }
       router.push("/lists");
     } finally {
       setLoading(false);
@@ -38,11 +46,11 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-semibold text-center mb-8">Create account</h1>
+        <h1 className="text-2xl font-semibold text-center mb-8">{t("createAccount")}</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Username <span className="text-gray-400 font-normal">(lowercase, no spaces)</span>
+              {t("username")} <span className="text-gray-400 font-normal">({t("usernameHint")})</span>
             </label>
             <input
               type="text"
@@ -51,36 +59,36 @@ export default function RegisterPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               pattern="[a-z0-9_]{3,30}"
-              placeholder="e.g. sarah"
+              placeholder={t("usernamePlaceholder")}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Display name <span className="text-gray-400 font-normal">(optional)</span>
+              {t("displayNameLabel")} <span className="text-gray-400 font-normal">({t("displayNameHint")})</span>
             </label>
             <input
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder={username || "leave blank to use username"}
+              placeholder={t("displayNamePlaceholder")}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone <span className="text-gray-400 font-normal">(optional)</span>
+              {t("phone")} <span className="text-gray-400 font-normal">({t("phoneHint")})</span>
             </label>
             <input
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="e.g. +86 138 0000 0000"
+              placeholder={t("phonePlaceholder")}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("password")}</label>
             <input
               type="password"
               required
@@ -96,12 +104,12 @@ export default function RegisterPage() {
             disabled={loading}
             className="w-full bg-black text-white rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-50"
           >
-            {loading ? "Creating account…" : "Create account"}
+            {loading ? t("creatingAccount") : t("createAccount")}
           </button>
         </form>
         <p className="text-sm text-center text-gray-500 mt-6">
-          Already have an account?{" "}
-          <Link href="/login" className="text-black font-medium underline">Sign in</Link>
+          {t("alreadyHaveAccount")}{" "}
+          <Link href="/login" className="text-black font-medium underline">{t("signIn")}</Link>
         </p>
       </div>
     </div>

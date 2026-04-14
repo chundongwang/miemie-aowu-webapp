@@ -8,8 +8,10 @@ import ItemList from "@/components/ItemList";
 import AddItemModal from "@/components/AddItemModal";
 import ShareModal from "@/components/ShareModal";
 import EditListModal from "@/components/EditListModal";
+import { useT } from "@/context/LocaleContext";
 
 export default function ListDetailPage() {
+  const t = useT();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [list, setList] = useState<ListDetail | null>(null);
@@ -41,22 +43,22 @@ export default function ListDetailPage() {
   }
 
   async function deleteList() {
-    if (!confirm("Delete this list? This cannot be undone.")) return;
+    if (!confirm(t("deleteListConfirm"))) return;
     await fetch(`/api/lists/${id}`, { method: "DELETE" });
     router.push("/lists");
   }
 
   async function revokeShare() {
-    if (!confirm("Unshare this list?")) return;
+    if (!confirm(t("unshareConfirm"))) return;
     await fetch(`/api/lists/${id}/share`, { method: "DELETE" });
     load();
   }
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-400 text-sm">Loading…</div>;
+    return <div className="min-h-screen flex items-center justify-center text-gray-400 text-sm">{t("loading")}</div>;
   }
   if (notFound || !list) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-400 text-sm">List not found.</div>;
+    return <div className="min-h-screen flex items-center justify-center text-gray-400 text-sm">{t("listNotFound")}</div>;
   }
 
   const isOwner = me?.id === list.ownerId;
@@ -74,7 +76,6 @@ export default function ListDetailPage() {
             ‹
           </button>
 
-          {/* tapping emoji+title opens edit for owner */}
           {isOwner ? (
             <button
               onClick={() => setShowEdit(true)}
@@ -84,7 +85,7 @@ export default function ListDetailPage() {
               <div className="min-w-0">
                 <h1 className="font-semibold text-gray-900 truncate">{list.title}</h1>
                 {list.recipientDisplayName && (
-                  <p className="text-xs text-gray-400">shared with {list.recipientDisplayName}</p>
+                  <p className="text-xs text-gray-400">{t("sharedWith")} {list.recipientDisplayName}</p>
                 )}
               </div>
             </button>
@@ -93,7 +94,7 @@ export default function ListDetailPage() {
               <span className="text-2xl">{list.emoji}</span>
               <div className="min-w-0">
                 <h1 className="font-semibold text-gray-900 truncate">{list.title}</h1>
-                <p className="text-xs text-gray-400">by {list.ownerDisplayName}</p>
+                <p className="text-xs text-gray-400">{t("by")} {list.ownerDisplayName}</p>
               </div>
             </div>
           )}
@@ -105,18 +106,18 @@ export default function ListDetailPage() {
                   onClick={revokeShare}
                   className="text-xs text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg px-2 py-1"
                 >
-                  Unshare
+                  {t("unshare")}
                 </button>
               ) : (
                 <button
                   onClick={() => setShowShare(true)}
                   className="text-xs font-medium border border-gray-300 rounded-lg px-2 py-1 hover:bg-gray-50"
                 >
-                  Share
+                  {t("share")}
                 </button>
               )}
               <button onClick={deleteList} className="text-xs text-red-400 hover:text-red-600">
-                Delete
+                {t("delete")}
               </button>
             </div>
           )}
@@ -136,12 +137,12 @@ export default function ListDetailPage() {
       {isGuest && (
         <div className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-100 px-4 py-4">
           <div className="max-w-lg mx-auto flex items-center justify-between gap-4">
-            <p className="text-sm text-gray-500">Want to create your own list?</p>
+            <p className="text-sm text-gray-500">{t("wantToCreate")}</p>
             <Link
               href="/register"
               className="shrink-0 bg-black text-white text-sm font-medium px-4 py-2 rounded-lg"
             >
-              Get started
+              {t("getStarted")}
             </Link>
           </div>
         </div>
@@ -159,11 +160,7 @@ export default function ListDetailPage() {
       )}
 
       {showAddItem && (
-        <AddItemModal
-          listId={id}
-          secondaryLabel={list.secondaryLabel}
-          onClose={handleModalClose(setShowAddItem)}
-        />
+        <AddItemModal listId={id} secondaryLabel={list.secondaryLabel} onClose={handleModalClose(setShowAddItem)} />
       )}
       {showShare && (
         <ShareModal listId={id} onClose={handleModalClose(setShowShare)} />

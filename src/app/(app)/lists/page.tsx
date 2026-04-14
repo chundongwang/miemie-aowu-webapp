@@ -5,8 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { List } from "@/types";
 import NewListModal from "@/components/NewListModal";
+import { useT } from "@/context/LocaleContext";
 
 export default function ListsPage() {
+  const t = useT();
   const router = useRouter();
   const [lists, setLists] = useState<List[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,41 +34,41 @@ export default function ListsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="sticky top-0 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between z-10">
-        <h1 className="text-lg font-semibold">My Lists</h1>
+        <h1 className="text-lg font-semibold">{t("myLists")}</h1>
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowNew(true)}
             className="bg-black text-white text-sm font-medium px-3 py-1.5 rounded-lg"
           >
-            + New
+            {t("newListButton")}
           </button>
           <button onClick={logout} className="text-sm text-gray-400 hover:text-gray-600">
-            Sign out
+            {t("signOut")}
           </button>
         </div>
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-4">
         {loading ? (
-          <div className="py-16 text-center text-gray-400 text-sm">Loading…</div>
+          <div className="py-16 text-center text-gray-400 text-sm">{t("loading")}</div>
         ) : lists.length === 0 ? (
           <div className="py-16 text-center">
-            <p className="text-gray-400 text-sm mb-4">No lists yet.</p>
+            <p className="text-gray-400 text-sm mb-4">{t("noListsYet")}</p>
             <button
               onClick={() => setShowNew(true)}
               className="bg-black text-white text-sm font-medium px-4 py-2 rounded-lg"
             >
-              Create your first list
+              {t("createFirstList")}
             </button>
           </div>
         ) : (
           <ul className="space-y-3">
             {lists.map((list) => {
               const isOwner = me && list.ownerId === me.id;
-              const other = isOwner
-                ? list.recipientDisplayName
-                : list.ownerDisplayName;
-              const otherLabel = isOwner ? "shared with" : "from";
+              const other = isOwner ? list.recipientDisplayName : list.ownerDisplayName;
+              const otherLabel = isOwner ? t("sharedWith") : t("fromUser");
+              const count = list.itemCount;
+              const countLabel = count === 1 ? t("itemSingular") : t("itemPlural");
 
               return (
                 <li key={list.id}>
@@ -82,10 +84,10 @@ export default function ListsPage() {
                           {other
                             ? `${otherLabel} ${other}`
                             : isOwner
-                            ? "not shared yet"
+                            ? t("notSharedYet")
                             : ""}
                           {" · "}
-                          {list.itemCount} {list.itemCount === 1 ? "item" : "items"}
+                          {count} {countLabel}
                         </p>
                       </div>
                       <span className="text-gray-300 text-lg">›</span>
