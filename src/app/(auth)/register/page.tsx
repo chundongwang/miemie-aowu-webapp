@@ -61,7 +61,7 @@ export default function RegisterPage() {
               onChange={(e) => setUsername(e.target.value)}
               pattern="[a-z0-9_]{3,30}"
               placeholder={t("usernamePlaceholder")}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C]"
             />
           </div>
           <div>
@@ -73,7 +73,7 @@ export default function RegisterPage() {
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder={t("displayNamePlaceholder")}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C]"
             />
           </div>
           <div>
@@ -85,7 +85,7 @@ export default function RegisterPage() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder={t("phonePlaceholder")}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C]"
             />
           </div>
           <div>
@@ -96,21 +96,21 @@ export default function RegisterPage() {
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C]"
             />
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-black text-white rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-50"
+            className="w-full bg-[#2B4B8C] text-white rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-50"
           >
             {loading ? t("creatingAccount") : t("createAccount")}
           </button>
         </form>
         <p className="text-sm text-center text-gray-500 mt-6">
           {t("alreadyHaveAccount")}{" "}
-          <Link href="/login" className="text-black font-medium underline">{t("signIn")}</Link>
+          <Link href="/login" className="text-[#2B4B8C] font-medium underline">{t("signIn")}</Link>
         </p>
       </div>
     </div>

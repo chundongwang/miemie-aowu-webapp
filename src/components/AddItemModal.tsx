@@ -21,6 +21,13 @@ export default function AddItemModal({ listId, secondaryLabel, onClose }: Props)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const isDirty = name.trim() !== "" || secondary.trim() !== "" || reason.trim() !== "" || photos.length > 0;
+
+  function handleDismiss() {
+    if (isDirty && !confirm(t("unsavedChanges"))) return;
+    onClose();
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -52,18 +59,18 @@ export default function AddItemModal({ listId, secondaryLabel, onClose }: Props)
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center">
-      <div className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-6 pb-10 sm:pb-6 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center" onClick={handleDismiss}>
+      <div className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-6 pb-10 sm:pb-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-semibold">{t("addItem")}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+          <button onClick={handleDismiss} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{t("nameLabel")}</label>
             <input
               autoFocus required value={name} onChange={(e) => setName(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C]"
             />
           </div>
           {secondaryLabel && (
@@ -73,7 +80,7 @@ export default function AddItemModal({ listId, secondaryLabel, onClose }: Props)
               </label>
               <input
                 value={secondary} onChange={(e) => setSecondary(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C]"
               />
             </div>
           )}
@@ -83,7 +90,7 @@ export default function AddItemModal({ listId, secondaryLabel, onClose }: Props)
             </label>
             <textarea
               rows={2} value={reason} onChange={(e) => setReason(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black resize-none"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C] resize-none"
             />
           </div>
 
@@ -92,7 +99,7 @@ export default function AddItemModal({ listId, secondaryLabel, onClose }: Props)
           {error && <p className="text-sm text-red-600">{error}</p>}
           <button
             type="submit" disabled={loading || !name.trim()}
-            className="w-full bg-black text-white rounded-xl py-3 text-sm font-medium disabled:opacity-40"
+            className="w-full bg-[#2B4B8C] text-white rounded-xl py-3 text-sm font-medium disabled:opacity-40"
           >
             {loading ? (photos.length > 0 ? t("uploading") : t("adding")) : t("addItem")}
           </button>

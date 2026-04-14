@@ -46,7 +46,7 @@ export default function LoginPage() {
               autoFocus
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C]"
             />
           </div>
           <div>
@@ -56,21 +56,21 @@ export default function LoginPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C]"
             />
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-black text-white rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-50"
+            className="w-full bg-[#2B4B8C] text-white rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-50"
           >
             {loading ? t("signingIn") : t("signIn")}
           </button>
         </form>
         <p className="text-sm text-center text-gray-500 mt-6">
           {t("noAccount")}{" "}
-          <Link href="/register" className="text-black font-medium underline">{t("register")}</Link>
+          <Link href="/register" className="text-[#2B4B8C] font-medium underline">{t("register")}</Link>
         </p>
       </div>
     </div>

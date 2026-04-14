@@ -3,45 +3,76 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import type { ListDetail, Item } from "@/types";
+import type { ListDetail, Item, Comment } from "@/types";
 import ItemList from "@/components/ItemList";
 import AddItemModal from "@/components/AddItemModal";
 import EditItemModal from "@/components/EditItemModal";
 import ShareModal from "@/components/ShareModal";
 import EditListModal from "@/components/EditListModal";
+import Lightbox from "@/components/Lightbox";
+import CommentThread from "@/components/CommentThread";
 import { useT } from "@/context/LocaleContext";
+
+type Me = { id: string; displayName: string };
 
 export default function ListDetailPage() {
   const t = useT();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [list, setList] = useState<ListDetail | null>(null);
-  const [me, setMe] = useState<{ id: string } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [showAddItem, setShowAddItem] = useState(false);
-  const [showShare, setShowShare] = useState(false);
-  const [showEditList, setShowEditList] = useState(false);
-  const [editingItem, setEditingItem] = useState<Item | null>(null);
+
+  const [list, setList]         = useState<ListDetail | null>(null);
+  const [me, setMe]             = useState<Me | null>(null);
+  const [loading, setLoading]   = useState(true);
   const [notFound, setNotFound] = useState(false);
+
+  const [showAddItem,  setShowAddItem]  = useState(false);
+  const [showShare,    setShowShare]    = useState(false);
+  const [showEditList, setShowEditList] = useState(false);
+  const [editingItem,  setEditingItem]  = useState<Item | null>(null);
+
+  const [viewMode,    setViewMode]    = useState<"list" | "waterfall">("list");
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [comments,    setComments]    = useState<Comment[]>([]);
+  const [reactionTotals, setReactionTotals] = useState({ miemie: 0, aowu: 0 });
 
   function load() {
     Promise.all([
       fetch(`/api/lists/${id}`).then(async (r) => {
         if (r.status === 404) { setNotFound(true); return null; }
+        if (!r.ok) return null;
         return r.json() as Promise<ListDetail>;
       }),
-      fetch("/api/auth/me").then((r) => (r.ok ? r.json() : null)) as Promise<{ id: string } | null>,
+      fetch("/api/auth/me").then((r) => (r.ok ? r.json() : null)) as Promise<Me | null>,
     ]).then(([l, user]) => {
       setList(l);
       setMe(user);
+      if (l) {
+        setReactionTotals({
+          miemie: l.items.reduce((s, i) => s + i.miemieCount, 0),
+          aowu:   l.items.reduce((s, i) => s + i.aowuCount,   0),
+        });
+      }
       setLoading(false);
     });
   }
 
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Load comments once list is available
+  useEffect(() => {
+    if (!loading && list) {
+      fetch(`/api/lists/${id}/comments`)
+        .then((r) => (r.ok ? (r.json() as Promise<Comment[]>) : Promise.resolve([] as Comment[])))
+        .then((data) => setComments(data));
+    }
+  }, [loading, list, id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   function handleModalClose(setter: (v: boolean) => void) {
     return () => { setter(false); load(); };
+  }
+
+  function handleCommentAdded(comment: Comment) {
+    setComments((prev) => [...prev, comment]);
   }
 
   async function deleteList() {
@@ -59,7 +90,7 @@ export default function ListDetailPage() {
   async function togglePublic() {
     if (!list) return;
     const next = !list.isPublic;
-    setList((l) => l ? { ...l, isPublic: next } : l); // optimistic
+    setList((l) => l ? { ...l, isPublic: next } : l);
     await fetch(`/api/lists/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -74,9 +105,11 @@ export default function ListDetailPage() {
     return <div className="min-h-screen flex items-center justify-center text-gray-400 text-sm">{t("listNotFound")}</div>;
   }
 
-  const isOwner = me?.id === list.ownerId;
+  const isOwner     = me?.id === list.ownerId;
   const isRecipient = me?.id === list.recipientId;
-  const isGuest = !me;
+  const isGuest     = !me;
+
+  const hasReactions = reactionTotals.miemie > 0 || reactionTotals.aowu > 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -107,10 +140,26 @@ export default function ListDetailPage() {
               <span className="text-2xl">{list.emoji}</span>
               <div className="min-w-0">
                 <h1 className="font-semibold text-gray-900 truncate">{list.title}</h1>
-                <p className="text-xs text-gray-400">{t("by")} {list.ownerDisplayName}</p>
+                <p className="text-xs text-gray-400">
+                  {t("by")} {list.ownerDisplayName}
+                  {hasReactions && (
+                    <span className="ml-2 text-[#2B4B8C]">
+                      咩~ {reactionTotals.miemie} · 嗷～ {reactionTotals.aowu}
+                    </span>
+                  )}
+                </p>
               </div>
             </div>
           )}
+
+          {/* view-mode toggle — always visible */}
+          <button
+            onClick={() => setViewMode((m) => m === "list" ? "waterfall" : "list")}
+            className="text-gray-400 hover:text-gray-600 text-base shrink-0"
+            title={viewMode === "list" ? t("viewModeWaterfall") : t("viewModeList")}
+          >
+            {viewMode === "list" ? "⊞" : "☰"}
+          </button>
 
           {isOwner && (
             <div className="flex items-center gap-2 shrink-0">
@@ -154,15 +203,35 @@ export default function ListDetailPage() {
           isRecipient={isRecipient}
           secondaryLabel={list.secondaryLabel}
           listId={id}
+          viewMode={viewMode}
+          comments={comments}
+          userDisplayName={me?.displayName ?? null}
           onEditItem={(item) => setEditingItem(item)}
+          onPhotoClick={setLightboxUrl}
+          onCommentAdded={handleCommentAdded}
+          onReactionsChanged={(m, a) => setReactionTotals({ miemie: m, aowu: a })}
         />
       </main>
+
+      {/* list-level comments — logged-in only */}
+      {!isGuest && (
+        <div className="max-w-lg mx-auto px-4 py-6 border-t border-gray-100">
+          <h3 className="text-sm font-semibold text-gray-700 mb-4">{t("comments")}</h3>
+          <CommentThread
+            listId={id}
+            itemId={null}
+            comments={comments.filter((c) => !c.itemId)}
+            userDisplayName={me?.displayName ?? null}
+            onCommentAdded={handleCommentAdded}
+          />
+        </div>
+      )}
 
       {isGuest && (
         <div className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-100 px-4 py-4">
           <div className="max-w-lg mx-auto flex items-center justify-between gap-4">
             <p className="text-sm text-gray-500">{t("wantToCreate")}</p>
-            <Link href="/register" className="shrink-0 bg-black text-white text-sm font-medium px-4 py-2 rounded-lg">
+            <Link href="/register" className="shrink-0 bg-[#2B4B8C] text-white text-sm font-medium px-4 py-2 rounded-lg">
               {t("getStarted")}
             </Link>
           </div>
@@ -173,7 +242,7 @@ export default function ListDetailPage() {
         <div className="fixed bottom-6 right-6 sm:right-[calc(50%-208px)]">
           <button
             onClick={() => setShowAddItem(true)}
-            className="bg-black text-white w-14 h-14 rounded-full text-2xl shadow-lg hover:bg-gray-800 flex items-center justify-center"
+            className="bg-[#2B4B8C] text-white w-14 h-14 rounded-full text-2xl shadow-lg hover:bg-[#1e3a70] flex items-center justify-center"
           >
             +
           </button>
@@ -199,6 +268,9 @@ export default function ListDetailPage() {
           secondaryLabel={list.secondaryLabel}
           onClose={() => { setEditingItem(null); load(); }}
         />
+      )}
+      {lightboxUrl && (
+        <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
       )}
     </div>
   );

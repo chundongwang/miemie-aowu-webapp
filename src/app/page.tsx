@@ -52,7 +52,7 @@ export default async function RootPage() {
             <Link href="/login" className="text-sm text-gray-500 hover:text-gray-800">{t("signIn")}</Link>
             <Link
               href="/register"
-              className="text-sm font-medium bg-black text-white px-3 py-1.5 rounded-lg"
+              className="text-sm font-medium bg-[#2B4B8C] text-white px-3 py-1.5 rounded-lg"
             >
               {t("getStarted")}
             </Link>
@@ -70,7 +70,7 @@ export default async function RootPage() {
             <p className="text-gray-400 text-sm mb-4">{t("noPublicLists")}</p>
             <Link
               href="/register"
-              className="inline-block bg-black text-white text-sm font-medium px-4 py-2 rounded-lg"
+              className="inline-block bg-[#2B4B8C] text-white text-sm font-medium px-4 py-2 rounded-lg"
             >
               {t("beFirst")}
             </Link>
@@ -109,7 +109,7 @@ export default async function RootPage() {
             <div className="text-center mt-8">
               <Link
                 href="/register"
-                className="inline-block bg-black text-white text-sm font-medium px-5 py-2.5 rounded-lg"
+                className="inline-block bg-[#2B4B8C] text-white text-sm font-medium px-5 py-2.5 rounded-lg"
               >
                 {t("createYours")}
               </Link>

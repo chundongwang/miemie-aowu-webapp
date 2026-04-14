@@ -39,7 +39,7 @@ export default function ListsPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowNew(true)}
-            className="bg-black text-white text-sm font-medium px-3 py-1.5 rounded-lg"
+            className="bg-[#2B4B8C] text-white text-sm font-medium px-3 py-1.5 rounded-lg"
           >
             {t("newListButton")}
           </button>
@@ -60,7 +60,7 @@ export default function ListsPage() {
             <p className="text-gray-400 text-sm mb-4">{t("noListsYet")}</p>
             <button
               onClick={() => setShowNew(true)}
-              className="bg-black text-white text-sm font-medium px-4 py-2 rounded-lg"
+              className="bg-[#2B4B8C] text-white text-sm font-medium px-4 py-2 rounded-lg"
             >
               {t("createFirstList")}
             </button>
