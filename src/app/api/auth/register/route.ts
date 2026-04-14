@@ -6,12 +6,12 @@ import { hashPassword, setAuthCookie } from "@/lib/auth";
 export const runtime = "edge";
 
 export async function POST(req: NextRequest) {
-  const { email, password, username, displayName } = await req.json() as {
-    email: string; password: string; username: string; displayName: string;
+  const { username, password, displayName, phone } = await req.json() as {
+    username: string; password: string; displayName?: string; phone?: string;
   };
 
-  if (!email || !password || !username || !displayName) {
-    return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+  if (!username || !password) {
+    return NextResponse.json({ error: "Username and password are required" }, { status: 400 });
   }
   if (password.length < 8) {
     return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
@@ -24,28 +24,28 @@ export async function POST(req: NextRequest) {
   }
 
   const db = await getDB();
-
   const existing = await db
-    .prepare("SELECT id FROM users WHERE email = ? OR username = ?")
-    .bind(email.toLowerCase(), username.toLowerCase())
+    .prepare("SELECT id FROM users WHERE username = ?")
+    .bind(username.toLowerCase())
     .first();
 
   if (existing) {
-    return NextResponse.json({ error: "Email or username already taken" }, { status: 409 });
+    return NextResponse.json({ error: "Username already taken" }, { status: 409 });
   }
 
   const id = nanoid();
   const passwordHash = await hashPassword(password);
+  const resolvedDisplayName = displayName?.trim() || username;
   const now = Date.now();
 
   await db
     .prepare(
-      "INSERT INTO users (id, username, email, password_hash, display_name, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+      "INSERT INTO users (id, username, phone, password_hash, display_name, created_at) VALUES (?, ?, ?, ?, ?, ?)"
     )
-    .bind(id, username.toLowerCase(), email.toLowerCase(), passwordHash, displayName, now)
+    .bind(id, username.toLowerCase(), phone?.trim() || null, passwordHash, resolvedDisplayName, now)
     .run();
 
   await setAuthCookie(id);
 
-  return NextResponse.json({ id, username: username.toLowerCase(), displayName }, { status: 201 });
+  return NextResponse.json({ id, username: username.toLowerCase(), displayName: resolvedDisplayName }, { status: 201 });
 }

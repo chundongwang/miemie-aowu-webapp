@@ -26,18 +26,14 @@ export async function GET() {
       .bind(userId, userId)
       .all();
 
-    const lists = rows.results.map(mapList);
-    return NextResponse.json(lists);
+    return NextResponse.json(rows.results.map(mapList));
   });
 }
 
 export async function POST(req: NextRequest) {
   return withAuth(async (userId) => {
-    const { title, emoji, category, secondaryLabel } = await req.json() as {
-      title: string;
-      emoji: string;
-      category: string;
-      secondaryLabel?: string;
+    const { title, emoji, category, secondaryLabel, isPublic } = await req.json() as {
+      title: string; emoji: string; category: string; secondaryLabel?: string; isPublic?: boolean;
     };
 
     if (!title?.trim()) {
@@ -51,14 +47,15 @@ export async function POST(req: NextRequest) {
 
     await db
       .prepare(
-        `INSERT INTO lists (id, owner_id, title, emoji, category, secondary_label, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO lists (id, owner_id, title, emoji, category, secondary_label, is_public, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .bind(
         id, userId, title.trim(),
         emoji || cat.emoji,
         category || "custom",
         secondaryLabel ?? cat.secondaryLabel ?? null,
+        isPublic !== false ? 1 : 0,
         now, now
       )
       .run();
@@ -75,6 +72,7 @@ function mapList(r: any) {
     emoji: r.emoji,
     category: r.category,
     secondaryLabel: r.secondary_label,
+    isPublic: r.is_public === 1,
     ownerId: r.owner_id,
     ownerUsername: r.owner_username,
     ownerDisplayName: r.owner_display_name,

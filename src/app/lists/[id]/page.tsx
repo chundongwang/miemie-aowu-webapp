@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import type { ListDetail } from "@/types";
 import ItemList from "@/components/ItemList";
 import AddItemModal from "@/components/AddItemModal";
@@ -23,7 +24,7 @@ export default function ListDetailPage() {
         if (r.status === 404) { setNotFound(true); return null; }
         return r.json() as Promise<ListDetail>;
       }),
-      fetch("/api/auth/me").then((r) => r.json()) as Promise<{ id: string }>,
+      fetch("/api/auth/me").then((r) => (r.ok ? r.json() : null)) as Promise<{ id: string } | null>,
     ]).then(([l, user]) => {
       setList(l);
       setMe(user);
@@ -33,7 +34,6 @@ export default function ListDetailPage() {
 
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // re-fetch when modals close (router.refresh() triggers a re-render but won't re-run useEffect)
   function handleModalClose(setter: (v: boolean) => void) {
     return () => { setter(false); load(); };
   }
@@ -58,22 +58,29 @@ export default function ListDetailPage() {
   }
 
   const isOwner = me?.id === list.ownerId;
+  const isRecipient = me?.id === list.recipientId;
+  const isGuest = !me;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="sticky top-0 bg-white border-b border-gray-100 px-4 py-3 z-10">
         <div className="max-w-lg mx-auto flex items-center gap-3">
-          <button onClick={() => router.push("/lists")} className="text-gray-400 hover:text-gray-600 text-xl pr-1">
+          <button
+            onClick={() => me ? router.push("/lists") : router.push("/")}
+            className="text-gray-400 hover:text-gray-600 text-xl pr-1"
+          >
             ‹
           </button>
           <span className="text-2xl">{list.emoji}</span>
           <div className="flex-1 min-w-0">
             <h1 className="font-semibold text-gray-900 truncate">{list.title}</h1>
-            {list.recipientDisplayName && (
-              <p className="text-xs text-gray-400">
-                {isOwner ? `shared with ${list.recipientDisplayName}` : `from ${list.ownerDisplayName}`}
-              </p>
-            )}
+            <p className="text-xs text-gray-400">
+              {isOwner && list.recipientDisplayName
+                ? `shared with ${list.recipientDisplayName}`
+                : !isOwner
+                ? `by ${list.ownerDisplayName}`
+                : ""}
+            </p>
           </div>
           {isOwner && (
             <div className="flex items-center gap-2">
@@ -104,10 +111,24 @@ export default function ListDetailPage() {
         <ItemList
           items={list.items}
           isOwner={isOwner}
-          isRecipient={me?.id === list.recipientId}
+          isRecipient={isRecipient}
           secondaryLabel={list.secondaryLabel}
         />
       </main>
+
+      {isGuest && (
+        <div className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-100 px-4 py-4">
+          <div className="max-w-lg mx-auto flex items-center justify-between gap-4">
+            <p className="text-sm text-gray-500">Want to create your own list?</p>
+            <Link
+              href="/register"
+              className="shrink-0 bg-black text-white text-sm font-medium px-4 py-2 rounded-lg"
+            >
+              Get started
+            </Link>
+          </div>
+        </div>
+      )}
 
       {isOwner && (
         <div className="fixed bottom-6 right-6 sm:right-[calc(50%-208px)]">

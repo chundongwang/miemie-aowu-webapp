@@ -1,33 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/db";
 import { withAuth } from "@/lib/api";
+import { getAuthUserId } from "@/lib/auth";
 
 export const runtime = "edge";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_req: NextRequest, { params }: Params) {
-  return withAuth(async (userId) => {
-    const { id } = await params;
-    const db = await getDB();
+  const { id } = await params;
+  const userId = await getAuthUserId();
+  const db = await getDB();
 
-    const list = await db
-      .prepare(
-        `SELECT l.*,
-                o.username AS owner_username, o.display_name AS owner_display_name,
-                r.username AS recipient_username, r.display_name AS recipient_display_name
-         FROM lists l
-         JOIN users o ON o.id = l.owner_id
-         LEFT JOIN users r ON r.id = l.recipient_id
-         WHERE l.id = ? AND (l.owner_id = ? OR l.recipient_id = ?)`
-      )
-      .bind(id, userId, userId)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .first<any>();
+  const list = await db
+    .prepare(
+      `SELECT l.*,
+              o.username AS owner_username, o.display_name AS owner_display_name,
+              r.username AS recipient_username, r.display_name AS recipient_display_name
+       FROM lists l
+       JOIN users o ON o.id = l.owner_id
+       LEFT JOIN users r ON r.id = l.recipient_id
+       WHERE l.id = ? AND (l.is_public = 1 OR l.owner_id = ? OR l.recipient_id = ?)`
+    )
+    .bind(id, userId ?? "", userId ?? "")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .first<any>();
 
-    if (!list) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
-    }
+  if (!list) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  {
 
     const itemRows = await db
       .prepare(
@@ -65,6 +68,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
       emoji: list.emoji,
       category: list.category,
       secondaryLabel: list.secondary_label,
+      isPublic: list.is_public === 1,
       ownerId: list.owner_id,
       ownerUsername: list.owner_username,
       ownerDisplayName: list.owner_display_name,
@@ -75,7 +79,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
       itemCount: items.length,
       items,
     });
-  });
+  }
 }
 
 export async function PATCH(req: NextRequest, { params }: Params) {
