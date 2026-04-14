@@ -8,7 +8,7 @@
     "build:worker": "opennextjs-cloudflare build",
     "deploy": "opennextjs-cloudflare build && wrangler deploy",
     "preview": "opennextjs-cloudflare build && wrangler dev",
-    "db:migrate": "wrangler d1 migrations apply miemie-aowu-db",
+    "db:migrate": "wrangler d1 migrations apply miemie-aowu-db --remote",
     "db:migrate:local": "wrangler d1 migrations apply miemie-aowu-db --local",
     "start": "next start",
     "lint": "eslint"
