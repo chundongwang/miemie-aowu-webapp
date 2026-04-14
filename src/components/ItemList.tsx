@@ -19,6 +19,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Item } from "@/types";
+import { useT } from "@/context/LocaleContext";
 
 const STATUS_CYCLE: Record<string, string> = { unseen: "saved", saved: "done", done: "unseen" };
 const STATUS_LABEL: Record<string, string> = { unseen: "·", saved: "★", done: "✓" };
@@ -50,6 +51,7 @@ function SortableRow({
   pending, deleting,
   onCycle, onDelete, onPhotoAdded, onPhotoRemoved,
 }: RowProps) {
+  const t = useT();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -123,7 +125,7 @@ function SortableRow({
           {...attributes}
           {...listeners}
           className="mt-1 text-gray-300 hover:text-gray-400 cursor-grab active:cursor-grabbing shrink-0 touch-none"
-          aria-label="Drag to reorder"
+          aria-label={t("dragToReorder")}
         >
           ⠿
         </button>
@@ -136,7 +138,7 @@ function SortableRow({
         className={`mt-0.5 text-xl w-7 shrink-0 text-center transition-opacity ${STATUS_COLOR[item.status]} ${
           pending === item.id ? "opacity-40" : ""
         } ${!isRecipient && !isOwner ? "cursor-default" : ""}`}
-        title={`Status: ${item.status}${isRecipient || isOwner ? " — tap to change" : ""}`}
+        title={`${item.status}${isRecipient || isOwner ? t("tapToChange") : ""}`}
       >
         {STATUS_LABEL[item.status]}
       </button>
@@ -188,7 +190,7 @@ function SortableRow({
                 ) : (
                   <>
                     <span className="text-lg leading-none">+</span>
-                    <span className="text-xs">photo</span>
+                    <span className="text-xs">{t("photoButton")}</span>
                   </>
                 )}
               </button>
@@ -202,7 +204,7 @@ function SortableRow({
           onClick={() => onDelete(item.id)}
           disabled={deleting === item.id}
           className="text-gray-300 hover:text-red-400 text-sm mt-0.5 shrink-0"
-          title="Delete item"
+          title={t("deleteItem")}
         >
           {deleting === item.id ? "…" : "✕"}
         </button>
@@ -230,6 +232,7 @@ type Props = {
 };
 
 export default function ItemList({ items: initialItems, isRecipient, isOwner, secondaryLabel, listId }: Props) {
+  const t = useT();
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [items, setItems] = useState<Item[]>(initialItems);
@@ -258,7 +261,7 @@ export default function ItemList({ items: initialItems, isRecipient, isOwner, se
   }
 
   async function deleteItem(itemId: string) {
-    if (!confirm("Remove this item?")) return;
+    if (!confirm(t("removeItemConfirm"))) return;
     setDeleting(itemId);
     setItems((prev) => prev.filter((i) => i.id !== itemId));
     await fetch(`/api/items/${itemId}`, { method: "DELETE" });
@@ -302,7 +305,7 @@ export default function ItemList({ items: initialItems, isRecipient, isOwner, se
   if (items.length === 0) {
     return (
       <p className="text-center text-gray-400 text-sm py-16">
-        {isOwner ? "No items yet. Add the first one!" : "Nothing here yet."}
+        {isOwner ? t("noItemsOwner") : t("noItemsRecipient")}
       </p>
     );
   }

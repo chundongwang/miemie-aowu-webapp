@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useT } from "@/context/LocaleContext";
 
 export type StagedPhoto = {
   file: File;
@@ -14,6 +15,7 @@ type Props = {
 };
 
 export default function PhotoUploadArea({ photos, onChange, max = 3 }: Props) {
+  const t = useT();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canAdd = photos.length < max;
 
@@ -94,7 +96,7 @@ export default function PhotoUploadArea({ photos, onChange, max = 3 }: Props) {
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-2">
-        Photos <span className="text-gray-400 font-normal">(optional, up to {max})</span>
+        {t("photosLabel")} <span className="text-gray-400 font-normal">({t("photosHint", { max })})</span>
       </label>
 
       <div className="flex items-center gap-2 flex-wrap">
@@ -125,14 +127,14 @@ export default function PhotoUploadArea({ photos, onChange, max = 3 }: Props) {
             className="w-20 h-20 shrink-0 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-gray-500 hover:text-gray-600 transition-colors"
           >
             <span className="text-2xl leading-none">+</span>
-            <span className="text-xs mt-1">photo</span>
+            <span className="text-xs mt-1">{t("photoButton")}</span>
           </button>
         )}
       </div>
 
       {canAdd && (
         <p className="text-xs text-gray-400 mt-1.5">
-          Or paste an image with {navigator.platform?.includes("Mac") ? "⌘V" : "Ctrl+V"}
+          {navigator.platform?.includes("Mac") ? t("pasteHintMac") : t("pasteHintOther")}
         </p>
       )}
 

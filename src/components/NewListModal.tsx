@@ -3,10 +3,22 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CATEGORIES } from "@/types";
+import { useT } from "@/context/LocaleContext";
+import type { TranslationKey } from "@/lib/translations";
 
 const EMOJIS = ["☕", "🎵", "🍜", "📚", "🎬", "🌿", "🎮", "✈️", "🛍️", "💡", "🎨", "🏋️"];
 
+const CATEGORY_LABEL_KEYS: Record<string, TranslationKey> = {
+  coffee:     "categoryCoffee",
+  music:      "categoryMusic",
+  restaurant: "categoryRestaurant",
+  book:       "categoryBook",
+  movie:      "categoryMovie",
+  custom:     "categoryCustom",
+};
+
 export default function NewListModal({ onClose }: { onClose: () => void }) {
+  const t = useT();
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [emoji, setEmoji] = useState("📋");
@@ -31,7 +43,7 @@ export default function NewListModal({ onClose }: { onClose: () => void }) {
         body: JSON.stringify({ title, emoji, category, isPublic }),
       });
       const data = await res.json() as { id?: string; error?: string };
-      if (!res.ok) { setError(data.error ?? "Failed to create list"); return; }
+      if (!res.ok) { setError(t("errorCreateList")); return; }
       router.push(`/lists/${data.id}`);
       router.refresh();
       onClose();
@@ -44,12 +56,11 @@ export default function NewListModal({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center">
       <div className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-6 pb-10 sm:pb-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold">New list</h2>
+          <h2 className="text-lg font-semibold">{t("newListTitle")}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* emoji picker */}
           <div className="flex flex-wrap gap-2">
             {EMOJIS.map((e) => (
               <button
@@ -61,16 +72,16 @@ export default function NewListModal({ onClose }: { onClose: () => void }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("titleLabel")}</label>
             <input
               autoFocus required value={title} onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Cafes to Try"
+              placeholder={t("titlePlaceholder")}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t("categoryLabel")}</label>
             <div className="flex flex-wrap gap-2">
               {Object.entries(CATEGORIES).map(([key, val]) => (
                 <button
@@ -80,7 +91,7 @@ export default function NewListModal({ onClose }: { onClose: () => void }) {
                     category === key ? "bg-black text-white border-black" : "border-gray-300 hover:border-gray-500"
                   }`}
                 >
-                  {val.emoji} {val.label}
+                  {val.emoji} {t(CATEGORY_LABEL_KEYS[key])}
                 </button>
               ))}
             </div>
@@ -88,8 +99,8 @@ export default function NewListModal({ onClose }: { onClose: () => void }) {
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-700">Public list</p>
-              <p className="text-xs text-gray-400">Anyone can discover and view this list</p>
+              <p className="text-sm font-medium text-gray-700">{t("publicListLabel")}</p>
+              <p className="text-xs text-gray-400">{t("publicListHint")}</p>
             </div>
             <button
               type="button"
@@ -98,11 +109,9 @@ export default function NewListModal({ onClose }: { onClose: () => void }) {
                 isPublic ? "bg-black" : "bg-gray-200"
               }`}
             >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  isPublic ? "translate-x-6" : "translate-x-1"
-                }`}
-              />
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                isPublic ? "translate-x-6" : "translate-x-1"
+              }`} />
             </button>
           </div>
 
@@ -112,7 +121,7 @@ export default function NewListModal({ onClose }: { onClose: () => void }) {
             type="submit" disabled={loading || !title.trim()}
             className="w-full bg-black text-white rounded-xl py-3 text-sm font-medium disabled:opacity-40"
           >
-            {loading ? "Creating…" : "Create list"}
+            {loading ? t("creating") : t("createList")}
           </button>
         </form>
       </div>
