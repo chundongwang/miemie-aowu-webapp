@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useT } from "@/context/LocaleContext";
+import { useT, useLocale } from "@/context/LocaleContext";
 
 type ChallengeState = "idle" | "loading" | "answering" | "evaluating" | "result";
 
 export default function LoginPage() {
   const t = useT();
+  const locale = useLocale();
   const router = useRouter();
 
   // ── Login form ──────────────────────────────────────────────────────────────
@@ -79,7 +80,7 @@ export default function LoginPage() {
     const res = await fetch("/api/auth/login-challenge", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, sharedUsername, word, answer }),
+      body: JSON.stringify({ username, sharedUsername, word, answer, locale }),
     });
     const data = await res.json() as { correct: boolean; comment: string };
     setResult(data);

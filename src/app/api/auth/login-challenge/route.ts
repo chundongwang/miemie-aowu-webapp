@@ -2,22 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/db";
 import { setAuthCookie } from "@/lib/auth";
 import { callOpenRouter } from "@/lib/llm";
+import { professorPrompt, parseEval } from "@/lib/professor";
 import { withErrorHandling } from "@/lib/api";
-
-const PROFESSOR_PROMPT = `You are Professor Higgins, a notoriously exacting English teacher with impossibly high standards. You are brilliant, merciless, and darkly witty. You find something to criticize in even the best answers. When a student is wrong, you are devastating but briefly educational.
-
-Keep your comment to 1–2 sentences, maximum 160 characters. Always respond in English.
-
-Evaluate whether the student correctly demonstrated understanding of the given word. They must either:
-1. Use the word correctly in a grammatical English sentence, OR
-2. Provide an accurate Chinese translation of the word.
-
-Return ONLY valid JSON: {"correct":true/false,"comment":"your response"}`;
 
 export async function POST(req: NextRequest) {
   return withErrorHandling("auth.login-challenge", async () => {
-    const { username, sharedUsername, word, answer } = await req.json() as {
-      username: string; sharedUsername: string; word: string; answer: string;
+    const { username, sharedUsername, word, answer, locale = "en" } = await req.json() as {
+      username: string; sharedUsername: string; word: string; answer: string; locale?: string;
     };
 
     if (!username?.trim() || !sharedUsername?.trim() || !word?.trim() || !answer?.trim()) {
@@ -63,17 +54,15 @@ export async function POST(req: NextRequest) {
     try {
       raw = await callOpenRouter(
         `Word: "${word}"\nStudent's answer: "${answer.trim()}"`,
-        PROFESSOR_PROMPT
+        professorPrompt(locale)
       );
     } catch {
       return NextResponse.json({ error: "AI unavailable" }, { status: 502 });
     }
 
-    const json = raw.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "").trim();
-
     let result: { correct: boolean; comment: string };
     try {
-      result = JSON.parse(json) as { correct: boolean; comment: string };
+      result = parseEval(raw);
     } catch {
       return NextResponse.json({ error: "AI returned invalid response" }, { status: 500 });
     }
@@ -82,9 +71,6 @@ export async function POST(req: NextRequest) {
       await setAuthCookie(user.id);
     }
 
-    return NextResponse.json({
-      correct: Boolean(result.correct),
-      comment: String(result.comment ?? ""),
-    });
+    return NextResponse.json(result);
   });
 }
