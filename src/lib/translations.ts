@@ -126,6 +126,17 @@ export const translations = {
     beFirst: "Be the first to create one",
     createYours: "Create your own list →",
 
+    // vocab challenge
+    mieButton: "🐑 咩~",
+    mieTitle: "Word Challenge",
+    mieInstructions: "Use this word in a sentence, or translate it to Chinese:",
+    mieAnswerPlaceholder: "Type a sentence or Chinese translation…",
+    mieSubmit: "Submit",
+    mieEvaluating: "Professor is reading…",
+    mieLoginCountdown: "Logging in in {n}s…",
+    mieWrongRetry: "Try again",
+    mieNewWord: "New word",
+
     // photo search
     searchPhotoTitle: "Search for a photo",
     searchPhotoPlaceholder: "Search…",
@@ -288,6 +299,16 @@ export const translations = {
     noPublicLists: "还没有公开列表。",
     beFirst: "成为第一个创建的人",
     createYours: "创建你自己的列表 →",
+
+    mieButton: "🐑 咩~",
+    mieTitle: "词汇挑战",
+    mieInstructions: "用这个词造句，或翻译成中文：",
+    mieAnswerPlaceholder: "写句子或中文翻译…",
+    mieSubmit: "提交",
+    mieEvaluating: "教授阅卷中…",
+    mieLoginCountdown: "{n}秒后登录…",
+    mieWrongRetry: "再试一次",
+    mieNewWord: "换一个词",
 
     searchPhotoTitle: "搜索图片",
     searchPhotoPlaceholder: "搜索…",
