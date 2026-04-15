@@ -84,7 +84,7 @@ export default function ListDetailPage() {
   }
 
   async function revokeShare() {
-    if (!confirm(t("unshareConfirm"))) return;
+    if (!confirm(t("unshareConfirm", { name: list?.recipientDisplayName ?? "them" }))) return;
     await fetch(`/api/lists/${id}/share`, { method: "DELETE" });
     load();
   }
@@ -240,7 +240,7 @@ export default function ListDetailPage() {
         </div>
       )}
 
-      {isOwner && (
+      {(isOwner || isRecipient) && (
         <div className="fixed bottom-6 right-6 sm:right-[calc(50%-208px)] flex flex-col items-center gap-3">
           <button
             onClick={() => setShowImport(true)}

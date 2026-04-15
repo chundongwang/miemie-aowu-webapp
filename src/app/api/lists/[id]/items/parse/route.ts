@@ -20,12 +20,14 @@ export async function POST(req: NextRequest, { params }: Params) {
 
     const db = await getDB();
     const list = await db
-      .prepare("SELECT owner_id, secondary_label FROM lists WHERE id = ?")
+      .prepare("SELECT owner_id, recipient_id, secondary_label FROM lists WHERE id = ?")
       .bind(id)
-      .first<{ owner_id: string; secondary_label: string | null }>();
+      .first<{ owner_id: string; recipient_id: string | null; secondary_label: string | null }>();
 
     if (!list) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    if (list.owner_id !== userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (list.owner_id !== userId && list.recipient_id !== userId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const secondaryField = list.secondary_label
       ? `"secondary": "${list.secondary_label} if present (string, optional)"`
