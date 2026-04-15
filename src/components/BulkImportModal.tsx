@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useT } from "@/context/LocaleContext";
 
 type ParsedItem = {
-  _key: string; // client-only stable key
+  _key: string;
   name: string;
   secondary: string;
   reason: string;
+  imageUrls: string[];
 };
 
 type Props = {
@@ -21,61 +22,98 @@ export default function BulkImportModal({ listId, secondaryLabel, onClose }: Pro
   const t = useT();
   const router = useRouter();
 
-  const [step, setStep]       = useState<"input" | "preview">("input");
-  const [text, setText]       = useState("");
+  const [step,    setStep]    = useState<"input" | "preview" | "adding">("input");
+  const [text,    setText]    = useState("");
   const [parsing, setParsing] = useState(false);
-  const [adding,  setAdding]  = useState(false);
-  const [error,   setError]   = useState("");
   const [items,   setItems]   = useState<ParsedItem[]>([]);
+  const [error,   setError]   = useState("");
+  const [progress,      setProgress]      = useState(0);
+  const [progressLabel, setProgressLabel] = useState("");
+
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  function stopTimer() {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+  }
 
   const isDirty = text.trim() !== "" || items.length > 0;
 
   function handleDismiss() {
+    if (step === "adding") return; // block dismiss during import
     if (isDirty && !confirm(t("unsavedChanges"))) return;
+    stopTimer();
     onClose();
   }
+
+  // ── Step 1: parse ────────────────────────────────────────────────────────
 
   async function handleParse() {
     setError("");
     setParsing(true);
+    setProgress(0);
+    setProgressLabel(t("importParsing"));
+
+    // Fake progress: 0 → 38% while LLM works (~150 ms / step)
+    timerRef.current = setInterval(() => {
+      setProgress((p) => (p < 38 ? p + 1 : p));
+    }, 150);
+
     try {
       const res = await fetch(`/api/lists/${listId}/items/parse`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
       });
-      const data = await res.json() as { items?: Array<{ name: string; secondary?: string | null; reason?: string | null }>; error?: string };
+      const data = await res.json() as {
+        items?: Array<{ name: string; secondary?: string | null; reason?: string | null; imageUrls?: string[] }>;
+        error?: string;
+      };
+
+      stopTimer();
+
       if (!res.ok) { setError(t("importErrorParse")); return; }
-      if (!data.items || data.items.length === 0) { setError(t("importNoItems")); return; }
+      if (!data.items?.length) { setError(t("importNoItems")); return; }
+
       setItems(data.items.map((it, i) => ({
         _key:      `${i}-${it.name}`,
         name:      it.name,
         secondary: it.secondary ?? "",
         reason:    it.reason    ?? "",
+        imageUrls: it.imageUrls ?? [],
       })));
+      setProgress(40);
+      setProgressLabel("");
       setStep("preview");
     } catch {
+      stopTimer();
       setError(t("importErrorParse"));
     } finally {
       setParsing(false);
     }
   }
 
+  // ── Step 2 helpers: edit preview ─────────────────────────────────────────
+
   function updateItem(key: string, field: "name" | "secondary" | "reason", value: string) {
     setItems((prev) => prev.map((it) => it._key === key ? { ...it, [field]: value } : it));
   }
-
   function removeItem(key: string) {
     setItems((prev) => prev.filter((it) => it._key !== key));
   }
 
+  // ── Step 3: bulk add with SSE progress ───────────────────────────────────
+
   async function handleAdd() {
     const valid = items.filter((it) => it.name.trim());
-    if (valid.length === 0) return;
+    if (!valid.length) return;
+
     setError("");
-    setAdding(true);
+    setStep("adding");
+    setProgressLabel(t("importAdding"));
+
+    let res: Response;
     try {
-      const res = await fetch(`/api/lists/${listId}/items/bulk`, {
+      res = await fetch(`/api/lists/${listId}/items/bulk`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -83,20 +121,73 @@ export default function BulkImportModal({ listId, secondaryLabel, onClose }: Pro
             name:      it.name.trim(),
             secondary: it.secondary.trim() || null,
             reason:    it.reason.trim()    || null,
+            imageUrls: it.imageUrls.length ? it.imageUrls : undefined,
           })),
         }),
       });
-      if (!res.ok) { setError(t("importErrorAdd")); return; }
-      router.refresh();
-      onClose();
     } catch {
       setError(t("importErrorAdd"));
-    } finally {
-      setAdding(false);
+      setStep("preview");
+      return;
+    }
+
+    if (!res.ok || !res.body) {
+      setError(t("importErrorAdd"));
+      setStep("preview");
+      return;
+    }
+
+    const reader  = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = "";
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+
+        let nl: number;
+        while ((nl = buf.indexOf("\n")) !== -1) {
+          const line = buf.slice(0, nl).trim();
+          buf = buf.slice(nl + 1);
+          if (!line.startsWith("data: ")) continue;
+
+          const event = JSON.parse(line.slice(6)) as {
+            type: string;
+            index?: number;
+            total?: number;
+            count?: number;
+            message?: string;
+          };
+
+          if (event.type === "item" && event.index !== undefined && event.total) {
+            const pct = 40 + Math.round(60 * (event.index + 1) / event.total);
+            setProgress(pct);
+            setProgressLabel(`${t("importAdding")} ${event.index + 1} / ${event.total}`);
+          }
+          if (event.type === "done") {
+            setProgress(100);
+            setProgressLabel("✓");
+            router.refresh();
+            setTimeout(onClose, 600);
+          }
+          if (event.type === "error") {
+            setError(t("importErrorAdd"));
+            setStep("preview");
+          }
+        }
+      }
+    } catch {
+      setError(t("importErrorAdd"));
+      setStep("preview");
     }
   }
 
   const validCount = items.filter((it) => it.name.trim()).length;
+  const showBar    = parsing || step === "adding";
+
+  // ── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div
@@ -108,25 +199,47 @@ export default function BulkImportModal({ listId, secondaryLabel, onClose }: Pro
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 shrink-0">
-          <div className="flex items-center gap-2">
-            {step === "preview" && (
-              <button
-                onClick={() => { setStep("input"); setError(""); }}
-                className="text-gray-400 hover:text-gray-600 text-sm mr-1"
-              >
-                {t("importBack")}
-              </button>
-            )}
-            <h2 className="text-lg font-semibold">{t("importTitle")}</h2>
+        {step !== "adding" && (
+          <div className="flex items-center justify-between px-6 pt-6 pb-3 shrink-0">
+            <div className="flex items-center gap-2">
+              {step === "preview" && (
+                <button
+                  onClick={() => { setStep("input"); setError(""); }}
+                  className="text-gray-400 hover:text-gray-600 text-sm"
+                >
+                  {t("importBack")}
+                </button>
+              )}
+              <h2 className="text-lg font-semibold">{t("importTitle")}</h2>
+            </div>
+            <button onClick={handleDismiss} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
           </div>
-          <button onClick={handleDismiss} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
-        </div>
+        )}
+
+        {/* Progress bar (parse + add steps) */}
+        {showBar && (
+          <div className="px-6 pt-6 pb-2 shrink-0">
+            {step === "adding" && (
+              <p className="text-sm font-medium text-gray-700 mb-3 text-center">{t("importTitle")}</p>
+            )}
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[#2B4B8C] rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <p className="text-xs text-gray-400 text-center mt-1.5">{progressLabel} {Math.round(progress)}%</p>
+          </div>
+        )}
 
         {/* Body */}
-        <div className="overflow-y-auto px-6 pb-6 flex-1">
-          {step === "input" ? (
-            <div className="space-y-4">
+        <div className="overflow-y-auto px-6 pb-8 flex-1">
+          {step === "adding" ? (
+            // Adding: just the progress bar above, no content here
+            <div className="py-4" />
+          ) : step === "input" ? (
+            // ── Input step ──
+            <div className="space-y-4 pt-1">
               <p className="text-xs text-gray-400">{t("importStep1Hint")}</p>
               <textarea
                 autoFocus
@@ -136,8 +249,8 @@ export default function BulkImportModal({ listId, secondaryLabel, onClose }: Pro
                 className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C] resize-none"
                 placeholder={
                   secondaryLabel
-                    ? `Blue Bottle Coffee\n${secondaryLabel}: 300 Webster St, Oakland\nBest pour-over in the city\n\nFour Barrel Coffee — amazing espresso`
-                    : `Blue Bottle Coffee — best pour-over in the city\n\nFour Barrel Coffee\nAmazing espresso and pastries`
+                    ? `Blue Bottle Coffee\n${secondaryLabel}: 300 Webster St, Oakland\nBest pour-over in the city`
+                    : `Blue Bottle Coffee — best pour-over in the city\n\nFour Barrel Coffee\nAmazing espresso`
                 }
               />
               {error && <p className="text-sm text-red-600">{error}</p>}
@@ -146,18 +259,12 @@ export default function BulkImportModal({ listId, secondaryLabel, onClose }: Pro
                 disabled={parsing || !text.trim()}
                 className="w-full bg-[#2B4B8C] text-white rounded-xl py-3 text-sm font-medium disabled:opacity-40 flex items-center justify-center gap-2"
               >
-                {parsing ? (
-                  <>
-                    <span className="animate-spin text-base">⟳</span>
-                    {t("importParsing")}
-                  </>
-                ) : (
-                  <>✦ {t("importParseButton")}</>
-                )}
+                {parsing ? t("importParsing") : <>✦ {t("importParseButton")}</>}
               </button>
             </div>
           ) : (
-            <div className="space-y-3">
+            // ── Preview step ──
+            <div className="space-y-3 pt-1">
               <p className="text-xs text-gray-400">{t("importPreviewHint")}</p>
 
               {items.map((item) => (
@@ -190,6 +297,11 @@ export default function BulkImportModal({ listId, secondaryLabel, onClose }: Pro
                     placeholder={`${t("whyLabel")} (${t("optional")})`}
                     className="w-full text-xs text-gray-400 italic border-b border-gray-100 pb-0.5 focus:outline-none focus:border-[#2B4B8C]"
                   />
+                  {item.imageUrls.length > 0 && (
+                    <p className="text-[10px] text-[#2B4B8C]">
+                      📷 {item.imageUrls.length} image{item.imageUrls.length > 1 ? "s" : ""} will be downloaded
+                    </p>
+                  )}
                 </div>
               ))}
 
@@ -201,12 +313,10 @@ export default function BulkImportModal({ listId, secondaryLabel, onClose }: Pro
 
               <button
                 onClick={handleAdd}
-                disabled={adding || validCount === 0}
+                disabled={validCount === 0}
                 className="w-full bg-[#2B4B8C] text-white rounded-xl py-3 text-sm font-medium disabled:opacity-40"
               >
-                {adding
-                  ? t("importAdding")
-                  : t("importAddButton", { n: String(validCount) })}
+                {t("importAddButton", { n: String(validCount) })}
               </button>
             </div>
           )}

@@ -32,13 +32,14 @@ export async function POST(req: NextRequest, { params }: Params) {
       : `- secondary: secondary info such as location, artist, author, or creator (optional)`;
 
     const systemPrompt = `You extract recommendation items from free-form text.
-Return ONLY valid JSON in this exact shape: {"items":[{"name":"...","secondary":"...","reason":"..."}]}
+Return ONLY valid JSON in this exact shape: {"items":[{"name":"...","secondary":"...","reason":"...","imageUrls":["..."]}]}
 Rules:
 - name: the name of the recommended item — required, concise
 ${secondaryLine}
 - reason: brief reason or note (optional, max 100 chars)
+- imageUrls: array of image URLs explicitly present in the source text (e.g. markdown ![alt](url) or bare https:// links); max 3 per item; only include URLs actually in the text
 - Extract every distinct recommendation you can find
-- Omit a field entirely if it has no value (do not include empty strings)
+- Omit a field entirely if it has no value (do not use empty strings or empty arrays)
 - Output only the JSON object, nothing else`;
 
     let raw: string;
@@ -65,6 +66,9 @@ ${secondaryLine}
         name:      String(i.name      ?? "").trim(),
         secondary: String(i.secondary ?? "").trim() || null,
         reason:    String(i.reason    ?? "").trim() || null,
+        imageUrls: Array.isArray(i.imageUrls)
+          ? (i.imageUrls as unknown[]).filter((u): u is string => typeof u === "string" && u.startsWith("http")).slice(0, 3)
+          : [],
       }))
       .filter((i) => i.name.length > 0);
 
