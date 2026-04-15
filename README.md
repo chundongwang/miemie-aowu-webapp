@@ -4,6 +4,8 @@ A curated-recommendations sharing app. Build lists of things you love and share 
 
 **Live:** https://miemieaowu.ai
 
+[![Deployed on Cloudflare Workers](https://img.shields.io/badge/Deployed%20on-Cloudflare%20Workers-F38020?logo=cloudflare&logoColor=white)](https://workers.cloudflare.com)
+
 ---
 
 ## Prerequisites
