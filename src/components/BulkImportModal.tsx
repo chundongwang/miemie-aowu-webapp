@@ -29,6 +29,7 @@ export default function BulkImportModal({ listId, secondaryLabel, onClose }: Pro
   const [error,   setError]   = useState("");
   const [progress,      setProgress]      = useState(0);
   const [progressLabel, setProgressLabel] = useState("");
+  const [imageWarnings, setImageWarnings] = useState<string[]>([]);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -159,18 +160,25 @@ export default function BulkImportModal({ listId, secondaryLabel, onClose }: Pro
             total?: number;
             count?: number;
             message?: string;
+            imagesOk?: number;
+            imageErrors?: string[];
           };
 
           if (event.type === "item" && event.index !== undefined && event.total) {
             const pct = 40 + Math.round(60 * (event.index + 1) / event.total);
             setProgress(pct);
             setProgressLabel(`${t("importAdding")} ${event.index + 1} / ${event.total}`);
+            if (event.imageErrors?.length) {
+              setImageWarnings((w) => [...w, ...event.imageErrors!]);
+              console.warn("[import] image errors:", event.imageErrors);
+            }
           }
           if (event.type === "done") {
             setProgress(100);
             setProgressLabel("✓");
             router.refresh();
-            setTimeout(onClose, 600);
+            // If images failed, stay open briefly to show warning; otherwise close
+            setTimeout(onClose, imageWarnings.length > 0 ? 2500 : 600);
           }
           if (event.type === "error") {
             setError(t("importErrorAdd"));
@@ -235,8 +243,20 @@ export default function BulkImportModal({ listId, secondaryLabel, onClose }: Pro
         {/* Body */}
         <div className="overflow-y-auto px-6 pb-8 flex-1">
           {step === "adding" ? (
-            // Adding: just the progress bar above, no content here
-            <div className="py-4" />
+            <div className="py-2">
+              {imageWarnings.length > 0 && (
+                <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                  <p className="text-xs font-medium text-amber-700 mb-1">
+                    {imageWarnings.length} image{imageWarnings.length > 1 ? "s" : ""} could not be downloaded (items still added)
+                  </p>
+                  <ul className="space-y-0.5">
+                    {imageWarnings.map((w, i) => (
+                      <li key={i} className="text-[10px] text-amber-600 break-all">{w}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
           ) : step === "input" ? (
             // ── Input step ──
             <div className="space-y-4 pt-1">

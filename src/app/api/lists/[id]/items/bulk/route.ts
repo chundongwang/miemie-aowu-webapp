@@ -99,6 +99,9 @@ export async function POST(req: NextRequest, { params }: Params) {
 
           // Download + upload images in parallel; skip failures silently
           const urls = (item.imageUrls ?? []).slice(0, 3);
+          let imagesOk = 0;
+          const imageErrors: string[] = [];
+
           if (urls.length > 0) {
             const photoIds = urls.map(() => crypto.randomUUID());
             const r2Keys   = photoIds.map((pid) => `${itemId}/${pid}`);
@@ -120,15 +123,24 @@ export async function POST(req: NextRequest, { params }: Params) {
               await db.batch(photoInserts);
             }
 
-            // Log any image failures (non-fatal)
             results.forEach((r, idx) => {
-              if (r.status === "rejected") {
-                console.warn(`Image skip [${urls[idx]}]: ${r.reason}`);
+              if (r.status === "fulfilled") {
+                imagesOk++;
+              } else {
+                const reason = String((r as PromiseRejectedResult).reason);
+                imageErrors.push(`${urls[idx]}: ${reason}`);
+                console.error(`[bulk-import] image failed [${urls[idx]}]: ${reason}`);
               }
             });
           }
 
-          send({ type: "item", index: i, total: items.length });
+          send({
+            type: "item",
+            index: i,
+            total: items.length,
+            imagesOk,
+            imageErrors: imageErrors.length ? imageErrors : undefined,
+          });
         }
 
         await db
