@@ -12,13 +12,15 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     const item = await db
       .prepare(
-        `SELECT i.id, l.owner_id FROM items i JOIN lists l ON l.id = i.list_id WHERE i.id = ?`
+        `SELECT i.id, l.owner_id, l.recipient_id FROM items i JOIN lists l ON l.id = i.list_id WHERE i.id = ?`
       )
       .bind(id)
-      .first<{ id: string; owner_id: string }>();
+      .first<{ id: string; owner_id: string; recipient_id: string | null }>();
 
     if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    if (item.owner_id !== userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (item.owner_id !== userId && item.recipient_id !== userId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const { name, secondary, reason } = await req.json() as {
       name?: string; secondary?: string; reason?: string;
@@ -47,13 +49,15 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
     const item = await db
       .prepare(
-        `SELECT i.id, l.owner_id FROM items i JOIN lists l ON l.id = i.list_id WHERE i.id = ?`
+        `SELECT i.id, l.owner_id, l.recipient_id FROM items i JOIN lists l ON l.id = i.list_id WHERE i.id = ?`
       )
       .bind(id)
-      .first<{ id: string; owner_id: string }>();
+      .first<{ id: string; owner_id: string; recipient_id: string | null }>();
 
     if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    if (item.owner_id !== userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (item.owner_id !== userId && item.recipient_id !== userId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     await db.prepare("DELETE FROM items WHERE id = ?").bind(id).run();
     return NextResponse.json({ ok: true });

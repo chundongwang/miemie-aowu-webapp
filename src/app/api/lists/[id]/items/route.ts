@@ -11,12 +11,14 @@ export async function POST(req: NextRequest, { params }: Params) {
     const db = await getDB();
 
     const list = await db
-      .prepare("SELECT owner_id FROM lists WHERE id = ?")
+      .prepare("SELECT owner_id, recipient_id FROM lists WHERE id = ?")
       .bind(id)
-      .first<{ owner_id: string }>();
+      .first<{ owner_id: string; recipient_id: string | null }>();
 
     if (!list) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    if (list.owner_id !== userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (list.owner_id !== userId && list.recipient_id !== userId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const { name, secondary, reason } = await req.json() as {
       name: string; secondary?: string; reason?: string;

@@ -107,6 +107,8 @@ function SortableRow({
 
   const itemComments = comments.filter((c) => c.itemId === item.id);
 
+  const canEdit = isOwner || isRecipient;
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -194,7 +196,7 @@ function SortableRow({
       </button>
 
       <div className="flex-1 min-w-0">
-        {isOwner ? (
+        {canEdit ? (
           <button
             onClick={() => onEdit(item)}
             className={`font-medium text-sm text-left hover:opacity-70 transition-opacity ${
@@ -218,7 +220,7 @@ function SortableRow({
         )}
 
         {/* photos */}
-        {(item.photos.length > 0 || (isOwner && item.photos.length < MAX_PHOTOS)) && (
+        {(item.photos.length > 0 || (canEdit && item.photos.length < MAX_PHOTOS)) && (
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             {item.photos.map((photo) => (
               <div key={photo.id} className="relative shrink-0">
@@ -229,7 +231,7 @@ function SortableRow({
                   className="w-16 h-16 object-cover rounded-lg border border-gray-100 cursor-zoom-in"
                   onClick={() => onPhotoClick(photo.url)}
                 />
-                {isOwner && (
+                {canEdit && (
                   <button
                     onClick={() => removePhoto(photo.id)}
                     className="absolute -top-1 -right-1 bg-gray-700 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center hover:bg-red-500"
@@ -239,7 +241,7 @@ function SortableRow({
                 )}
               </div>
             ))}
-            {isOwner && item.photos.length < MAX_PHOTOS && (
+            {canEdit && item.photos.length < MAX_PHOTOS && (
               <>
                 <button
                   onClick={handleAddPhotoClick}
@@ -293,7 +295,7 @@ function SortableRow({
         )}
       </div>
 
-      {isOwner && (
+      {canEdit && (
         <button
           onClick={() => onDelete(item.id)}
           disabled={deleting === item.id}
@@ -350,6 +352,7 @@ function WaterfallCard({
   pending, deleting, onCycle, onEdit, onDelete, onPhotoClick, onReact, onCommentAdded,
 }: CardProps) {
   const t = useT();
+  const canEdit = isOwner || isRecipient;
   const [showComments, setShowComments] = useState(false);
   const itemComments = comments.filter((c) => c.itemId === item.id);
 
@@ -369,7 +372,7 @@ function WaterfallCard({
       <div className="p-3">
         {/* name + controls */}
         <div className="flex items-start justify-between gap-2">
-          {isOwner ? (
+          {canEdit ? (
             <button
               onClick={() => onEdit(item)}
               className={`font-medium text-sm text-left hover:opacity-70 transition-opacity flex-1 ${
@@ -393,7 +396,7 @@ function WaterfallCard({
                 {STATUS_LABEL[item.status]}
               </button>
             )}
-            {isOwner && (
+            {canEdit && (
               <button
                 onClick={() => onDelete(item.id)}
                 disabled={deleting === item.id}
