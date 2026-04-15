@@ -4,11 +4,12 @@ export async function callOpenRouter(userPrompt: string, systemPrompt: string): 
   const { env } = await getCloudflareContext({ async: true });
   const e = env as unknown as Record<string, string>;
 
-  const apiKey = e.OPENROUTER_API_KEY;
+  // In production: read from Cloudflare secrets (wrangler secret put)
+  // In local dev:  fall back to process.env / .env.local
+  const apiKey = e.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error("OPENROUTER_API_KEY not configured");
 
-  // Configurable via: npx wrangler secret put OPENROUTER_MODEL
-  const model = e.OPENROUTER_MODEL || "qwen/qwen-plus";
+  const model = e.OPENROUTER_MODEL || process.env.OPENROUTER_MODEL || "qwen/qwen-plus";
 
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
