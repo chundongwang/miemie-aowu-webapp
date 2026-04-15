@@ -126,6 +126,15 @@ export const translations = {
     beFirst: "Be the first to create one",
     createYours: "Create your own list →",
 
+    // photo search
+    searchPhotoTitle: "Search for a photo",
+    searchPhotoPlaceholder: "Search…",
+    searchPhotoButton: "Search",
+    searchPhotoSearching: "Searching…",
+    searchPhotoAdding: "Adding…",
+    searchPhotoNoResults: "No results. Try a different query.",
+    searchPhotoError: "Search failed — check SERPER_API_KEY",
+
     // AI import
     importButton: "AI",
     importTitle: "Import from text",
@@ -279,6 +288,14 @@ export const translations = {
     noPublicLists: "还没有公开列表。",
     beFirst: "成为第一个创建的人",
     createYours: "创建你自己的列表 →",
+
+    searchPhotoTitle: "搜索图片",
+    searchPhotoPlaceholder: "搜索…",
+    searchPhotoButton: "搜索",
+    searchPhotoSearching: "搜索中…",
+    searchPhotoAdding: "添加中…",
+    searchPhotoNoResults: "未找到结果，换个词试试。",
+    searchPhotoError: "搜索失败，请检查 SERPER_API_KEY",
 
     importButton: "AI",
     importTitle: "从文字导入",
