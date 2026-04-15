@@ -17,7 +17,7 @@ export async function callOpenRouter(userPrompt: string, systemPrompt: string): 
       "Authorization": `Bearer ${apiKey}`,
       "Content-Type": "application/json",
       "HTTP-Referer": "https://miemieaowu.ai",
-      "X-Title": "咩咩~嗷呜",
+      "X-Title": "miemieaowu",
     },
     body: JSON.stringify({
       model,
