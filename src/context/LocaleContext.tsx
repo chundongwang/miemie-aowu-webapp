@@ -23,3 +23,8 @@ export function useT() {
   return (key: TranslationKey, vars?: Record<string, string | number>) =>
     tr(locale, key, vars);
 }
+
+/** Returns the current locale string ("en" | "zh"). */
+export function useLocale(): Locale {
+  return useContext(LocaleContext);
+}
