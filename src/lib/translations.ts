@@ -126,6 +126,20 @@ export const translations = {
     beFirst: "Be the first to create one",
     createYours: "Create your own list →",
 
+    // AI import
+    importButton: "AI",
+    importTitle: "Import from text",
+    importStep1Hint: "Paste any text — notes, messages, markdown lists, anything with recommendations",
+    importParseButton: "Parse with AI",
+    importParsing: "Parsing…",
+    importPreviewHint: "Review and edit before adding",
+    importAddButton: "Add {n} items",
+    importAdding: "Adding…",
+    importBack: "← Edit text",
+    importErrorParse: "Could not parse — please try again",
+    importErrorAdd: "Failed to add items",
+    importNoItems: "No items found. Try adding more detail.",
+
     // view mode
     viewModeList: "List",
     viewModeWaterfall: "Grid",
@@ -265,6 +279,19 @@ export const translations = {
     noPublicLists: "还没有公开列表。",
     beFirst: "成为第一个创建的人",
     createYours: "创建你自己的列表 →",
+
+    importButton: "AI",
+    importTitle: "从文字导入",
+    importStep1Hint: "粘贴任意文字 — 笔记、消息、Markdown 列表等推荐内容",
+    importParseButton: "AI 解析",
+    importParsing: "解析中…",
+    importPreviewHint: "添加前可以编辑修改",
+    importAddButton: "添加 {n} 个项目",
+    importAdding: "添加中…",
+    importBack: "← 重新编辑",
+    importErrorParse: "解析失败，请重试",
+    importErrorAdd: "添加失败",
+    importNoItems: "未找到项目，请提供更详细的内容。",
 
     viewModeList: "列表",
     viewModeWaterfall: "瀑布",
