@@ -42,22 +42,19 @@ export default function LoginPage() {
   }
 
   // ── Vocab challenge ─────────────────────────────────────────────────────────
-  const [challengeState, setChallengeState] = useState<ChallengeState>("idle");
-  const [word,            setWord]           = useState("");
-  const [answer,          setAnswer]         = useState("");
-  const [result, setResult] = useState<{ correct: boolean; comment: string } | null>(null);
-  const [countdown, setCountdown] = useState(5);
+  const [challengeState,  setChallengeState]  = useState<ChallengeState>("idle");
+  const [word,            setWord]            = useState("");
+  const [sharedUsername,  setSharedUsername]  = useState("");
+  const [answer,          setAnswer]          = useState("");
+  const [result,          setResult]          = useState<{ correct: boolean; comment: string } | null>(null);
+  const [countdown,       setCountdown]       = useState(5);
 
   // Countdown effect — runs whenever countdown/state changes, always sees fresh username+password
   useEffect(() => {
     if (challengeState !== "result" || !result?.correct) return;
     if (countdown === 0) {
       setChallengeState("idle");
-      if (username.trim() && password.trim()) {
-        void doLogin();
-      } else {
-        setError("Challenge passed! Now enter your credentials and sign in.");
-      }
+      router.push("/lists"); // cookie already set server-side
       return;
     }
     const timer = setTimeout(() => setCountdown((n) => n - 1), 1000);
@@ -68,6 +65,7 @@ export default function LoginPage() {
     setError("");
     setChallengeState("loading");
     setAnswer("");
+    setSharedUsername("");
     setResult(null);
     const res = await fetch("/api/vocab-challenge/word");
     const data = await res.json() as { word: string };
@@ -76,12 +74,12 @@ export default function LoginPage() {
   }
 
   async function submitAnswer() {
-    if (!answer.trim()) return;
+    if (!answer.trim() || !sharedUsername.trim()) return;
     setChallengeState("evaluating");
-    const res = await fetch("/api/vocab-challenge", {
+    const res = await fetch("/api/auth/login-challenge", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ word, answer }),
+      body: JSON.stringify({ username, sharedUsername, word, answer }),
     });
     const data = await res.json() as { correct: boolean; comment: string };
     setResult(data);
@@ -98,6 +96,7 @@ export default function LoginPage() {
   async function newWord() {
     setChallengeState("loading");
     setAnswer("");
+    setSharedUsername("");
     setResult(null);
     const res = await fetch("/api/vocab-challenge/word");
     const data = await res.json() as { word: string };
@@ -177,11 +176,21 @@ export default function LoginPage() {
             {/* Answering */}
             {(challengeState === "answering" || challengeState === "evaluating") && (
               <>
-                <div className="mb-5">
+                <div className="mb-4">
                   <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">{t("mieTitle")}</p>
                   <p className="text-4xl font-bold text-[#2B4B8C] tracking-tight">{word}</p>
-                  <p className="text-xs text-gray-500 mt-2">{t("mieInstructions")}</p>
                 </div>
+                <div className="mb-3">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">{t("mieSharedUserLabel")}</label>
+                  <input
+                    value={sharedUsername}
+                    onChange={(e) => setSharedUsername(e.target.value)}
+                    placeholder={t("mieSharedUserPlaceholder")}
+                    disabled={challengeState === "evaluating"}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C] disabled:opacity-50"
+                  />
+                </div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">{t("mieInstructions")}</label>
                 <textarea
                   autoFocus
                   value={answer}
@@ -210,7 +219,7 @@ export default function LoginPage() {
                   </button>
                   <button
                     onClick={submitAnswer}
-                    disabled={challengeState === "evaluating" || !answer.trim()}
+                    disabled={challengeState === "evaluating" || !answer.trim() || !sharedUsername.trim()}
                     className="ml-auto bg-[#2B4B8C] text-white rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-40"
                   >
                     {challengeState === "evaluating" ? t("mieEvaluating") : t("mieSubmit")}

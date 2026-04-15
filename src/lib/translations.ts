@@ -128,7 +128,9 @@ export const translations = {
 
     // vocab challenge
     mieButton: "🐑 咩~",
-    mieTitle: "Word Challenge",
+    mieTitle: "Forgot password?",
+    mieSharedUserLabel: "Username of someone you've shared a list with",
+    mieSharedUserPlaceholder: "their username",
     mieInstructions: "Use this word in a sentence, or translate it to Chinese:",
     mieAnswerPlaceholder: "Type a sentence or Chinese translation…",
     mieSubmit: "Submit",
@@ -301,7 +303,9 @@ export const translations = {
     createYours: "创建你自己的列表 →",
 
     mieButton: "🐑 咩~",
-    mieTitle: "词汇挑战",
+    mieTitle: "忘记密码？",
+    mieSharedUserLabel: "你曾与之共享列表的用户名",
+    mieSharedUserPlaceholder: "对方的用户名",
     mieInstructions: "用这个词造句，或翻译成中文：",
     mieAnswerPlaceholder: "写句子或中文翻译…",
     mieSubmit: "提交",
