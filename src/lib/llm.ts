@@ -7,8 +7,8 @@ export async function callOpenRouter(userPrompt: string, systemPrompt: string): 
   const apiKey = e.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error("OPENROUTER_API_KEY not configured");
 
-  // Configurable via wrangler secret; defaults to a fast, cheap model
-  const model = e.OPENROUTER_MODEL || "google/gemini-2.0-flash-001";
+  // Configurable via: npx wrangler secret put OPENROUTER_MODEL
+  const model = e.OPENROUTER_MODEL || "qwen/qwen-plus";
 
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
