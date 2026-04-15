@@ -55,10 +55,6 @@ export default function LoginPage() {
   useEffect(() => () => clearTimer(), []);
 
   async function startChallenge() {
-    if (!username.trim() || !password.trim()) {
-      setError("Please fill in username and password first.");
-      return;
-    }
     setError("");
     setChallengeState("loading");
     setAnswer("");
@@ -89,7 +85,7 @@ export default function LoginPage() {
           if (n <= 1) {
             clearTimer();
             setChallengeState("idle");
-            void doLogin();
+            if (username.trim() && password.trim()) void doLogin();
             return 0;
           }
           return n - 1;
