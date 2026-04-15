@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useT } from "@/context/LocaleContext";
@@ -47,12 +47,22 @@ export default function LoginPage() {
   const [answer,          setAnswer]         = useState("");
   const [result, setResult] = useState<{ correct: boolean; comment: string } | null>(null);
   const [countdown, setCountdown] = useState(5);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  function clearTimer() {
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-  }
-  useEffect(() => () => clearTimer(), []);
+  // Countdown effect — runs whenever countdown/state changes, always sees fresh username+password
+  useEffect(() => {
+    if (challengeState !== "result" || !result?.correct) return;
+    if (countdown === 0) {
+      setChallengeState("idle");
+      if (username.trim() && password.trim()) {
+        void doLogin();
+      } else {
+        setError("Challenge passed! Now enter your credentials and sign in.");
+      }
+      return;
+    }
+    const timer = setTimeout(() => setCountdown((n) => n - 1), 1000);
+    return () => clearTimeout(timer);
+  }); // intentionally no deps array — always reads latest state
 
   async function startChallenge() {
     setError("");
@@ -77,21 +87,6 @@ export default function LoginPage() {
     setResult(data);
     setCountdown(5);
     setChallengeState("result");
-
-    // If correct: count down then auto-login
-    if (data.correct) {
-      timerRef.current = setInterval(() => {
-        setCountdown((n) => {
-          if (n <= 1) {
-            clearTimer();
-            setChallengeState("idle");
-            if (username.trim() && password.trim()) void doLogin();
-            return 0;
-          }
-          return n - 1;
-        });
-      }, 1000);
-    }
   }
 
   function retryChallenge() {
@@ -111,7 +106,6 @@ export default function LoginPage() {
   }
 
   function closeChallenge() {
-    clearTimer();
     setChallengeState("idle");
     setAnswer("");
     setResult(null);
