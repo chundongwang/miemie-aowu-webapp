@@ -21,6 +21,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { Item, ItemPhoto, Comment } from "@/types";
 import { useT } from "@/context/LocaleContext";
 import CommentThread from "@/components/CommentThread";
+import PhotoSearchModal from "@/components/PhotoSearchModal";
 
 const STATUS_CYCLE: Record<string, string> = { unseen: "saved", saved: "done", done: "unseen" };
 const STATUS_LABEL: Record<string, string> = { unseen: "·", saved: "★", done: "✓" };
@@ -100,8 +101,9 @@ function SortableRow({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id });
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [showComments, setShowComments] = useState(false);
+  const [uploadingPhoto,  setUploadingPhoto]  = useState(false);
+  const [showComments,    setShowComments]    = useState(false);
+  const [showPhotoSearch, setShowPhotoSearch] = useState(false);
 
   const itemComments = comments.filter((c) => c.itemId === item.id);
 
@@ -238,20 +240,29 @@ function SortableRow({
               </div>
             ))}
             {isOwner && item.photos.length < MAX_PHOTOS && (
-              <button
-                onClick={handleAddPhotoClick}
-                disabled={uploadingPhoto}
-                className="w-16 h-16 shrink-0 rounded-lg border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-300 hover:border-gray-400 hover:text-gray-400 transition-colors disabled:opacity-40"
-              >
-                {uploadingPhoto ? (
-                  <span className="text-xs">…</span>
-                ) : (
-                  <>
-                    <span className="text-lg leading-none">+</span>
-                    <span className="text-xs">{t("photoButton")}</span>
-                  </>
-                )}
-              </button>
+              <>
+                <button
+                  onClick={handleAddPhotoClick}
+                  disabled={uploadingPhoto}
+                  className="w-16 h-16 shrink-0 rounded-lg border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-300 hover:border-gray-400 hover:text-gray-400 transition-colors disabled:opacity-40"
+                >
+                  {uploadingPhoto ? (
+                    <span className="text-xs">…</span>
+                  ) : (
+                    <>
+                      <span className="text-lg leading-none">+</span>
+                      <span className="text-xs">{t("photoButton")}</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowPhotoSearch(true)}
+                  className="w-16 h-16 shrink-0 rounded-lg border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-300 hover:border-[#2B4B8C] hover:text-[#2B4B8C] transition-colors"
+                >
+                  <span className="text-lg leading-none">🔍</span>
+                  <span className="text-xs">search</span>
+                </button>
+              </>
             )}
           </div>
         )}
@@ -300,6 +311,15 @@ function SortableRow({
         className="hidden"
         onChange={handlePhotoInput}
       />
+
+      {showPhotoSearch && (
+        <PhotoSearchModal
+          itemId={item.id}
+          initialQuery={item.name}
+          onPhotoAdded={(photoId, url) => onPhotoAdded(item.id, photoId, url)}
+          onClose={() => setShowPhotoSearch(false)}
+        />
+      )}
     </li>
   );
 }

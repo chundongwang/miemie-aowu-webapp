@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDB, getPhotoBucket } from "@/lib/db";
 import { getAuthUserId } from "@/lib/auth";
 import { logError } from "@/lib/logger";
-import { searchImages } from "@/lib/serp";
 
 
 type Params = { params: Promise<{ id: string }> };
@@ -133,32 +132,6 @@ export async function POST(req: NextRequest, { params }: Params) {
                 console.error(`[bulk-import] image failed [${urls[idx]}]: ${reason}`);
               }
             });
-          }
-
-          // SERP fallback: if we had URLs but all failed, search Google Images
-          if (urls.length > 0 && imagesOk === 0) {
-            const query = [item.name, item.secondary].filter(Boolean).join(" ");
-            console.log(`[bulk-import] trying SERP fallback for "${query}"`);
-            const candidates = await searchImages(query, 5);
-
-            for (const url of candidates) {
-              const photoId = crypto.randomUUID();
-              const r2Key   = `${itemId}/${photoId}`;
-              try {
-                await downloadAndUpload(url, r2Key, bucket);
-                await db
-                  .prepare("INSERT INTO item_photos (id, item_id, r2_key, position) VALUES (?, ?, ?, ?)")
-                  .bind(photoId, itemId, r2Key, 0)
-                  .run();
-                imagesOk++;
-                // Clear the errors since we recovered
-                imageErrors.length = 0;
-                console.log(`[bulk-import] SERP image ok for "${item.name}": ${url}`);
-                break; // got one, stop trying
-              } catch (err) {
-                console.warn(`[bulk-import] SERP candidate failed [${url}]: ${err}`);
-              }
-            }
           }
 
           send({
