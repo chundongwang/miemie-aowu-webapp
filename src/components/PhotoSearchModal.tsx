@@ -5,13 +5,24 @@ import { useT } from "@/context/LocaleContext";
 import type { SerpImageResult } from "@/lib/serp";
 
 type Props = {
-  itemId: string;
   initialQuery: string;
-  onPhotoAdded: (photoId: string, url: string) => void;
   onClose: () => void;
-};
+} & (
+  | {
+      // Mode A: item already exists → server downloads directly to R2
+      itemId: string;
+      onPhotoAdded: (photoId: string, url: string) => void;
+      onSelectUrl?: never;
+    }
+  | {
+      // Mode B: item not yet created → return the URL to the caller for staging
+      itemId?: never;
+      onPhotoAdded?: never;
+      onSelectUrl: (imageUrl: string) => void;
+    }
+);
 
-export default function PhotoSearchModal({ itemId, initialQuery, onPhotoAdded, onClose }: Props) {
+export default function PhotoSearchModal({ itemId, initialQuery, onPhotoAdded, onSelectUrl, onClose }: Props) {
   const t = useT();
   const [query,     setQuery]     = useState(initialQuery);
   const [searching, setSearching] = useState(false);
@@ -27,9 +38,10 @@ export default function PhotoSearchModal({ itemId, initialQuery, onPhotoAdded, o
     setSearching(true);
     setSearched(true);
     try {
-      const res = await fetch(
-        `/api/items/${itemId}/search-photos?q=${encodeURIComponent(query.trim())}`
-      );
+      const endpoint = itemId
+        ? `/api/items/${itemId}/search-photos?q=${encodeURIComponent(query.trim())}`
+        : `/api/search-images?q=${encodeURIComponent(query.trim())}`;
+      const res = await fetch(endpoint);
       const data = await res.json() as { results?: SerpImageResult[]; error?: string };
       if (!res.ok) { setError(t("searchPhotoError")); return; }
       setResults(data.results ?? []);
@@ -44,6 +56,13 @@ export default function PhotoSearchModal({ itemId, initialQuery, onPhotoAdded, o
     if (addingUrl) return;
     setAddingUrl(imageUrl);
     try {
+      if (onSelectUrl) {
+        // Mode B: pass URL back to caller (AddItemModal will proxy-download it)
+        onSelectUrl(imageUrl);
+        onClose();
+        return;
+      }
+      // Mode A: server downloads directly to R2
       const res = await fetch(`/api/items/${itemId}/photos/from-url`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -55,7 +74,7 @@ export default function PhotoSearchModal({ itemId, initialQuery, onPhotoAdded, o
         return;
       }
       const data = await res.json() as { id: string; url: string };
-      onPhotoAdded(data.id, data.url);
+      onPhotoAdded!(data.id, data.url);
       onClose();
     } catch {
       setError("Failed to add photo");
