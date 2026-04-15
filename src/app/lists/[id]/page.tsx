@@ -11,6 +11,7 @@ import ShareModal from "@/components/ShareModal";
 import EditListModal from "@/components/EditListModal";
 import Lightbox from "@/components/Lightbox";
 import CommentThread from "@/components/CommentThread";
+import BulkImportModal from "@/components/BulkImportModal";
 import { useT } from "@/context/LocaleContext";
 
 type Me = { id: string; displayName: string };
@@ -28,6 +29,7 @@ export default function ListDetailPage() {
   const [showAddItem,  setShowAddItem]  = useState(false);
   const [showShare,    setShowShare]    = useState(false);
   const [showEditList, setShowEditList] = useState(false);
+  const [showImport,   setShowImport]   = useState(false);
   const [editingItem,  setEditingItem]  = useState<Item | null>(null);
 
   const [viewMode,    setViewMode]    = useState<"list" | "waterfall">("list");
@@ -239,7 +241,14 @@ export default function ListDetailPage() {
       )}
 
       {isOwner && (
-        <div className="fixed bottom-6 right-6 sm:right-[calc(50%-208px)]">
+        <div className="fixed bottom-6 right-6 sm:right-[calc(50%-208px)] flex flex-col items-center gap-3">
+          <button
+            onClick={() => setShowImport(true)}
+            title={t("importTitle")}
+            className="bg-white text-[#2B4B8C] border-2 border-[#2B4B8C] w-11 h-11 rounded-full text-xs font-bold shadow-md hover:bg-blue-50 flex items-center justify-center"
+          >
+            {t("importButton")}
+          </button>
           <button
             onClick={() => setShowAddItem(true)}
             className="bg-[#2B4B8C] text-white w-14 h-14 rounded-full text-2xl shadow-lg hover:bg-[#1e3a70] flex items-center justify-center"
@@ -267,6 +276,13 @@ export default function ListDetailPage() {
           item={editingItem}
           secondaryLabel={list.secondaryLabel}
           onClose={() => { setEditingItem(null); load(); }}
+        />
+      )}
+      {showImport && (
+        <BulkImportModal
+          listId={id}
+          secondaryLabel={list.secondaryLabel}
+          onClose={handleModalClose(setShowImport)}
         />
       )}
       {lightboxUrl && (
