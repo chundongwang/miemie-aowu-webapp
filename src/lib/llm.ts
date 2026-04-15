@@ -24,7 +24,8 @@ export async function callOpenRouter(userPrompt: string, systemPrompt: string): 
         { role: "system", content: systemPrompt },
         { role: "user",   content: userPrompt  },
       ],
-      response_format: { type: "json_object" },
+      // NOTE: response_format omitted — not universally supported across providers;
+      // we rely on the system prompt instruction and strip fences in the caller.
       max_tokens: 2000,
       temperature: 0.2,
     }),
