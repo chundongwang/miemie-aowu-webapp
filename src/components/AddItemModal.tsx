@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import PhotoUploadArea, { type StagedPhoto } from "@/components/PhotoUploadArea";
+import PhotoSearchModal from "@/components/PhotoSearchModal";
 import { useT } from "@/context/LocaleContext";
 
 type Props = {
@@ -17,11 +18,28 @@ export default function AddItemModal({ listId, secondaryLabel, onClose }: Props)
   const [name, setName] = useState("");
   const [secondary, setSecondary] = useState("");
   const [reason, setReason] = useState("");
-  const [photos, setPhotos] = useState<StagedPhoto[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [photos,          setPhotos]          = useState<StagedPhoto[]>([]);
+  const [loading,         setLoading]         = useState(false);
+  const [error,           setError]           = useState("");
+  const [showPhotoSearch, setShowPhotoSearch] = useState(false);
+  const [proxyLoading,    setProxyLoading]    = useState(false);
 
   const isDirty = name.trim() !== "" || secondary.trim() !== "" || reason.trim() !== "" || photos.length > 0;
+
+  async function handleSearchPick(imageUrl: string) {
+    if (photos.length >= 3) return;
+    setProxyLoading(true);
+    try {
+      const res = await fetch(`/api/proxy-image?url=${encodeURIComponent(imageUrl)}`);
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const file = new File([blob], "photo.jpg", { type: blob.type || "image/jpeg" });
+      const previewUrl = URL.createObjectURL(blob);
+      setPhotos((prev) => [...prev, { file, previewUrl }]);
+    } finally {
+      setProxyLoading(false);
+    }
+  }
 
   function handleDismiss() {
     if (isDirty && !confirm(t("unsavedChanges"))) return;
@@ -94,7 +112,19 @@ export default function AddItemModal({ listId, secondaryLabel, onClose }: Props)
             />
           </div>
 
-          <PhotoUploadArea photos={photos} onChange={setPhotos} />
+          <div>
+            <PhotoUploadArea photos={photos} onChange={setPhotos} />
+            {photos.length < 3 && (
+              <button
+                type="button"
+                onClick={() => setShowPhotoSearch(true)}
+                disabled={proxyLoading}
+                className="mt-2 flex items-center gap-1.5 text-xs text-[#2B4B8C] hover:opacity-70 disabled:opacity-40"
+              >
+                {proxyLoading ? "…" : <>🔍 {t("searchPhotoTitle")}</>}
+              </button>
+            )}
+          </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
           <button
@@ -105,6 +135,14 @@ export default function AddItemModal({ listId, secondaryLabel, onClose }: Props)
           </button>
         </form>
       </div>
+
+      {showPhotoSearch && (
+        <PhotoSearchModal
+          initialQuery={name.trim() || "photo"}
+          onSelectUrl={handleSearchPick}
+          onClose={() => setShowPhotoSearch(false)}
+        />
+      )}
     </div>
   );
 }
