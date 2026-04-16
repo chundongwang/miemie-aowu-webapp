@@ -455,6 +455,7 @@ type Props = {
   secondaryLabel: string | null;
   listId: string;
   viewMode: "list" | "waterfall";
+  isTextList?: boolean;
   comments: Comment[];
   userDisplayName: string | null;
   onEditItem: (item: Item) => void;
@@ -465,7 +466,7 @@ type Props = {
 
 export default function ItemList({
   items: initialItems, isRecipient, isOwner, secondaryLabel, listId,
-  viewMode, comments, userDisplayName,
+  viewMode, isTextList, comments, userDisplayName,
   onEditItem, onPhotoClick, onCommentAdded, onReactionsChanged,
 }: Props) {
   const t = useT();
@@ -584,6 +585,60 @@ export default function ItemList({
     onReact: reactToItem,
     onCommentAdded,
   };
+
+  // ── Text list mode ──
+  if (isTextList) {
+    function fmtDate(ts: number) {
+      const d = new Date(ts);
+      return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    }
+    const canEdit = isOwner || isRecipient;
+    return (
+      <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+        {items.map((item) => {
+          const hasTitle = item.name && item.name !== item.reason?.split("\n")[0].slice(0, 80);
+          const body = item.reason?.trim();
+          return (
+            <li key={item.id} className="py-4">
+              <div className="flex gap-3 items-start">
+                {item.secondary && (
+                  <span className="text-2xl shrink-0 mt-0.5">{item.secondary}</span>
+                )}
+                <button
+                  onClick={() => canEdit && onEditItem(item)}
+                  className={`flex-1 text-left min-w-0 ${canEdit ? "hover:opacity-70" : ""}`}
+                  disabled={!canEdit}
+                >
+                  {hasTitle && (
+                    <p className="font-semibold text-gray-900 dark:text-gray-100 mb-1 leading-snug">{item.name}</p>
+                  )}
+                  {body ? (
+                    <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed whitespace-pre-wrap line-clamp-6">
+                      {body}
+                    </p>
+                  ) : (
+                    !hasTitle && <p className="text-gray-400 dark:text-gray-500 italic text-sm">{t("textEmptyNote")}</p>
+                  )}
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                    {fmtDate(item.updatedAt > item.createdAt ? item.updatedAt : item.createdAt)}
+                  </p>
+                </button>
+                {canEdit && (
+                  <button
+                    onClick={() => deleteItem(item.id)}
+                    disabled={deleting === item.id}
+                    className="text-gray-300 dark:text-gray-600 hover:text-red-400 text-lg leading-none shrink-0 mt-0.5"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
 
   // ── Waterfall mode (one card per photo; items without photos get one card) ──
   if (viewMode === "waterfall") {

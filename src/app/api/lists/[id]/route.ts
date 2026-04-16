@@ -77,6 +77,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
       miemieCount: reactionMap.get(r.id)?.miemie ?? 0,
       aowuCount:   reactionMap.get(r.id)?.aowu   ?? 0,
       createdAt: r.created_at,
+      updatedAt: r.updated_at,
       photos: r.photos_raw
         ? r.photos_raw.split(",").map((chunk: string) => {
             const [photoId, r2Key, pos] = chunk.split("|");

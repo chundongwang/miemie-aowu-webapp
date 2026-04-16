@@ -15,6 +15,7 @@ const CATEGORY_LABEL_KEYS: Record<string, TranslationKey> = {
   book:       "categoryBook",
   movie:      "categoryMovie",
   custom:     "categoryCustom",
+  text:       "categoryText",
 };
 
 export default function NewListModal({ onClose }: { onClose: () => void }) {

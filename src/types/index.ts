@@ -33,6 +33,7 @@ export type Item = {
   miemieCount: number;
   aowuCount: number;
   createdAt: number;
+  updatedAt: number;
 };
 
 export type Comment = {
@@ -64,4 +65,5 @@ export const CATEGORIES: Record<
   book:       { emoji: "📚", secondaryLabel: "Author",   label: "Books"        },
   movie:      { emoji: "🎬", secondaryLabel: "Director", label: "Movies"       },
   custom:     { emoji: "📋", secondaryLabel: "",         label: "Custom"       },
+  text:       { emoji: "📝", secondaryLabel: "",         label: "Notes"        },
 };
