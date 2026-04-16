@@ -124,6 +124,55 @@ This runs `opennextjs-cloudflare build` then `wrangler deploy`.
 
 ---
 
+## iOS (Capacitor)
+
+The iOS app is a Capacitor shell that loads the live web app from `https://miemieaowu.ai`. No static export is needed — native features (camera, haptics, status bar) work via the Capacitor bridge.
+
+### First-time setup
+
+**Prerequisites:** Xcode 15+, CocoaPods (`brew install cocoapods`)
+
+```bash
+# 1. Create the Xcode project (only once)
+npm run ios:add
+
+# 2. Sync web assets and plugins
+npm run ios:sync
+
+# 3. Open in Xcode to set signing + bundle ID
+npm run ios:open
+```
+
+In Xcode:
+1. Select the `App` target → **Signing & Capabilities**
+2. Set your **Team** and confirm **Bundle Identifier** is `com.miemieaowu.app`
+3. Build & run on a simulator or device
+
+### Day-to-day
+
+```bash
+# After any native plugin or config change
+npm run ios:sync
+
+# Run on a connected device or simulator
+npm run ios:run
+
+# Open Xcode
+npm run ios:open
+```
+
+### Dev mode (point to local server)
+
+Set `NODE_ENV=development` before syncing to load from `http://localhost:4200` instead of the live URL:
+
+```bash
+NODE_ENV=development npm run ios:sync
+```
+
+Then start the web dev server (`npm run dev`) and run the app from Xcode.
+
+---
+
 ## Useful Commands
 
 | Command | What it does |
@@ -131,6 +180,10 @@ This runs `opennextjs-cloudflare build` then `wrangler deploy`.
 | `npm run dev` | Start local dev server |
 | `npm run build` | Type-check + Next.js build |
 | `npm run deploy` | Build and deploy to Cloudflare |
+| `npm run ios:add` | Create the iOS Xcode project (first time only) |
+| `npm run ios:sync` | Sync Capacitor plugins and config to iOS |
+| `npm run ios:open` | Open Xcode |
+| `npm run ios:run` | Run on a simulator or connected device |
 | `npx wrangler d1 migrations apply miemie-aowu-db --local` | Apply DB migrations locally |
 | `npx wrangler d1 migrations apply miemie-aowu-db --remote` | Apply DB migrations to production |
 | `npx wrangler tail` | Stream live production logs |

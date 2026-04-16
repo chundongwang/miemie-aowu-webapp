@@ -204,7 +204,7 @@ The LLM (Prof. Higgins, bulk import parser) receives the user's locale and respo
 | LLM | OpenRouter — default model `qwen/qwen-plus`, configurable via `OPENROUTER_MODEL` secret |
 | Image search | Serper (Google Images API) — requires `SERPER_API_KEY` |
 | Auth | PBKDF2 password hashing · HMAC-SHA256 JWT · HTTP-only cookie · 1-year TTL |
-| Mobile | Capacitor 6 shell for iOS / Android |
+| Mobile | Capacitor 8 shell for iOS / Android — loads live `miemieaowu.ai` via `server.url` |
 
 ### Required Secrets
 | Secret | Purpose |
