@@ -118,6 +118,13 @@ export const translations = {
     categoryBook: "Books",
     categoryMovie: "Movies",
     categoryCustom: "Custom",
+    categoryText: "Notes",
+    textTitlePlaceholder: "Title (optional)",
+    textBodyPlaceholder: "Start writing…",
+    textBodyLabel: "Content",
+    textUntitled: "(untitled)",
+    textEmptyNote: "Empty note",
+    newNote: "New note",
 
     // landing
     tagline: "Curated recommendations, shared with the people you care about.",
@@ -295,6 +302,13 @@ export const translations = {
     categoryBook: "书籍",
     categoryMovie: "电影",
     categoryCustom: "自定义",
+    categoryText: "笔记",
+    textTitlePlaceholder: "标题（可选）",
+    textBodyPlaceholder: "开始写作…",
+    textBodyLabel: "内容",
+    textUntitled: "（无标题）",
+    textEmptyNote: "空白笔记",
+    newNote: "新建笔记",
 
     tagline: "精心整理的推荐，与你在乎的人分享。",
     communityLists: "社区列表",

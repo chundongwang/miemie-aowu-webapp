@@ -7,6 +7,7 @@ import type { ListDetail, Item, Comment } from "@/types";
 import ItemList from "@/components/ItemList";
 import AddItemModal from "@/components/AddItemModal";
 import EditItemModal from "@/components/EditItemModal";
+import TextItemEditor from "@/components/TextItemEditor";
 import ShareModal from "@/components/ShareModal";
 import EditListModal from "@/components/EditListModal";
 import Lightbox from "@/components/Lightbox";
@@ -110,6 +111,7 @@ export default function ListDetailPage() {
   const isOwner     = me?.id === list.ownerId;
   const isRecipient = me?.id === list.recipientId;
   const isGuest     = !me;
+  const isTextList  = list.category === "text";
 
   const hasReactions = reactionTotals.miemie > 0 || reactionTotals.aowu > 0;
 
@@ -206,6 +208,7 @@ export default function ListDetailPage() {
           secondaryLabel={list.secondaryLabel}
           listId={id}
           viewMode={viewMode}
+          isTextList={isTextList}
           comments={comments}
           userDisplayName={me?.displayName ?? null}
           onEditItem={(item) => setEditingItem(item)}
@@ -242,13 +245,15 @@ export default function ListDetailPage() {
 
       {(isOwner || isRecipient) && (
         <div className="fixed bottom-6 right-6 sm:right-[calc(50%-208px)] flex flex-col items-center gap-3">
-          <button
-            onClick={() => setShowImport(true)}
-            title={t("importTitle")}
-            className="bg-white dark:bg-gray-900 text-[#2B4B8C] border-2 border-[#2B4B8C] w-11 h-11 rounded-full text-xs font-bold shadow-md dark:shadow-none hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center justify-center"
-          >
-            {t("importButton")}
-          </button>
+          {!isTextList && (
+            <button
+              onClick={() => setShowImport(true)}
+              title={t("importTitle")}
+              className="bg-white dark:bg-gray-900 text-[#2B4B8C] border-2 border-[#2B4B8C] w-11 h-11 rounded-full text-xs font-bold shadow-md dark:shadow-none hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center justify-center"
+            >
+              {t("importButton")}
+            </button>
+          )}
           <button
             onClick={() => setShowAddItem(true)}
             className="bg-[#2B4B8C] text-white w-14 h-14 rounded-full text-2xl shadow-lg hover:bg-[#1e3a70] flex items-center justify-center"
@@ -259,7 +264,9 @@ export default function ListDetailPage() {
       )}
 
       {showAddItem && (
-        <AddItemModal listId={id} secondaryLabel={list.secondaryLabel} onClose={handleModalClose(setShowAddItem)} />
+        isTextList
+          ? <TextItemEditor listId={id} onClose={handleModalClose(setShowAddItem)} />
+          : <AddItemModal listId={id} secondaryLabel={list.secondaryLabel} onClose={handleModalClose(setShowAddItem)} />
       )}
       {showShare && (
         <ShareModal listId={id} onClose={handleModalClose(setShowShare)} />
@@ -272,11 +279,13 @@ export default function ListDetailPage() {
         />
       )}
       {editingItem && (
-        <EditItemModal
-          item={editingItem}
-          secondaryLabel={list.secondaryLabel}
-          onClose={() => { setEditingItem(null); load(); }}
-        />
+        isTextList
+          ? <TextItemEditor listId={id} item={editingItem} onClose={() => { setEditingItem(null); load(); }} />
+          : <EditItemModal
+              item={editingItem}
+              secondaryLabel={list.secondaryLabel}
+              onClose={() => { setEditingItem(null); load(); }}
+            />
       )}
       {showImport && (
         <BulkImportModal
