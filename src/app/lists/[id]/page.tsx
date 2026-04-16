@@ -111,7 +111,7 @@ export default function ListDetailPage() {
   const isOwner     = me?.id === list.ownerId;
   const isRecipient = me?.id === list.recipientId;
   const isGuest     = !me;
-  const isTextList  = list.category === "text";
+  const isTextList  = list.category === "text" || list.category === "tears";
 
   const hasReactions = reactionTotals.miemie > 0 || reactionTotals.aowu > 0;
 

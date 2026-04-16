@@ -64,6 +64,10 @@ export const CATEGORIES: Record<
   restaurant: { emoji: "🍜", secondaryLabel: "Address",  label: "Restaurants"  },
   book:       { emoji: "📚", secondaryLabel: "Author",   label: "Books"        },
   movie:      { emoji: "🎬", secondaryLabel: "Director", label: "Movies"       },
-  custom:     { emoji: "📋", secondaryLabel: "",         label: "Custom"       },
-  text:       { emoji: "📝", secondaryLabel: "",         label: "Notes"        },
+  custom:      { emoji: "📋", secondaryLabel: "",             label: "Custom"       },
+  text:        { emoji: "📝", secondaryLabel: "",             label: "Notes"        },
+  camera:      { emoji: "📸", secondaryLabel: "",             label: "Camera Roll"  },
+  screenshots: { emoji: "🖼️", secondaryLabel: "From",        label: "Screenshots"  },
+  shopping:    { emoji: "🛍️", secondaryLabel: "Where to buy", label: "Shopping"     },
+  tears:       { emoji: "🥹", secondaryLabel: "",             label: "Tears"        },
 };
