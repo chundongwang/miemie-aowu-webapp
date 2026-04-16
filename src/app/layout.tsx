@@ -24,6 +24,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "🐑 咩咩~嗷呜 🐺",
   description: "Curated recommendations, shared with the people you care about.",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+  manifest: "/manifest.json",
 };
 
 export default async function RootLayout({
