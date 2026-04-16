@@ -45,13 +45,13 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
       <div className="w-full max-w-sm">
         <h1 className="text-2xl font-semibold text-center mb-8">{t("createAccount")}</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t("username")} <span className="text-gray-400 font-normal">({t("usernameHint")})</span>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {t("username")} <span className="text-gray-400 dark:text-gray-500 font-normal">({t("usernameHint")})</span>
             </label>
             <input
               type="text"
@@ -61,42 +61,42 @@ export default function RegisterPage() {
               onChange={(e) => setUsername(e.target.value)}
               pattern="[a-z0-9_]{3,30}"
               placeholder={t("usernamePlaceholder")}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C]"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C] dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t("displayNameLabel")} <span className="text-gray-400 font-normal">({t("displayNameHint")})</span>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {t("displayNameLabel")} <span className="text-gray-400 dark:text-gray-500 font-normal">({t("displayNameHint")})</span>
             </label>
             <input
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder={t("displayNamePlaceholder")}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C]"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C] dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t("phone")} <span className="text-gray-400 font-normal">({t("phoneHint")})</span>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {t("phone")} <span className="text-gray-400 dark:text-gray-500 font-normal">({t("phoneHint")})</span>
             </label>
             <input
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder={t("phonePlaceholder")}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C]"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C] dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("password")}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("password")}</label>
             <input
               type="password"
               required
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C]"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C] dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
             />
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
@@ -108,7 +108,7 @@ export default function RegisterPage() {
             {loading ? t("creatingAccount") : t("createAccount")}
           </button>
         </form>
-        <p className="text-sm text-center text-gray-500 mt-6">
+        <p className="text-sm text-center text-gray-500 dark:text-gray-400 mt-6">
           {t("alreadyHaveAccount")}{" "}
           <Link href="/login" className="text-[#2B4B8C] font-medium underline">{t("signIn")}</Link>
         </p>

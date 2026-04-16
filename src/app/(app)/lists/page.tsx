@@ -33,8 +33,8 @@ export default function ListsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="sticky top-0 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between z-10">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <header className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-4 py-3 flex items-center justify-between z-10">
         <h1 className="text-lg font-semibold">{t("myLists")}</h1>
         <div className="flex items-center gap-3">
           <button
@@ -43,10 +43,10 @@ export default function ListsPage() {
           >
             {t("newListButton")}
           </button>
-          <Link href="/profile" className="text-sm text-gray-400 hover:text-gray-600">
+          <Link href="/profile" className="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400">
             {t("profile")}
           </Link>
-          <button onClick={logout} className="text-sm text-gray-400 hover:text-gray-600">
+          <button onClick={logout} className="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400">
             {t("signOut")}
           </button>
         </div>
@@ -54,10 +54,10 @@ export default function ListsPage() {
 
       <main className="max-w-lg mx-auto px-4 py-4">
         {loading ? (
-          <div className="py-16 text-center text-gray-400 text-sm">{t("loading")}</div>
+          <div className="py-16 text-center text-gray-400 dark:text-gray-500 text-sm">{t("loading")}</div>
         ) : lists.length === 0 ? (
           <div className="py-16 text-center">
-            <p className="text-gray-400 text-sm mb-4">{t("noListsYet")}</p>
+            <p className="text-gray-400 dark:text-gray-500 text-sm mb-4">{t("noListsYet")}</p>
             <button
               onClick={() => setShowNew(true)}
               className="bg-[#2B4B8C] text-white text-sm font-medium px-4 py-2 rounded-lg"
@@ -78,13 +78,13 @@ export default function ListsPage() {
                 <li key={list.id}>
                   <Link
                     href={`/lists/${list.id}`}
-                    className="block bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
+                    className="block bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm dark:shadow-none hover:shadow-md dark:hover:shadow-none transition-shadow"
                   >
                     <div className="flex items-center gap-3">
                       <span className="text-3xl">{list.emoji}</span>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900 truncate">{list.title}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">
+                        <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">{list.title}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                           {other
                             ? `${otherLabel} ${other}`
                             : isOwner
@@ -94,7 +94,7 @@ export default function ListsPage() {
                           {count} {countLabel}
                         </p>
                       </div>
-                      <span className="text-gray-300 text-lg">›</span>
+                      <span className="text-gray-300 dark:text-gray-600 text-lg">›</span>
                     </div>
                   </Link>
                 </li>

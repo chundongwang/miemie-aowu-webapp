@@ -78,37 +78,37 @@ export default function AddItemModal({ listId, secondaryLabel, onClose }: Props)
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center" onClick={handleDismiss}>
-      <div className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-6 pb-10 sm:pb-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-t-2xl sm:rounded-2xl p-6 pb-10 sm:pb-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-semibold">{t("addItem")}</h2>
-          <button onClick={handleDismiss} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+          <button onClick={handleDismiss} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 text-xl leading-none">×</button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("nameLabel")}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("nameLabel")}</label>
             <input
               autoFocus required value={name} onChange={(e) => setName(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C]"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C] dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
             />
           </div>
           {secondaryLabel && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {secondaryLabel} <span className="text-gray-400 font-normal">({t("optional")})</span>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {secondaryLabel} <span className="text-gray-400 dark:text-gray-500 font-normal">({t("optional")})</span>
               </label>
               <input
                 value={secondary} onChange={(e) => setSecondary(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C]"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C] dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
               />
             </div>
           )}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t("whyLabel")} <span className="text-gray-400 font-normal">({t("optional")})</span>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {t("whyLabel")} <span className="text-gray-400 dark:text-gray-500 font-normal">({t("optional")})</span>
             </label>
             <textarea
               rows={2} value={reason} onChange={(e) => setReason(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C] resize-none"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C] resize-none dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
             />
           </div>
 

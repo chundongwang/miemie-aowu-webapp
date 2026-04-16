@@ -203,7 +203,7 @@ export default function BulkImportModal({ listId, secondaryLabel, onClose }: Pro
       onClick={handleDismiss}
     >
       <div
-        className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl flex flex-col max-h-[90vh]"
+        className="bg-white dark:bg-gray-900 w-full max-w-md rounded-t-2xl sm:rounded-2xl flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -213,14 +213,14 @@ export default function BulkImportModal({ listId, secondaryLabel, onClose }: Pro
               {step === "preview" && (
                 <button
                   onClick={() => { setStep("input"); setError(""); }}
-                  className="text-gray-400 hover:text-gray-600 text-sm"
+                  className="text-gray-400 dark:text-gray-500 hover:text-gray-600 text-sm"
                 >
                   {t("importBack")}
                 </button>
               )}
               <h2 className="text-lg font-semibold">{t("importTitle")}</h2>
             </div>
-            <button onClick={handleDismiss} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+            <button onClick={handleDismiss} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 text-xl leading-none">×</button>
           </div>
         )}
 
@@ -228,15 +228,15 @@ export default function BulkImportModal({ listId, secondaryLabel, onClose }: Pro
         {showBar && (
           <div className="px-6 pt-6 pb-2 shrink-0">
             {step === "adding" && (
-              <p className="text-sm font-medium text-gray-700 mb-3 text-center">{t("importTitle")}</p>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 text-center">{t("importTitle")}</p>
             )}
-            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
               <div
                 className="h-full bg-[#2B4B8C] rounded-full transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <p className="text-xs text-gray-400 text-center mt-1.5">{progressLabel} {Math.round(progress)}%</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 text-center mt-1.5">{progressLabel} {Math.round(progress)}%</p>
           </div>
         )}
 
@@ -245,13 +245,13 @@ export default function BulkImportModal({ listId, secondaryLabel, onClose }: Pro
           {step === "adding" ? (
             <div className="py-2">
               {imageWarnings.length > 0 && (
-                <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                  <p className="text-xs font-medium text-amber-700 mb-1">
+                <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl">
+                  <p className="text-xs font-medium text-amber-700 dark:text-amber-400 mb-1">
                     {imageWarnings.length} image{imageWarnings.length > 1 ? "s" : ""} could not be downloaded (items still added)
                   </p>
                   <ul className="space-y-0.5">
                     {imageWarnings.map((w, i) => (
-                      <li key={i} className="text-[10px] text-amber-600 break-all">{w}</li>
+                      <li key={i} className="text-[10px] text-amber-600 dark:text-amber-400 break-all">{w}</li>
                     ))}
                   </ul>
                 </div>
@@ -260,13 +260,13 @@ export default function BulkImportModal({ listId, secondaryLabel, onClose }: Pro
           ) : step === "input" ? (
             // ── Input step ──
             <div className="space-y-4 pt-1">
-              <p className="text-xs text-gray-400">{t("importStep1Hint")}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500">{t("importStep1Hint")}</p>
               <textarea
                 autoFocus
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 rows={10}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C] resize-none"
+                className="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C] resize-none dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
                 placeholder={
                   secondaryLabel
                     ? `Blue Bottle Coffee\n${secondaryLabel}: 300 Webster St, Oakland\nBest pour-over in the city`
@@ -285,20 +285,20 @@ export default function BulkImportModal({ listId, secondaryLabel, onClose }: Pro
           ) : (
             // ── Preview step ──
             <div className="space-y-3 pt-1">
-              <p className="text-xs text-gray-400">{t("importPreviewHint")}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500">{t("importPreviewHint")}</p>
 
               {items.map((item) => (
-                <div key={item._key} className="border border-gray-200 rounded-xl p-3 space-y-1.5">
+                <div key={item._key} className="border border-gray-200 dark:border-gray-700 rounded-xl p-3 space-y-1.5">
                   <div className="flex items-start gap-2">
                     <input
                       value={item.name}
                       onChange={(e) => updateItem(item._key, "name", e.target.value)}
                       placeholder={t("nameLabel")}
-                      className="flex-1 text-sm font-medium border-b border-gray-200 pb-0.5 focus:outline-none focus:border-[#2B4B8C]"
+                      className="flex-1 text-sm font-medium border-b border-gray-200 dark:border-gray-700 pb-0.5 focus:outline-none focus:border-[#2B4B8C] dark:bg-transparent dark:text-white dark:placeholder-gray-500"
                     />
                     <button
                       onClick={() => removeItem(item._key)}
-                      className="text-gray-300 hover:text-red-400 text-sm shrink-0 mt-0.5"
+                      className="text-gray-300 dark:text-gray-600 hover:text-red-400 text-sm shrink-0 mt-0.5"
                     >
                       ✕
                     </button>
@@ -308,14 +308,14 @@ export default function BulkImportModal({ listId, secondaryLabel, onClose }: Pro
                       value={item.secondary}
                       onChange={(e) => updateItem(item._key, "secondary", e.target.value)}
                       placeholder={`${secondaryLabel} (${t("optional")})`}
-                      className="w-full text-xs text-gray-500 border-b border-gray-100 pb-0.5 focus:outline-none focus:border-[#2B4B8C]"
+                      className="w-full text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-800 pb-0.5 focus:outline-none focus:border-[#2B4B8C] dark:bg-transparent dark:text-white dark:placeholder-gray-500"
                     />
                   )}
                   <input
                     value={item.reason}
                     onChange={(e) => updateItem(item._key, "reason", e.target.value)}
                     placeholder={`${t("whyLabel")} (${t("optional")})`}
-                    className="w-full text-xs text-gray-400 italic border-b border-gray-100 pb-0.5 focus:outline-none focus:border-[#2B4B8C]"
+                    className="w-full text-xs text-gray-400 dark:text-gray-500 italic border-b border-gray-100 dark:border-gray-800 pb-0.5 focus:outline-none focus:border-[#2B4B8C] dark:bg-transparent dark:placeholder-gray-500"
                   />
                   {item.imageUrls.length > 0 && (
                     <p className="text-[10px] text-[#2B4B8C]">
@@ -326,7 +326,7 @@ export default function BulkImportModal({ listId, secondaryLabel, onClose }: Pro
               ))}
 
               {items.length === 0 && (
-                <p className="text-sm text-gray-400 text-center py-4">{t("importNoItems")}</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">{t("importNoItems")}</p>
               )}
 
               {error && <p className="text-sm text-red-600">{error}</p>}
