@@ -45,7 +45,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4 pt-[env(safe-area-inset-top)]">
       <div className="w-full max-w-sm">
         <h1 className="text-2xl font-semibold text-center mb-8">{t("createAccount")}</h1>
         <form onSubmit={handleSubmit} className="space-y-4">

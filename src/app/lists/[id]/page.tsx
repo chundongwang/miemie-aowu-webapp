@@ -117,7 +117,7 @@ export default function ListDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-4 py-3 z-10">
+      <header className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] z-10">
         <div className="max-w-lg mx-auto flex items-center gap-3">
           <button
             onClick={() => me ? router.push("/lists") : router.push("/")}
