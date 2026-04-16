@@ -23,7 +23,7 @@ export default function NewListModal({ onClose }: { onClose: () => void }) {
   const [title, setTitle] = useState("");
   const [emoji, setEmoji] = useState("📋");
   const [category, setCategory] = useState("custom");
-  const [isPublic, setIsPublic] = useState(true);
+  const [isPublic, setIsPublic] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 

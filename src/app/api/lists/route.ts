@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
         emoji || cat.emoji,
         category || "custom",
         secondaryLabel ?? cat.secondaryLabel ?? null,
-        isPublic !== false ? 1 : 0,
+        isPublic === true ? 1 : 0,
         now, now
       )
       .run();
