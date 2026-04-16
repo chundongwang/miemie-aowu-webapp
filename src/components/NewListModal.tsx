@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { CATEGORIES } from "@/types";
 import { useT } from "@/context/LocaleContext";
 import type { TranslationKey } from "@/lib/translations";
-
-const EMOJIS = ["☕", "🎵", "🍜", "📚", "🎬", "🌿", "🎮", "✈️", "🛍️", "💡", "🎨", "🏋️"];
+import EmojiPicker from "@/components/EmojiPicker";
+import { LIST_QUICK_EMOJIS, LIST_MORE_EMOJIS } from "@/lib/emojis";
 
 const CATEGORY_LABEL_KEYS: Record<string, TranslationKey> = {
   coffee:     "categoryCoffee",
@@ -73,15 +73,12 @@ export default function NewListModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex flex-wrap gap-2">
-            {EMOJIS.map((e) => (
-              <button
-                key={e} type="button"
-                onClick={() => setEmoji(e)}
-                className={`text-xl p-1.5 rounded-lg ${emoji === e ? "bg-gray-200 dark:bg-gray-700" : "hover:bg-gray-100 dark:hover:bg-gray-700"}`}
-              >{e}</button>
-            ))}
-          </div>
+          <EmojiPicker
+            value={emoji}
+            onChange={setEmoji}
+            quickEmojis={LIST_QUICK_EMOJIS}
+            moreEmojis={LIST_MORE_EMOJIS}
+          />
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("titleLabel")}</label>

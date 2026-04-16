@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useT } from "@/context/LocaleContext";
-
-const EMOJIS = ["☕", "🎵", "🍜", "📚", "🎬", "🌿", "🎮", "✈️", "🛍️", "💡", "🎨", "🏋️", "📋", "🎯", "🌸", "🍷"];
+import EmojiPicker from "@/components/EmojiPicker";
+import { LIST_QUICK_EMOJIS, LIST_MORE_EMOJIS } from "@/lib/emojis";
 
 type Props = {
   listId: string;
@@ -55,15 +55,12 @@ export default function EditListModal({ listId, current, onClose }: Props) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex flex-wrap gap-2">
-            {EMOJIS.map((e) => (
-              <button
-                key={e} type="button"
-                onClick={() => setEmoji(e)}
-                className={`text-xl p-1.5 rounded-lg ${emoji === e ? "bg-gray-200" : "hover:bg-gray-100"}`}
-              >{e}</button>
-            ))}
-          </div>
+          <EmojiPicker
+            value={emoji}
+            onChange={setEmoji}
+            quickEmojis={LIST_QUICK_EMOJIS}
+            moreEmojis={LIST_MORE_EMOJIS}
+          />
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{t("titleLabel")}</label>
