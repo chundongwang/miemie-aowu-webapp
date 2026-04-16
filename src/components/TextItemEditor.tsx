@@ -4,18 +4,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useT } from "@/context/LocaleContext";
 import type { Item } from "@/types";
-
-const NOTE_EMOJIS = ["💭", "💡", "⭐", "❤️", "🔥", "📌", "✅", "🌿", "🎵", "📖", "🎯", "😄"];
-
-const MORE_EMOJIS: { label: string; emojis: string[] }[] = [
-  { label: "Mood",    emojis: ["😄","😊","🥰","😎","🤔","😢","😂","🥳","😴","🤩","😤","🫠","🙃","🤗","😇","🥹","😩","🫡","🤫","🧐"] },
-  { label: "Nature",  emojis: ["🌸","🌿","🍀","🌊","🌙","☀️","🌈","🍃","🦋","🌺","🌻","🌵","🍄","🌾","🐚","🦋","🌷","🪻","🐾","🌍"] },
-  { label: "Objects", emojis: ["📝","📖","📌","📎","🔑","💎","🎯","🏆","🎁","🔮","💼","🗂️","📷","🎨","🖊️","📐","🧩","🪄","🔭","💻"] },
-  { label: "Food",    emojis: ["☕","🍵","🍎","🍕","🍜","🍣","🧁","🍷","🥗","🍓","🎂","🫖","🍰","🥂","🍺","🧃","🍦","🥐","🫙","🍫"] },
-  { label: "Active",  emojis: ["🎵","🎮","🏃","💪","🧘","✈️","🚀","🎸","🏋️","⚽","🎾","🏊","🚴","🧗","🎭","🎪","🏄","🎲","♟️","🎻"] },
-  { label: "Symbols", emojis: ["💫","🌟","💥","🎊","🎉","❓","💯","🔆","♾️","🔔","⚡","🌀","🔱","☯️","🆕","✨","🔖","🏷️","📍","🗝️"] },
-  { label: "Hearts",  emojis: ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","💕","💞","💗","💓","💔","❤️‍🔥","💝","🫀","❣️","💟","☮️","🩷"] },
-];
+import EmojiPicker from "@/components/EmojiPicker";
+import { NOTE_QUICK_EMOJIS, NOTE_MORE_EMOJIS } from "@/lib/emojis";
 
 type Props = {
   listId: string;
@@ -29,21 +19,8 @@ export default function TextItemEditor({ listId, item, onClose }: Props) {
   const [title, setTitle]     = useState(item?.name ?? "");
   const [body, setBody]       = useState(item?.reason ?? "");
   const [emoji, setEmoji]     = useState(item?.secondary ?? "");
-  const [showMore, setShowMore] = useState(false);
-  const [saving, setSaving]   = useState(false);
-  const bodyRef    = useRef<HTMLTextAreaElement>(null);
-  const pickerRef  = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!showMore) return;
-    function handleClickOutside(e: MouseEvent) {
-      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
-        setShowMore(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showMore]);
+  const [saving, setSaving] = useState(false);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
 
   const isDirty = item
     ? title !== (item.name ?? "") || body !== (item.reason ?? "") || emoji !== (item.secondary ?? "")
@@ -124,60 +101,13 @@ export default function TextItemEditor({ listId, item, onClose }: Props) {
       {/* editor */}
       <div className="flex-1 overflow-y-auto px-6 py-6 max-w-2xl w-full mx-auto">
         {/* emoji picker */}
-        <div className="relative mb-5" ref={pickerRef}>
-          <div className="flex items-center gap-1.5">
-            {NOTE_EMOJIS.map((e) => (
-              <button
-                key={e}
-                type="button"
-                onClick={() => setEmoji(emoji === e ? "" : e)}
-                className={`text-xl w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
-                  emoji === e
-                    ? "bg-[#2B4B8C]/10 ring-2 ring-[#2B4B8C]/40"
-                    : "hover:bg-gray-100 dark:hover:bg-gray-800"
-                }`}
-              >
-                {e}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => setShowMore((v) => !v)}
-              className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm transition-colors ${
-                showMore
-                  ? "bg-[#2B4B8C]/10 text-[#2B4B8C]"
-                  : "text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
-              }`}
-            >
-              ···
-            </button>
-          </div>
-
-          {showMore && (
-            <div className="absolute top-11 left-0 z-10 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-lg p-3 w-72 max-h-72 overflow-y-auto">
-              {MORE_EMOJIS.map(({ label, emojis }) => (
-                <div key={label} className="mb-3">
-                  <p className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-1.5 px-1">{label}</p>
-                  <div className="flex flex-wrap gap-1">
-                    {emojis.map((e) => (
-                      <button
-                        key={e}
-                        type="button"
-                        onClick={() => { setEmoji(emoji === e ? "" : e); setShowMore(false); }}
-                        className={`text-xl w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
-                          emoji === e
-                            ? "bg-[#2B4B8C]/10 ring-2 ring-[#2B4B8C]/40"
-                            : "hover:bg-gray-100 dark:hover:bg-gray-800"
-                        }`}
-                      >
-                        {e}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="mb-5">
+          <EmojiPicker
+            value={emoji}
+            onChange={setEmoji}
+            quickEmojis={NOTE_QUICK_EMOJIS}
+            moreEmojis={NOTE_MORE_EMOJIS}
+          />
         </div>
 
         {/* title */}
