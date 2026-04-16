@@ -16,8 +16,7 @@ out/
 .env.local
 .env.*.local
 
-# Capacitor native projects (generated — add ios/ android/ only if you want to track native code)
-# ios/
+# Capacitor native projects
 # android/
 
 # misc
