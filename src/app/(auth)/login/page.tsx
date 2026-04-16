@@ -114,26 +114,26 @@ export default function LoginPage() {
   const showOverlay = challengeState !== "idle";
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
       <div className="w-full max-w-sm">
         <h1 className="text-2xl font-semibold text-center mb-8">{t("signIn")}</h1>
 
         {/* Login form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("username")}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("username")}</label>
             <input
               type="text" required autoFocus value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C]"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C] dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("password")}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("password")}</label>
             <input
               type="password" required value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C]"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C] dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
             />
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
@@ -150,7 +150,7 @@ export default function LoginPage() {
               type="button"
               onClick={startChallenge}
               disabled={loading}
-              className="shrink-0 border-2 border-[#2B4B8C] text-[#2B4B8C] rounded-lg px-3 py-2 text-sm font-medium hover:bg-blue-50 disabled:opacity-50"
+              className="shrink-0 border-2 border-[#2B4B8C] text-[#2B4B8C] rounded-lg px-3 py-2 text-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-900/30 disabled:opacity-50"
               title={t("mieTitle")}
             >
               {t("mieButton")}
@@ -158,7 +158,7 @@ export default function LoginPage() {
           </div>
         </form>
 
-        <p className="text-sm text-center text-gray-500 mt-6">
+        <p className="text-sm text-center text-gray-500 dark:text-gray-400 mt-6">
           {t("noAccount")}{" "}
           <Link href="/register" className="text-[#2B4B8C] font-medium underline">{t("register")}</Link>
         </p>
@@ -167,31 +167,31 @@ export default function LoginPage() {
       {/* ── Challenge overlay ─────────────────────────────────────────────── */}
       {showOverlay && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-4">
-          <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-xl">
+          <div className="bg-white dark:bg-gray-800 w-full max-w-sm rounded-2xl p-6 shadow-xl dark:shadow-none">
 
             {/* Loading word */}
             {challengeState === "loading" && (
-              <p className="text-center text-gray-400 py-8">Getting word…</p>
+              <p className="text-center text-gray-400 dark:text-gray-500 py-8">Getting word…</p>
             )}
 
             {/* Answering */}
             {(challengeState === "answering" || challengeState === "evaluating") && (
               <>
                 <div className="mb-4">
-                  <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">{t("mieTitle")}</p>
+                  <p className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1">{t("mieTitle")}</p>
                   <p className="text-4xl font-bold text-[#2B4B8C] tracking-tight">{word}</p>
                 </div>
                 <div className="mb-3">
-                  <label className="block text-xs font-medium text-gray-600 mb-1">{t("mieSharedUserLabel")}</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t("mieSharedUserLabel")}</label>
                   <input
                     value={sharedUsername}
                     onChange={(e) => setSharedUsername(e.target.value)}
                     placeholder={t("mieSharedUserPlaceholder")}
                     disabled={challengeState === "evaluating"}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C] disabled:opacity-50"
+                    className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C] disabled:opacity-50 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
                   />
                 </div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">{t("mieInstructions")}</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t("mieInstructions")}</label>
                 <textarea
                   autoFocus
                   value={answer}
@@ -202,19 +202,19 @@ export default function LoginPage() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void submitAnswer();
                   }}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C] resize-none disabled:opacity-50"
+                  className="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C] resize-none disabled:opacity-50 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
                 />
                 <div className="flex gap-2 mt-3">
                   <button
                     onClick={closeChallenge}
-                    className="text-xs text-gray-400 hover:text-gray-600 px-2"
+                    className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 px-2"
                   >
                     ×
                   </button>
                   <button
                     onClick={newWord}
                     disabled={challengeState === "evaluating"}
-                    className="text-xs text-gray-400 hover:text-gray-600 disabled:opacity-40"
+                    className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 disabled:opacity-40"
                   >
                     {t("mieNewWord")}
                   </button>
@@ -240,10 +240,10 @@ export default function LoginPage() {
                     }}>
                       {result.correct ? "Acceptable." : "Incorrect."}
                     </p>
-                    <p className="text-sm text-gray-700 leading-snug italic">
+                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-snug italic">
                       "{result.comment}"
                     </p>
-                    <p className="text-xs text-gray-400 mt-1.5">
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
                       — Prof. Higgins
                     </p>
                   </div>
@@ -251,13 +251,13 @@ export default function LoginPage() {
 
                 {result.correct ? (
                   <div className="text-center">
-                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-1.5">
+                    <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden mb-1.5">
                       <div
                         className="h-full bg-[#2B4B8C] rounded-full transition-all duration-1000"
                         style={{ width: `${((5 - countdown) / 5) * 100}%` }}
                       />
                     </div>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
                       {t("mieLoginCountdown", { n: String(countdown) })}
                     </p>
                   </div>
@@ -265,7 +265,7 @@ export default function LoginPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={retryChallenge}
-                      className="flex-1 border border-[#2B4B8C] text-[#2B4B8C] rounded-lg py-2 text-sm font-medium hover:bg-blue-50"
+                      className="flex-1 border border-[#2B4B8C] text-[#2B4B8C] rounded-lg py-2 text-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-900/30"
                     >
                       {t("mieWrongRetry")}
                     </button>

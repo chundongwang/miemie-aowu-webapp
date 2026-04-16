@@ -58,21 +58,21 @@ export default function CommentThread({
   return (
     <div className={compact ? "text-xs" : "text-sm"}>
       {comments.length === 0 && (
-        <p className="text-gray-400 text-xs mb-3">{t("noComments")}</p>
+        <p className="text-gray-400 dark:text-gray-500 text-xs mb-3">{t("noComments")}</p>
       )}
       <div className="space-y-3 mb-3">
         {comments.map((c) => (
           <div key={c.id}>
             <div className="flex items-baseline gap-2">
-              <span className="font-medium text-gray-800 text-xs">{c.authorName}</span>
+              <span className="font-medium text-gray-800 dark:text-gray-200 text-xs">{c.authorName}</span>
               {c.itemName && !itemId && (
-                <span className="text-[10px] text-[#2B4B8C] bg-blue-50 px-1.5 py-0.5 rounded-full">
+                <span className="text-[10px] text-[#2B4B8C] bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-full">
                   {t("itemCommentHint", { item: c.itemName })}
                 </span>
               )}
-              <span className="text-[10px] text-gray-400 ml-auto">{timeAgo(c.createdAt)}</span>
+              <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-auto">{timeAgo(c.createdAt)}</span>
             </div>
-            <p className="text-gray-700 mt-0.5 text-xs leading-snug">{c.body}</p>
+            <p className="text-gray-700 dark:text-gray-300 mt-0.5 text-xs leading-snug">{c.body}</p>
           </div>
         ))}
       </div>
@@ -83,7 +83,7 @@ export default function CommentThread({
             value={guestName}
             onChange={(e) => setGuestName(e.target.value)}
             placeholder={t("yourName")}
-            className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#2B4B8C]"
+            className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#2B4B8C] dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
           />
         )}
         <div className="flex gap-2">
@@ -91,7 +91,7 @@ export default function CommentThread({
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder={t("addComment")}
-            className="flex-1 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#2B4B8C]"
+            className="flex-1 border border-gray-200 dark:border-gray-700 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#2B4B8C] dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
           />
           <button
             type="submit"

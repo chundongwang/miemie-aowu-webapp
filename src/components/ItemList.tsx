@@ -48,20 +48,20 @@ function ReactionBar({ item, itemComments, onReact, showComments, onToggleCommen
     <div className="flex items-center gap-3 mt-2">
       <button
         onClick={() => onReact(item.id, "miemie")}
-        className="flex items-center gap-1 text-xs text-gray-400 hover:text-[#2B4B8C] transition-colors"
+        className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 hover:text-[#2B4B8C] transition-colors"
       >
         <span>咩~</span><span>{item.miemieCount}</span>
       </button>
       <button
         onClick={() => onReact(item.id, "aowu")}
-        className="flex items-center gap-1 text-xs text-gray-400 hover:text-[#2B4B8C] transition-colors"
+        className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 hover:text-[#2B4B8C] transition-colors"
       >
         <span>嗷～</span><span>{item.aowuCount}</span>
       </button>
       <button
         onClick={onToggleComments}
         className={`flex items-center gap-1 text-xs ml-auto transition-colors ${
-          showComments ? "text-[#2B4B8C]" : "text-gray-400 hover:text-gray-600"
+          showComments ? "text-[#2B4B8C]" : "text-gray-400 dark:text-gray-500 hover:text-gray-600"
         }`}
       >
         <span>💬</span><span>{itemComments.length}</span>
@@ -176,7 +176,7 @@ function SortableRow({
         <button
           {...attributes}
           {...listeners}
-          className="mt-1 text-gray-300 hover:text-gray-400 cursor-grab active:cursor-grabbing shrink-0 touch-none"
+          className="mt-1 text-gray-300 dark:text-gray-600 hover:text-gray-400 cursor-grab active:cursor-grabbing shrink-0 touch-none"
           aria-label={t("dragToReorder")}
         >
           ⠿
@@ -200,7 +200,7 @@ function SortableRow({
           <button
             onClick={() => onEdit(item)}
             className={`font-medium text-sm text-left hover:opacity-70 transition-opacity ${
-              item.status === "done" ? "line-through text-gray-400" : "text-gray-900"
+              item.status === "done" ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-900 dark:text-gray-100"
             }`}
           >
             {item.name}
@@ -211,12 +211,12 @@ function SortableRow({
           </p>
         )}
         {item.secondary && (
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             {secondaryLabel ? `${secondaryLabel}: ` : ""}{item.secondary}
           </p>
         )}
         {item.reason && (
-          <p className="text-xs text-gray-400 italic mt-1">"{item.reason}"</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 italic mt-1">"{item.reason}"</p>
         )}
 
         {/* photos */}
@@ -228,7 +228,7 @@ function SortableRow({
                 <img
                   src={photo.url}
                   alt=""
-                  className="w-16 h-16 object-cover rounded-lg border border-gray-100 cursor-zoom-in"
+                  className="w-16 h-16 object-cover rounded-lg border border-gray-100 dark:border-gray-800 cursor-zoom-in"
                   onClick={() => onPhotoClick(photo.url)}
                 />
                 {canEdit && (
@@ -246,7 +246,7 @@ function SortableRow({
                 <button
                   onClick={handleAddPhotoClick}
                   disabled={uploadingPhoto}
-                  className="w-16 h-16 shrink-0 rounded-lg border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-300 hover:border-gray-400 hover:text-gray-400 transition-colors disabled:opacity-40"
+                  className="w-16 h-16 shrink-0 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center text-gray-300 dark:text-gray-600 hover:border-gray-400 hover:text-gray-400 transition-colors disabled:opacity-40"
                 >
                   {uploadingPhoto ? (
                     <span className="text-xs">…</span>
@@ -259,7 +259,7 @@ function SortableRow({
                 </button>
                 <button
                   onClick={() => setShowPhotoSearch(true)}
-                  className="w-16 h-16 shrink-0 rounded-lg border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-300 hover:border-[#2B4B8C] hover:text-[#2B4B8C] transition-colors"
+                  className="w-16 h-16 shrink-0 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center text-gray-300 dark:text-gray-600 hover:border-[#2B4B8C] hover:text-[#2B4B8C] transition-colors"
                 >
                   <span className="text-lg leading-none">🔍</span>
                   <span className="text-xs">search</span>
@@ -280,7 +280,7 @@ function SortableRow({
               onToggleComments={() => setShowComments((v) => !v)}
             />
             {showComments && (
-              <div className="mt-2 pl-3 border-l-2 border-gray-100">
+              <div className="mt-2 pl-3 border-l-2 border-gray-100 dark:border-gray-800">
                 <CommentThread
                   listId={listId}
                   itemId={item.id}
@@ -299,7 +299,7 @@ function SortableRow({
         <button
           onClick={() => onDelete(item.id)}
           disabled={deleting === item.id}
-          className="mt-0.5 text-gray-300 hover:text-red-400 text-sm shrink-0"
+          className="mt-0.5 text-gray-300 dark:text-gray-600 hover:text-red-400 text-sm shrink-0"
           title={t("deleteItem")}
         >
           {deleting === item.id ? "…" : "✕"}
@@ -357,7 +357,7 @@ function WaterfallCard({
   const itemComments = comments.filter((c) => c.itemId === item.id);
 
   return (
-    <div className="break-inside-avoid mb-3 bg-white rounded-xl overflow-hidden shadow-sm">
+    <div className="break-inside-avoid mb-3 bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-sm">
       {/* Single photo for this card */}
       {photo && (
         // eslint-disable-next-line @next/next/no-img-element
@@ -376,7 +376,7 @@ function WaterfallCard({
             <button
               onClick={() => onEdit(item)}
               className={`font-medium text-sm text-left hover:opacity-70 transition-opacity flex-1 ${
-                item.status === "done" ? "line-through text-gray-400" : "text-gray-900"
+                item.status === "done" ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-900 dark:text-gray-100"
               }`}
             >
               {item.name}
@@ -400,7 +400,7 @@ function WaterfallCard({
               <button
                 onClick={() => onDelete(item.id)}
                 disabled={deleting === item.id}
-                className="text-gray-300 hover:text-red-400 text-xs"
+                className="text-gray-300 dark:text-gray-600 hover:text-red-400 text-xs"
               >
                 {deleting === item.id ? "…" : "✕"}
               </button>
@@ -409,12 +409,12 @@ function WaterfallCard({
         </div>
 
         {item.secondary && (
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             {secondaryLabel ? `${secondaryLabel}: ` : ""}{item.secondary}
           </p>
         )}
         {item.reason && (
-          <p className="text-xs text-gray-400 italic mt-1">"{item.reason}"</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 italic mt-1">"{item.reason}"</p>
         )}
 
         {/* reaction bar + comments — logged-in only */}
@@ -428,7 +428,7 @@ function WaterfallCard({
               onToggleComments={() => setShowComments((v) => !v)}
             />
             {showComments && (
-              <div className="mt-2 pt-2 border-t border-gray-100">
+              <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
                 <CommentThread
                   listId={listId}
                   itemId={item.id}
@@ -568,7 +568,7 @@ export default function ItemList({
 
   if (items.length === 0) {
     return (
-      <p className="text-center text-gray-400 text-sm py-16">
+      <p className="text-center text-gray-400 dark:text-gray-500 text-sm py-16">
         {isOwner ? t("noItemsOwner") : t("noItemsRecipient")}
       </p>
     );
@@ -610,7 +610,7 @@ export default function ItemList({
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
-        <ul className="divide-y divide-gray-100">
+        <ul className="divide-y divide-gray-100 dark:divide-gray-800">
           {items.map((item) => (
             <SortableRow
               key={item.id}

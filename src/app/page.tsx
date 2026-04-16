@@ -44,12 +44,12 @@ export default async function RootPage() {
   }));
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-100 px-4 py-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <header className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-4 py-4">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <h1 className="text-lg font-semibold">{t("appName")}</h1>
           <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-gray-500 hover:text-gray-800">{t("signIn")}</Link>
+            <Link href="/login" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">{t("signIn")}</Link>
             <Link
               href="/register"
               className="text-sm font-medium bg-[#2B4B8C] text-white px-3 py-1.5 rounded-lg"
@@ -62,12 +62,12 @@ export default async function RootPage() {
 
       <main className="max-w-lg mx-auto px-4 py-8">
         <div className="text-center mb-8">
-          <p className="text-gray-500 text-sm">{t("tagline")}</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">{t("tagline")}</p>
         </div>
 
         {lists.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-gray-400 text-sm mb-4">{t("noPublicLists")}</p>
+            <p className="text-gray-400 dark:text-gray-500 text-sm mb-4">{t("noPublicLists")}</p>
             <Link
               href="/register"
               className="inline-block bg-[#2B4B8C] text-white text-sm font-medium px-4 py-2 rounded-lg"
@@ -77,7 +77,7 @@ export default async function RootPage() {
           </div>
         ) : (
           <>
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-3">
               {t("communityLists")}
             </h2>
             <ul className="space-y-3">
@@ -89,17 +89,17 @@ export default async function RootPage() {
                   <li key={list.id}>
                     <Link
                       href={`/lists/${list.id}`}
-                      className="block bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
+                      className="block bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm dark:shadow-none hover:shadow-md dark:hover:shadow-none transition-shadow"
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-3xl">{list.emoji}</span>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-900 truncate">{list.title}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">
+                          <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">{list.title}</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                             {byPrefix ? `${byPrefix} ` : ""}{list.ownerDisplayName} · {count} {countLabel}
                           </p>
                         </div>
-                        <span className="text-gray-300 text-lg">›</span>
+                        <span className="text-gray-300 dark:text-gray-600 text-lg">›</span>
                       </div>
                     </Link>
                   </li>

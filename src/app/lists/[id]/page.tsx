@@ -101,10 +101,10 @@ export default function ListDetailPage() {
   }
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-400 text-sm">{t("loading")}</div>;
+    return <div className="min-h-screen flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">{t("loading")}</div>;
   }
   if (notFound || !list) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-400 text-sm">{t("listNotFound")}</div>;
+    return <div className="min-h-screen flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm">{t("listNotFound")}</div>;
   }
 
   const isOwner     = me?.id === list.ownerId;
@@ -114,12 +114,12 @@ export default function ListDetailPage() {
   const hasReactions = reactionTotals.miemie > 0 || reactionTotals.aowu > 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="sticky top-0 bg-white border-b border-gray-100 px-4 py-3 z-10">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <header className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-4 py-3 z-10">
         <div className="max-w-lg mx-auto flex items-center gap-3">
           <button
             onClick={() => me ? router.push("/lists") : router.push("/")}
-            className="text-gray-400 hover:text-gray-600 text-xl pr-1"
+            className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 text-xl pr-1"
           >
             ‹
           </button>
@@ -131,9 +131,9 @@ export default function ListDetailPage() {
             >
               <span className="text-2xl">{list.emoji}</span>
               <div className="min-w-0">
-                <h1 className="font-semibold text-gray-900 truncate">{list.title}</h1>
+                <h1 className="font-semibold text-gray-900 dark:text-gray-100 truncate">{list.title}</h1>
                 {list.recipientDisplayName && (
-                  <p className="text-xs text-gray-400">{t("sharedWith")} {list.recipientDisplayName}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">{t("sharedWith")} {list.recipientDisplayName}</p>
                 )}
               </div>
             </button>
@@ -141,8 +141,8 @@ export default function ListDetailPage() {
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <span className="text-2xl">{list.emoji}</span>
               <div className="min-w-0">
-                <h1 className="font-semibold text-gray-900 truncate">{list.title}</h1>
-                <p className="text-xs text-gray-400">
+                <h1 className="font-semibold text-gray-900 dark:text-gray-100 truncate">{list.title}</h1>
+                <p className="text-xs text-gray-400 dark:text-gray-500">
                   {t("by")} {list.ownerDisplayName}
                   {hasReactions && (
                     <span className="ml-2 text-[#2B4B8C]">
@@ -157,7 +157,7 @@ export default function ListDetailPage() {
           {/* view-mode toggle — always visible */}
           <button
             onClick={() => setViewMode((m) => m === "list" ? "waterfall" : "list")}
-            className="text-gray-400 hover:text-gray-600 text-base shrink-0"
+            className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 text-base shrink-0"
             title={viewMode === "list" ? t("viewModeWaterfall") : t("viewModeList")}
           >
             {viewMode === "list" ? "⊞" : "☰"}
@@ -169,8 +169,8 @@ export default function ListDetailPage() {
                 onClick={togglePublic}
                 className={`text-xs px-2 py-1 rounded-full border transition-colors ${
                   list.isPublic
-                    ? "border-green-200 text-green-700 bg-green-50 hover:bg-green-100"
-                    : "border-gray-200 text-gray-500 bg-gray-50 hover:bg-gray-100"
+                    ? "border-green-200 text-green-700 bg-green-50 hover:bg-green-100 dark:border-green-800 dark:text-green-400 dark:bg-green-900/30 dark:hover:bg-green-900/50"
+                    : "border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
                 }`}
               >
                 {list.isPublic ? `🌍 ${t("publicBadge")}` : `🔒 ${t("privateBadge")}`}
@@ -178,14 +178,14 @@ export default function ListDetailPage() {
               {list.recipientId ? (
                 <button
                   onClick={revokeShare}
-                  className="text-xs text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg px-2 py-1"
+                  className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1"
                 >
                   {t("unshare")}
                 </button>
               ) : (
                 <button
                   onClick={() => setShowShare(true)}
-                  className="text-xs font-medium border border-gray-300 rounded-lg px-2 py-1 hover:bg-gray-50"
+                  className="text-xs font-medium border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1 hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300"
                 >
                   {t("share")}
                 </button>
@@ -217,8 +217,8 @@ export default function ListDetailPage() {
 
       {/* list-level comments — logged-in only */}
       {!isGuest && (
-        <div className="max-w-lg mx-auto px-4 py-6 border-t border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-700 mb-4">{t("comments")}</h3>
+        <div className="max-w-lg mx-auto px-4 py-6 border-t border-gray-100 dark:border-gray-800">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">{t("comments")}</h3>
           <CommentThread
             listId={id}
             itemId={null}
@@ -230,9 +230,9 @@ export default function ListDetailPage() {
       )}
 
       {isGuest && (
-        <div className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-100 px-4 py-4">
+        <div className="fixed bottom-0 inset-x-0 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 px-4 py-4">
           <div className="max-w-lg mx-auto flex items-center justify-between gap-4">
-            <p className="text-sm text-gray-500">{t("wantToCreate")}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t("wantToCreate")}</p>
             <Link href="/register" className="shrink-0 bg-[#2B4B8C] text-white text-sm font-medium px-4 py-2 rounded-lg">
               {t("getStarted")}
             </Link>
@@ -245,7 +245,7 @@ export default function ListDetailPage() {
           <button
             onClick={() => setShowImport(true)}
             title={t("importTitle")}
-            className="bg-white text-[#2B4B8C] border-2 border-[#2B4B8C] w-11 h-11 rounded-full text-xs font-bold shadow-md hover:bg-blue-50 flex items-center justify-center"
+            className="bg-white dark:bg-gray-900 text-[#2B4B8C] border-2 border-[#2B4B8C] w-11 h-11 rounded-full text-xs font-bold shadow-md dark:shadow-none hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center justify-center"
           >
             {t("importButton")}
           </button>
