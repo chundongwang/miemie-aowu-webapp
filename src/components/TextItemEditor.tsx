@@ -85,7 +85,7 @@ export default function TextItemEditor({ listId, item, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white dark:bg-gray-950">
       {/* toolbar */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800 shrink-0">
+      <div className="flex items-center justify-between px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] border-b border-gray-100 dark:border-gray-800 shrink-0">
         <button onClick={handleDismiss} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-sm">
           ‹ Back
         </button>

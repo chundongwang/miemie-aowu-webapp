@@ -45,7 +45,7 @@ export default async function RootPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-4 py-4">
+      <header className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))]">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <h1 className="text-lg font-semibold">{t("appName")}</h1>
           <div className="flex items-center gap-3">

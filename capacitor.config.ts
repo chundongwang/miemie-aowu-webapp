@@ -27,13 +27,9 @@ const config: CapacitorConfig = {
         "We save images from your lists to your photo library.",
     },
     StatusBar: {
-      style: "Light",
-      backgroundColor: "#2B4B8C",
-      overlaysWebView: false,
+      style: "Dark",
+      overlaysWebView: true,
     },
-  },
-  ios: {
-    contentInset: "always",
   },
 };
 
