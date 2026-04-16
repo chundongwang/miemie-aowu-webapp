@@ -45,6 +45,12 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>We use your camera to add photos to your recommendation lists.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We use your photo library to add photos to your recommendation lists.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>We save images from your lists to your photo library.</string>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
 	<key>ITSAppUsesNonExemptEncryption</key>
