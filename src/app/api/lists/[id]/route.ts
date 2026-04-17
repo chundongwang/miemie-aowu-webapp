@@ -86,6 +86,14 @@ export async function GET(_req: NextRequest, { params }: Params) {
         : [],
     }));
 
+    // Record view for authenticated users (best-effort)
+    if (userId) {
+      db.prepare(
+        `INSERT INTO list_views (user_id, list_id, viewed_at) VALUES (?, ?, ?)
+         ON CONFLICT (user_id, list_id) DO UPDATE SET viewed_at = excluded.viewed_at`
+      ).bind(userId, id, Date.now()).run().catch(() => {});
+    }
+
     return NextResponse.json({
       id: list.id,
       title: list.title,
@@ -100,6 +108,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
       recipientUsername: list.recipient_username,
       recipientDisplayName: list.recipient_display_name,
       createdAt: list.created_at,
+      updatedAt: list.updated_at,
+      hasUnread: false,
       itemCount: items.length,
       items,
     });
