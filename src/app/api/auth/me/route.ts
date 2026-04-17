@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/db";
-import { getAuthUserId, hashPassword, verifyPassword } from "@/lib/auth";
+import { getAuthUserId, hashPassword, verifyPassword, clearAuthCookie } from "@/lib/auth";
 
 
 export async function GET() {
@@ -9,7 +9,7 @@ export async function GET() {
 
   const db = await getDB();
   const user = await db
-    .prepare("SELECT id, username, display_name FROM users WHERE id = ?")
+    .prepare("SELECT id, username, display_name FROM users WHERE id = ? AND deleted_at IS NULL")
     .bind(userId)
     .first<{ id: string; username: string; display_name: string }>();
 
@@ -55,5 +55,19 @@ export async function PATCH(req: NextRequest) {
       .run();
   }
 
+  return NextResponse.json({ ok: true });
+}
+
+export async function DELETE() {
+  const userId = await getAuthUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const db = await getDB();
+  await db
+    .prepare("UPDATE users SET deleted_at = ? WHERE id = ?")
+    .bind(Date.now(), userId)
+    .run();
+
+  await clearAuthCookie();
   return NextResponse.json({ ok: true });
 }

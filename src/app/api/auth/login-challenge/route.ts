@@ -19,12 +19,12 @@ export async function POST(req: NextRequest) {
 
     // Look up both users
     const user = await db
-      .prepare("SELECT id FROM users WHERE username = ?")
+      .prepare("SELECT id FROM users WHERE username = ? AND deleted_at IS NULL")
       .bind(username.toLowerCase().trim())
       .first<{ id: string }>();
 
     const shared = await db
-      .prepare("SELECT id FROM users WHERE username = ?")
+      .prepare("SELECT id FROM users WHERE username = ? AND deleted_at IS NULL")
       .bind(sharedUsername.toLowerCase().trim())
       .first<{ id: string }>();
 

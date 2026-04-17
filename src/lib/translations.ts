@@ -110,6 +110,10 @@ export const translations = {
     leaveBlankToKeep: "leave blank to keep",
     profileSaved: "Saved!",
     errorWrongPassword: "Current password is incorrect",
+    deleteAccount: "Delete Account",
+    deleteAccountConfirm: "This will permanently delete your account and all your lists and items. This cannot be undone. Type DELETE to confirm:",
+    deleteAccountButton: "Permanently Delete My Account",
+    deleting: "Deleting…",
 
     // categories
     categoryCoffee: "Coffee Shops",
@@ -299,6 +303,10 @@ export const translations = {
     leaveBlankToKeep: "留空则不修改",
     profileSaved: "已保存！",
     errorWrongPassword: "当前密码不正确",
+    deleteAccount: "注销账户",
+    deleteAccountConfirm: "此操作将永久删除您的账户及所有清单和项目，无法撤销。请输入 DELETE 确认：",
+    deleteAccountButton: "永久删除我的账户",
+    deleting: "删除中…",
 
     categoryCoffee: "咖啡馆",
     categoryMusic: "音乐",
