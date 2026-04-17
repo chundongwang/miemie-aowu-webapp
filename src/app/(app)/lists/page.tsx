@@ -86,7 +86,7 @@ export default function ListsPage() {
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">{list.title}</p>
                           {list.hasUnread && (
-                            <span className="shrink-0 w-2 h-2 rounded-full bg-[#2B4B8C]" />
+                            <span className="shrink-0 w-2 h-2 rounded-full bg-[#2B4B8C] dark:bg-blue-400" />
                           )}
                         </div>
                         <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
