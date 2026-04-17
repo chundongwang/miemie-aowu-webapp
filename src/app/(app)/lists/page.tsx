@@ -21,7 +21,9 @@ export default function ListsPage() {
       fetch("/api/lists").then((r) => r.json()) as Promise<List[]>,
       fetch("/api/auth/me").then((r) => r.json()) as Promise<{ id: string }>,
     ]).then(([ls, user]) => {
-      setLists(ls);
+      // Suppress hasUnread for lists viewed this session (D1 replica lag workaround)
+      const viewed = new Set(JSON.parse(sessionStorage.getItem("viewedLists") ?? "[]") as string[]);
+      setLists(ls.map((l) => viewed.has(l.id) ? { ...l, hasUnread: false } : l));
       setMe(user);
       setLoading(false);
     });
@@ -78,6 +80,12 @@ export default function ListsPage() {
                 <li key={list.id}>
                   <Link
                     href={`/lists/${list.id}`}
+                    onClick={() => {
+                      const viewed = new Set(JSON.parse(sessionStorage.getItem("viewedLists") ?? "[]") as string[]);
+                      viewed.add(list.id);
+                      sessionStorage.setItem("viewedLists", JSON.stringify([...viewed]));
+                      setLists((prev) => prev.map((l) => l.id === list.id ? { ...l, hasUnread: false } : l));
+                    }}
                     className="block bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm dark:shadow-none hover:shadow-md dark:hover:shadow-none transition-shadow"
                   >
                     <div className="flex items-center gap-3">
