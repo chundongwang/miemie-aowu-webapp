@@ -86,12 +86,12 @@ export async function GET(_req: NextRequest, { params }: Params) {
         : [],
     }));
 
-    // Record view for authenticated users (best-effort)
+    // Record view for authenticated users
     if (userId) {
-      db.prepare(
+      await db.prepare(
         `INSERT INTO list_views (user_id, list_id, viewed_at) VALUES (?, ?, ?)
          ON CONFLICT (user_id, list_id) DO UPDATE SET viewed_at = excluded.viewed_at`
-      ).bind(userId, id, Date.now()).run().catch(() => {});
+      ).bind(userId, id, Date.now()).run();
     }
 
     return NextResponse.json({
