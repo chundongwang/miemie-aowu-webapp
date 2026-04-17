@@ -14,6 +14,8 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -54,6 +56,16 @@ export default function ProfilePage() {
       setTimeout(() => setSaved(false), 3000);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    try {
+      await fetch("/api/auth/me", { method: "DELETE" });
+      router.push("/");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -130,6 +142,25 @@ export default function ProfilePage() {
           </button>
         </form>
       </main>
+
+      <div className="max-w-lg mx-auto px-4 py-6 border-t border-gray-100 dark:border-gray-800">
+        <h2 className="text-sm font-medium text-red-600 mb-3">{t("deleteAccount")}</h2>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">{t("deleteAccountConfirm")}</p>
+        <input
+          type="text"
+          value={deleteConfirm}
+          onChange={(e) => setDeleteConfirm(e.target.value)}
+          placeholder="DELETE"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-red-500 dark:bg-gray-800 dark:text-white"
+        />
+        <button
+          onClick={handleDeleteAccount}
+          disabled={deleteConfirm !== "DELETE" || deleting}
+          className="w-full bg-red-600 text-white rounded-xl py-3 text-sm font-medium disabled:opacity-40 hover:bg-red-700"
+        >
+          {deleting ? t("deleting") : t("deleteAccountButton")}
+        </button>
+      </div>
     </div>
   );
 }

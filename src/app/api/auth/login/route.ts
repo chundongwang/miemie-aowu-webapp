@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
     const db = await getDB();
     const user = await db
-      .prepare("SELECT id, username, display_name, password_hash FROM users WHERE username = ?")
+      .prepare("SELECT id, username, display_name, password_hash FROM users WHERE username = ? AND deleted_at IS NULL")
       .bind(username.toLowerCase())
       .first<{ id: string; username: string; display_name: string; password_hash: string }>();
 
