@@ -11,7 +11,7 @@ export const translations = {
     register: "Register",
     createAccount: "Create account",
     username: "Username",
-    usernameHint: "lowercase, no spaces",
+    usernameHint: "letters, numbers, underscores",
     usernamePlaceholder: "e.g. sarah",
     displayNameLabel: "Display name",
     displayNameHint: "optional",
@@ -195,7 +195,7 @@ export const translations = {
 
     // errors
     errorRequired: "Username and password are required",
-    errorUsernamePattern: "Username must be 3-30 lowercase letters, numbers, or underscores",
+    errorUsernamePattern: "Username must be 3-30 letters, numbers, or underscores",
     errorUsernameTaken: "Username already taken",
     errorInvalidCredentials: "Invalid username or password",
     errorPasswordLength: "Password must be at least 8 characters",
@@ -215,7 +215,7 @@ export const translations = {
     register: "注册",
     createAccount: "创建账户",
     username: "用户名",
-    usernameHint: "小写字母，无空格",
+    usernameHint: "字母、数字、下划线",
     usernamePlaceholder: "如 sarah",
     displayNameLabel: "显示名称",
     displayNameHint: "可选",
@@ -379,7 +379,7 @@ export const translations = {
     unsavedChanges: "有未保存的修改，确认丢弃？",
 
     errorRequired: "用户名和密码为必填",
-    errorUsernamePattern: "用户名须为 3-30 个小写字母、数字或下划线",
+    errorUsernamePattern: "用户名须为 3-30 个字母、数字或下划线",
     errorUsernameTaken: "用户名已被占用",
     errorInvalidCredentials: "用户名或密码错误",
     errorPasswordLength: "密码至少需要 8 个字符",
