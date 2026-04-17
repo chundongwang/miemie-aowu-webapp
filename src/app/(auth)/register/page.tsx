@@ -59,7 +59,7 @@ export default function RegisterPage() {
               autoFocus
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              pattern="[a-z0-9_]{3,30}"
+              pattern="[a-zA-Z0-9_]{3,30}"
               placeholder={t("usernamePlaceholder")}
               className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C] dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
             />
