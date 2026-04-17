@@ -63,9 +63,10 @@ export async function DELETE() {
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const db = await getDB();
+  const anonymizedUsername = `deleted_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
   await db
-    .prepare("UPDATE users SET deleted_at = ? WHERE id = ?")
-    .bind(Date.now(), userId)
+    .prepare("UPDATE users SET deleted_at = ?, username = ?, display_name = 'Deleted User' WHERE id = ?")
+    .bind(Date.now(), anonymizedUsername, userId)
     .run();
 
   await clearAuthCookie();
