@@ -12,10 +12,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     const item = await db
       .prepare(
-        `SELECT i.id, l.owner_id, l.recipient_id FROM items i JOIN lists l ON l.id = i.list_id WHERE i.id = ?`
+        `SELECT i.id, i.list_id, l.owner_id, l.recipient_id FROM items i JOIN lists l ON l.id = i.list_id WHERE i.id = ?`
       )
       .bind(id)
-      .first<{ id: string; owner_id: string; recipient_id: string | null }>();
+      .first<{ id: string; list_id: string; owner_id: string; recipient_id: string | null }>();
 
     if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
     if (item.owner_id !== userId && item.recipient_id !== userId) {
@@ -26,6 +26,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       name?: string; secondary?: string; reason?: string;
     };
 
+    const now = Date.now();
     await db
       .prepare(
         `UPDATE items SET
@@ -35,8 +36,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
            updated_at = ?
          WHERE id = ?`
       )
-      .bind(name ?? null, secondary ?? null, reason ?? null, Date.now(), id)
+      .bind(name ?? null, secondary ?? null, reason ?? null, now, id)
       .run();
+    await db.prepare("UPDATE lists SET updated_at = ? WHERE id = ?").bind(now, item.list_id).run();
 
     return NextResponse.json({ ok: true });
   });
@@ -49,10 +51,10 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
     const item = await db
       .prepare(
-        `SELECT i.id, l.owner_id, l.recipient_id FROM items i JOIN lists l ON l.id = i.list_id WHERE i.id = ?`
+        `SELECT i.id, i.list_id, l.owner_id, l.recipient_id FROM items i JOIN lists l ON l.id = i.list_id WHERE i.id = ?`
       )
       .bind(id)
-      .first<{ id: string; owner_id: string; recipient_id: string | null }>();
+      .first<{ id: string; list_id: string; owner_id: string; recipient_id: string | null }>();
 
     if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
     if (item.owner_id !== userId && item.recipient_id !== userId) {
@@ -60,6 +62,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     }
 
     await db.prepare("DELETE FROM items WHERE id = ?").bind(id).run();
+    await db.prepare("UPDATE lists SET updated_at = ? WHERE id = ?").bind(Date.now(), item.list_id).run();
     return NextResponse.json({ ok: true });
   });
 }

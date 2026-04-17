@@ -83,7 +83,12 @@ export default function ListsPage() {
                     <div className="flex items-center gap-3">
                       <span className="text-3xl">{list.emoji}</span>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">{list.title}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">{list.title}</p>
+                          {list.hasUnread && (
+                            <span className="shrink-0 w-2 h-2 rounded-full bg-[#2B4B8C]" />
+                          )}
+                        </div>
                         <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                           {other
                             ? `${otherLabel} ${other}`

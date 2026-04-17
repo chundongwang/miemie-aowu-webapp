@@ -12,16 +12,18 @@ export async function GET() {
         `SELECT l.*,
                 o.username AS owner_username, o.display_name AS owner_display_name,
                 r.username AS recipient_username, r.display_name AS recipient_display_name,
-                COUNT(i.id) AS item_count
+                COUNT(i.id) AS item_count,
+                lv.viewed_at
          FROM lists l
          JOIN users o ON o.id = l.owner_id
          LEFT JOIN users r ON r.id = l.recipient_id
          LEFT JOIN items i ON i.list_id = l.id
+         LEFT JOIN list_views lv ON lv.list_id = l.id AND lv.user_id = ?
          WHERE l.owner_id = ? OR l.recipient_id = ?
          GROUP BY l.id
          ORDER BY l.updated_at DESC`
       )
-      .bind(userId, userId)
+      .bind(userId, userId, userId)
       .all();
 
     return NextResponse.json(rows.results.map(mapList));
@@ -79,5 +81,7 @@ function mapList(r: any) {
     recipientDisplayName: r.recipient_display_name,
     itemCount: r.item_count,
     createdAt: r.created_at,
+    updatedAt: r.updated_at,
+    hasUnread: r.viewed_at == null || r.updated_at > r.viewed_at,
   };
 }

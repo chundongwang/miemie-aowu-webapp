@@ -19,6 +19,8 @@ export type List = {
   recipientDisplayName: string | null;
   itemCount: number;
   createdAt: number;
+  updatedAt: number;
+  hasUnread: boolean;
 };
 
 export type Item = {
