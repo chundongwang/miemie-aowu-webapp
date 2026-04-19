@@ -18,19 +18,13 @@ export async function POST(req: NextRequest, { params }: Params) {
     const userId = await getAuthUserId();
     const db = await getDB();
 
-    const item = await db
-      .prepare("SELECT id, list_id FROM items WHERE id = ?")
-      .bind(itemId)
-      .first<{ id: string; list_id: string }>();
+    const item = await db.prepare("SELECT id FROM items WHERE id = ?").bind(itemId).first();
     if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    const now = Date.now();
     await db
       .prepare("INSERT INTO reactions (id, item_id, user_id, type, created_at) VALUES (?, ?, ?, ?, ?)")
-      .bind(crypto.randomUUID(), itemId, userId ?? null, type, now)
+      .bind(crypto.randomUUID(), itemId, userId ?? null, type, Date.now())
       .run();
-    await db.prepare("UPDATE items SET updated_at = ? WHERE id = ?").bind(now, itemId).run();
-    await db.prepare("UPDATE lists SET updated_at = ? WHERE id = ?").bind(now, item.list_id).run();
 
     const counts = await db
       .prepare(
