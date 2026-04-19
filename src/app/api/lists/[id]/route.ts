@@ -38,7 +38,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
          LEFT JOIN item_photos p ON p.item_id = i.id
          WHERE i.list_id = ?
          GROUP BY i.id
-         ORDER BY i.position ASC, i.created_at ASC`
+         ORDER BY i.updated_at DESC`
       )
       .bind(id)
       .all();
