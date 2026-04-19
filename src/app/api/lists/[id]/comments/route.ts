@@ -88,6 +88,9 @@ export async function POST(req: NextRequest, { params }: Params) {
       .bind(commentId, id, itemId ?? null, userId ?? null, name, body.trim(), now)
       .run();
     await db.prepare("UPDATE lists SET updated_at = ? WHERE id = ?").bind(now, id).run();
+    if (itemId) {
+      await db.prepare("UPDATE items SET updated_at = ? WHERE id = ?").bind(now, itemId).run();
+    }
 
     // Get item name for response
     let itemName: string | null = null;
