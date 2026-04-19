@@ -16,10 +16,10 @@ export async function POST(req: NextRequest, { params }: Params) {
     // verify ownership or co-editor access
     const item = await db
       .prepare(
-        `SELECT i.id, l.owner_id, l.recipient_id FROM items i JOIN lists l ON l.id = i.list_id WHERE i.id = ?`
+        `SELECT i.id, i.list_id, l.owner_id, l.recipient_id FROM items i JOIN lists l ON l.id = i.list_id WHERE i.id = ?`
       )
       .bind(itemId)
-      .first<{ id: string; owner_id: string; recipient_id: string | null }>();
+      .first<{ id: string; list_id: string; owner_id: string; recipient_id: string | null }>();
 
     if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
     if (item.owner_id !== userId && item.recipient_id !== userId) {
@@ -56,10 +56,13 @@ export async function POST(req: NextRequest, { params }: Params) {
     });
 
     const position = (countRow?.n ?? 0);
+    const now = Date.now();
     await db
       .prepare("INSERT INTO item_photos (id, item_id, r2_key, position) VALUES (?, ?, ?, ?)")
       .bind(photoId, itemId, r2Key, position)
       .run();
+    await db.prepare("UPDATE items SET updated_at = ? WHERE id = ?").bind(now, itemId).run();
+    await db.prepare("UPDATE lists SET updated_at = ? WHERE id = ?").bind(now, item.list_id).run();
 
     return NextResponse.json(
       { id: photoId, url: `/api/photos/${r2Key}` },
