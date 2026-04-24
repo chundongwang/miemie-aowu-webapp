@@ -140,7 +140,7 @@ export default function WheelPage() {
     const n = foods.length;
     const seg = (2 * Math.PI) / n;
     const winnerIndex = Math.floor(Math.random() * n);
-    const extraSpins = (6 + Math.random() * 4) * 2 * Math.PI;
+    const extraSpins = (6 + Math.floor(Math.random() * 5)) * 2 * Math.PI;
 
     const targetMod = (2 * Math.PI - (winnerIndex + 0.5) * seg + 2 * Math.PI) % (2 * Math.PI);
     const currentMod = rotRef.current % (2 * Math.PI);
