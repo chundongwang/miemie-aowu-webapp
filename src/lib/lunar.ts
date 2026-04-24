@@ -1,5 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { Solar, SolarTerm } = require("lunar-javascript") as {
+const { Solar } = require("lunar-javascript") as {
   Solar: {
     fromDate(d: Date): {
       getYear(): number;
@@ -10,13 +10,11 @@ const { Solar, SolarTerm } = require("lunar-javascript") as {
         getMonthInChinese(): string;
         getDayInChinese(): string;
         getJieQi(): string;
+        getNextJieQi(): {
+          getName(): string;
+          getSolar(): { getYear(): number; getMonth(): number; getDay(): number };
+        };
       };
-    };
-  };
-  SolarTerm: {
-    fromIndex(year: number, index: number): {
-      getName(): string;
-      getSolar(): { getYear(): number; getMonth(): number; getDay(): number };
     };
   };
 };
@@ -36,22 +34,10 @@ export function getLunarContext(): LunarContext {
   const lunarDate = `农历${lunar.getYearInChinese()}年${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`;
   const jieqi = lunar.getJieQi() || "";
 
-  const year = solar.getYear();
-  let nextJieqi = "";
-  let nextJieqiDate = "";
-
-  outer: for (const y of [year, year + 1]) {
-    for (let i = 1; i <= 24; i++) {
-      const st = SolarTerm.fromIndex(y, i);
-      const s = st.getSolar();
-      const stDate = new Date(s.getYear(), s.getMonth() - 1, s.getDay());
-      if (stDate > now) {
-        nextJieqi = st.getName();
-        nextJieqiDate = `${s.getMonth()}月${s.getDay()}日`;
-        break outer;
-      }
-    }
-  }
+  const nextJieQiObj = lunar.getNextJieQi();
+  const nextSolar = nextJieQiObj.getSolar();
+  const nextJieqi = nextJieQiObj.getName();
+  const nextJieqiDate = `${nextSolar.getMonth()}月${nextSolar.getDay()}日`;
 
   return { lunarDate, jieqi, nextJieqi, nextJieqiDate };
 }
