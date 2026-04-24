@@ -24,6 +24,7 @@ const ORBIT_CSS = `
 export default function DailyChallengeFAB({ loggedIn }: { loggedIn: boolean }) {
   const router = useRouter();
   const [showPopup, setShowPopup] = useState(false);
+  const [orbitOffset] = useState(() => Math.random() * 6);
 
   useEffect(() => {
     const show = () => {
@@ -61,8 +62,8 @@ export default function DailyChallengeFAB({ loggedIn }: { loggedIn: boolean }) {
       >
         <span className="text-2xl">🧠</span>
         {/* Orbiting emojis */}
-        <span className="challenge-orbit-emoji">🐑</span>
-        <span className="challenge-orbit-emoji" style={{ animationDelay: "-3s" }}>🐺</span>
+        <span className="challenge-orbit-emoji" style={{ animationDelay: `-${orbitOffset.toFixed(2)}s` }}>🐑</span>
+        <span className="challenge-orbit-emoji" style={{ animationDelay: `-${((orbitOffset + 3) % 6).toFixed(2)}s` }}>🐺</span>
       </button>
     </div>
   );

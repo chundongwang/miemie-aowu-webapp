@@ -24,6 +24,7 @@ const ORBIT_CSS = `
 export default function FoodWheelFAB() {
   const router = useRouter();
   const [showPopup, setShowPopup] = useState(false);
+  const [orbitOffset] = useState(() => Math.random() * 6);
 
   useEffect(() => {
     const show = () => {
@@ -59,8 +60,8 @@ export default function FoodWheelFAB() {
         aria-label="今天吃什么"
       >
         <span className="text-2xl">🍜</span>
-        <span className="food-orbit-emoji">🐑</span>
-        <span className="food-orbit-emoji" style={{ animationDelay: "-3s" }}>🐺</span>
+        <span className="food-orbit-emoji" style={{ animationDelay: `-${orbitOffset.toFixed(2)}s` }}>🐑</span>
+        <span className="food-orbit-emoji" style={{ animationDelay: `-${((orbitOffset + 3) % 6).toFixed(2)}s` }}>🐺</span>
       </button>
     </div>
   );
