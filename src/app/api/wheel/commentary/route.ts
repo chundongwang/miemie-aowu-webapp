@@ -29,6 +29,28 @@ export async function POST(req: NextRequest) {
     // Lunar context — pure computation, no API
     const lunar = getLunarContext();
 
+    // Local time at the location — Amap covers China only, so Asia/Shanghai is always correct
+    function getLocalTimeLine(tz = "Asia/Shanghai"): string {
+      const now = new Date();
+      const parts = new Intl.DateTimeFormat("zh-CN", {
+        timeZone: tz,
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: false,
+      }).formatToParts(now);
+      const h = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
+      const m = parts.find((p) => p.type === "minute")?.value ?? "00";
+      const period =
+        h >= 23 || h < 5  ? "深夜"
+        : h < 8           ? "凌晨"
+        : h < 11          ? "上午"
+        : h < 13          ? "中午"
+        : h < 17          ? "下午"
+        : h < 19          ? "傍晚"
+                          : "晚上";
+      return `当前本地时间：${period} ${h}:${m}`;
+    }
+
     // Weather — Amap 2-step, best-effort
     let weatherLine = "";
     if (location?.lat && location?.lng) {
@@ -56,7 +78,8 @@ export async function POST(req: NextRequest) {
             };
             const live = wx.lives?.[0];
             if (live) {
-              weatherLine = `当前天气：${city}${live.weather}，气温${live.temperature}°C，${live.winddirection}风${live.windpower}级`;
+              const timeLine = getLocalTimeLine();
+              weatherLine = `${timeLine}\n当前天气：${city}${live.weather}，气温${live.temperature}°C，${live.winddirection}风${live.windpower}级`;
             }
           }
         }
@@ -79,7 +102,8 @@ export async function POST(req: NextRequest) {
 
 要求：
 - 语气甜蜜体贴，像真实的男友在关心伴侣
-- 自然融入天气和节气信息，让推荐更有生活感
+- 结合当前时间和天气，给出具体贴心的细节（例如：凌晨要注意暖胃，下午高温记得防暑，傍晚下雨别忘带伞，深夜吃宵夜别太油腻等）
+- 自然融入节气信息，让推荐更有生活感
 - 如果这道菜有著名的历史人物、文人墨客或当代名人与之有趣的渊源或典故，自然地提一句（一句话即可）
 - 整体流畅自然，不要生硬堆砌信息
 - 直接输出文字，不要任何格式标记、引号或额外说明`;
