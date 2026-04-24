@@ -119,10 +119,10 @@ export default function CommentThread({
                   {isOwn && !isEditing && (
                     <button
                       onClick={() => startEdit(c)}
-                      className="text-gray-300 dark:text-gray-600 hover:text-[#2B4B8C] dark:hover:text-blue-400 transition-colors"
+                      className="text-gray-400 dark:text-gray-500 hover:text-[#2B4B8C] dark:hover:text-blue-400 transition-colors"
                       title="Edit comment"
                     >
-                      ✎
+                      Edit
                     </button>
                   )}
                 </span>
