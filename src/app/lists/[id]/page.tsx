@@ -13,6 +13,9 @@ import EditListModal from "@/components/EditListModal";
 import Lightbox from "@/components/Lightbox";
 import CommentThread from "@/components/CommentThread";
 import BulkImportModal from "@/components/BulkImportModal";
+import NearbyFoodModal from "@/components/NearbyFoodModal";
+import PullIndicator from "@/components/PullIndicator";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useT } from "@/context/LocaleContext";
 
 type Me = { id: string; displayName: string };
@@ -31,6 +34,7 @@ export default function ListDetailPage() {
   const [showShare,    setShowShare]    = useState(false);
   const [showEditList, setShowEditList] = useState(false);
   const [showImport,   setShowImport]   = useState(false);
+  const [showNearby,   setShowNearby]   = useState(false);
   const [editingItem,  setEditingItem]  = useState<Item | null>(null);
 
   const [viewMode,    setViewMode]    = useState<"list" | "waterfall">("list");
@@ -60,6 +64,8 @@ export default function ListDetailPage() {
   }
 
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const { indicatorRef, isRefreshing: pullRefreshing } = usePullToRefresh(async () => { load(); });
 
   // Load comments once list is available
   useEffect(() => {
@@ -200,6 +206,8 @@ export default function ListDetailPage() {
         </div>
       </header>
 
+      <PullIndicator ref={indicatorRef} isRefreshing={pullRefreshing} />
+
       <main className="max-w-lg mx-auto px-4 py-4">
         <ItemList
           items={list.items}
@@ -254,6 +262,15 @@ export default function ListDetailPage() {
               {t("importButton")}
             </button>
           )}
+          {["restaurant", "coffee"].includes(list.category) && (
+            <button
+              onClick={() => setShowNearby(true)}
+              title="Find nearby food"
+              className="bg-white dark:bg-gray-900 text-[#2B4B8C] border-2 border-[#2B4B8C] w-11 h-11 rounded-full text-xl shadow-md dark:shadow-none hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center justify-center"
+            >
+              📍
+            </button>
+          )}
           <button
             onClick={() => setShowAddItem(true)}
             className="bg-[#2B4B8C] text-white w-14 h-14 rounded-full text-2xl shadow-lg hover:bg-[#1e3a70] flex items-center justify-center"
@@ -292,6 +309,13 @@ export default function ListDetailPage() {
           listId={id}
           secondaryLabel={list.secondaryLabel}
           onClose={handleModalClose(setShowImport)}
+        />
+      )}
+      {showNearby && (
+        <NearbyFoodModal
+          listId={id}
+          secondaryLabel={list.secondaryLabel}
+          onClose={handleModalClose(setShowNearby)}
         />
       )}
       {lightboxUrl && (
