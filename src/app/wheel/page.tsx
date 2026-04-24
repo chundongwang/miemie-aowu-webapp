@@ -29,6 +29,10 @@ export default function WheelPage() {
   const [newZh, setNewZh] = useState("");
   const [adding, setAdding] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editEmoji, setEditEmoji] = useState("");
+  const [editZh, setEditZh] = useState("");
+  const [savingId, setSavingId] = useState<string | null>(null);
   const [selectedPlace, setSelectedPlace] = useState<NearbyResult | null>(null);
   const [copied, setCopied] = useState(false);
   const [commentary, setCommentary] = useState<string | null>(null);
@@ -213,6 +217,31 @@ export default function WheelPage() {
       }
     } finally {
       setAdding(false);
+    }
+  }
+
+  function startEditItem(f: Food) {
+    setEditingItemId(f.id);
+    setEditEmoji(f.emoji);
+    setEditZh(f.zh);
+  }
+
+  async function saveEditItem(id: string) {
+    if (!editZh.trim() || savingId) return;
+    setSavingId(id);
+    try {
+      const res = await fetch(`/api/wheel/items/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emoji: editEmoji, zh: editZh.trim() }),
+      });
+      if (res.ok) {
+        const updated = await res.json() as Food;
+        setFoods((prev) => prev.map((f) => f.id === id ? updated : f));
+        setEditingItemId(null);
+      }
+    } finally {
+      setSavingId(null);
     }
   }
 
@@ -581,23 +610,72 @@ export default function WheelPage() {
             </div>
 
             {/* Item list */}
-            <ul className="divide-y divide-gray-100 dark:divide-gray-700 max-h-60 overflow-y-auto [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none" }}>
-              {foods.map((f) => (
-                <li key={f.id} className="flex items-center gap-2 px-4 py-2.5">
-                  <span className="text-lg shrink-0">{f.emoji}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900 dark:text-gray-100 truncate">{f.zh}</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{f.en}</p>
-                  </div>
-                  <button
-                    onClick={() => removeItem(f.id)}
-                    disabled={foods.length <= 3 || deletingId === f.id}
-                    className="text-gray-300 dark:text-gray-600 hover:text-red-400 disabled:opacity-30 text-lg leading-none shrink-0"
-                  >
-                    {deletingId === f.id ? "…" : "×"}
-                  </button>
-                </li>
-              ))}
+            <ul className="divide-y divide-gray-100 dark:divide-gray-700 max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none" }}>
+              {foods.map((f) => {
+                const isEditing = editingItemId === f.id;
+                const isSaving = savingId === f.id;
+                return (
+                  <li key={f.id} className="px-4 py-2.5">
+                    {isEditing ? (
+                      <div className="space-y-1.5">
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={editEmoji}
+                            onChange={(e) => setEditEmoji(e.target.value)}
+                            maxLength={2}
+                            className="w-12 text-center rounded-lg border border-[#2B4B8C] bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 py-1.5 text-lg focus:outline-none focus:ring-2 focus:ring-[#2B4B8C]"
+                          />
+                          <input
+                            type="text"
+                            value={editZh}
+                            onChange={(e) => setEditZh(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === "Enter") saveEditItem(f.id); if (e.key === "Escape") setEditingItemId(null); }}
+                            autoFocus
+                            className="flex-1 rounded-lg border border-[#2B4B8C] bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C]"
+                          />
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <button
+                            onClick={() => saveEditItem(f.id)}
+                            disabled={!editZh.trim() || isSaving}
+                            className="bg-[#2B4B8C] text-white text-xs font-medium px-3 py-1 rounded-lg disabled:opacity-40"
+                          >
+                            {isSaving ? "AI翻译中…" : "保存"}
+                          </button>
+                          <button
+                            onClick={() => setEditingItemId(null)}
+                            className="text-xs text-gray-400 dark:text-gray-500"
+                          >
+                            取消
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg shrink-0">{f.emoji}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-900 dark:text-gray-100 truncate">{f.zh}</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{f.en}</p>
+                        </div>
+                        <button
+                          onClick={() => startEditItem(f)}
+                          className="text-gray-400 dark:text-gray-500 hover:text-[#2B4B8C] dark:hover:text-blue-400 text-xs shrink-0"
+                        >
+                          编辑
+                        </button>
+                        <button
+                          onClick={() => removeItem(f.id)}
+                          disabled={foods.length <= 3 || deletingId === f.id}
+                          className="text-gray-300 dark:text-gray-600 hover:text-red-400 disabled:opacity-30 text-lg leading-none shrink-0"
+                        >
+                          {deletingId === f.id ? "…" : "×"}
+                        </button>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
 
             {/* Add form */}
