@@ -82,6 +82,7 @@ type RowProps = {
   listId: string;
   comments: Comment[];
   userDisplayName: string | null;
+  currentUserId: string | null;
   onCycle: (item: Item) => void;
   onEdit: (item: Item) => void;
   onDelete: (id: string) => void;
@@ -94,7 +95,7 @@ type RowProps = {
 
 function SortableRow({
   item, isOwner, isRecipient, secondaryLabel,
-  pending, deleting, listId, comments, userDisplayName,
+  pending, deleting, listId, comments, userDisplayName, currentUserId,
   onCycle, onEdit, onDelete, onPhotoAdded, onPhotoRemoved, onPhotoClick, onReact, onCommentAdded,
 }: RowProps) {
   const t = useT();
@@ -286,6 +287,7 @@ function SortableRow({
                   itemId={item.id}
                   comments={itemComments}
                   userDisplayName={userDisplayName}
+                  currentUserId={currentUserId}
                   onCommentAdded={onCommentAdded}
                   compact
                 />
@@ -337,6 +339,7 @@ type CardProps = {
   listId: string;
   comments: Comment[];
   userDisplayName: string | null;
+  currentUserId: string | null;
   pending: string | null;
   deleting: string | null;
   onCycle: (item: Item) => void;
@@ -348,7 +351,7 @@ type CardProps = {
 };
 
 function WaterfallCard({
-  item, photo, isOwner, isRecipient, secondaryLabel, listId, comments, userDisplayName,
+  item, photo, isOwner, isRecipient, secondaryLabel, listId, comments, userDisplayName, currentUserId,
   pending, deleting, onCycle, onEdit, onDelete, onPhotoClick, onReact, onCommentAdded,
 }: CardProps) {
   const t = useT();
@@ -434,6 +437,7 @@ function WaterfallCard({
                   itemId={item.id}
                   comments={itemComments}
                   userDisplayName={userDisplayName}
+                  currentUserId={currentUserId}
                   onCommentAdded={onCommentAdded}
                   compact
                 />
@@ -454,6 +458,7 @@ type TextListProps = {
   listId: string;
   comments: Comment[];
   userDisplayName: string | null;
+  currentUserId: string | null;
   deleting: string | null;
   fmtDate: (ts: number) => string;
   onEdit: (item: Item) => void;
@@ -462,7 +467,7 @@ type TextListProps = {
   onCommentAdded: (c: Comment) => void;
 };
 
-function TextList({ items, canEdit, listId, comments, userDisplayName, deleting, fmtDate, onEdit, onDelete, onReact, onCommentAdded }: TextListProps) {
+function TextList({ items, canEdit, listId, comments, userDisplayName, currentUserId, deleting, fmtDate, onEdit, onDelete, onReact, onCommentAdded }: TextListProps) {
   const t = useT();
   const [openComments, setOpenComments] = useState<Set<string>>(new Set());
 
@@ -526,6 +531,7 @@ function TextList({ items, canEdit, listId, comments, userDisplayName, deleting,
                           itemId={item.id}
                           comments={itemComments}
                           userDisplayName={userDisplayName}
+                          currentUserId={currentUserId}
                           onCommentAdded={onCommentAdded}
                           compact
                         />
@@ -563,6 +569,7 @@ type Props = {
   isTextList?: boolean;
   comments: Comment[];
   userDisplayName: string | null;
+  currentUserId: string | null;
   onEditItem: (item: Item) => void;
   onPhotoClick: (url: string) => void;
   onCommentAdded: (c: Comment) => void;
@@ -571,7 +578,7 @@ type Props = {
 
 export default function ItemList({
   items: initialItems, isRecipient, isOwner, secondaryLabel, listId,
-  viewMode, isTextList, comments, userDisplayName,
+  viewMode, isTextList, comments, userDisplayName, currentUserId,
   onEditItem, onPhotoClick, onCommentAdded, onReactionsChanged,
 }: Props) {
   const t = useT();
@@ -681,7 +688,7 @@ export default function ItemList({
   }
 
   const sharedProps = {
-    isOwner, isRecipient, secondaryLabel, listId, comments, userDisplayName,
+    isOwner, isRecipient, secondaryLabel, listId, comments, userDisplayName, currentUserId,
     pending, deleting,
     onCycle: cycleStatus,
     onEdit: onEditItem,
@@ -705,6 +712,7 @@ export default function ItemList({
         listId={listId}
         comments={comments}
         userDisplayName={userDisplayName}
+        currentUserId={currentUserId}
         deleting={deleting}
         fmtDate={fmtDate}
         onEdit={onEditItem}

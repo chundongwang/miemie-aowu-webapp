@@ -219,6 +219,7 @@ export default function ListDetailPage() {
           isTextList={isTextList}
           comments={comments}
           userDisplayName={me?.displayName ?? null}
+          currentUserId={me?.id ?? null}
           onEditItem={(item) => setEditingItem(item)}
           onPhotoClick={setLightboxUrl}
           onCommentAdded={handleCommentAdded}
@@ -235,6 +236,7 @@ export default function ListDetailPage() {
             itemId={null}
             comments={comments.filter((c) => !c.itemId)}
             userDisplayName={me?.displayName ?? null}
+            currentUserId={me?.id ?? null}
             onCommentAdded={handleCommentAdded}
           />
         </div>

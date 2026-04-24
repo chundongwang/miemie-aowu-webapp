@@ -43,9 +43,11 @@ export type Comment = {
   listId: string;
   itemId: string | null;
   itemName: string | null;
+  userId: string | null;
   authorName: string;
   body: string;
   createdAt: number;
+  updatedAt: number | null;
 };
 
 export type ItemPhoto = {
