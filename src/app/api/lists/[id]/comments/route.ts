@@ -91,6 +91,12 @@ export async function POST(req: NextRequest, { params }: Params) {
     if (itemId) {
       await db.prepare("UPDATE items SET updated_at = ? WHERE id = ?").bind(now, itemId).run();
     }
+    if (userId) {
+      await db.prepare(
+        `INSERT INTO list_views (user_id, list_id, viewed_at) VALUES (?, ?, ?)
+         ON CONFLICT (user_id, list_id) DO UPDATE SET viewed_at = excluded.viewed_at`
+      ).bind(userId, id, now).run();
+    }
 
     // Get item name for response
     let itemName: string | null = null;

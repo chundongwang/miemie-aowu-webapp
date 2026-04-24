@@ -6,6 +6,10 @@ import { useRouter } from "next/navigation";
 
 import type { List } from "@/types";
 import NewListModal from "@/components/NewListModal";
+import PullIndicator from "@/components/PullIndicator";
+import DailyChallengeFAB from "@/components/DailyChallengeFAB";
+import FoodWheelFAB from "@/components/FoodWheelFAB";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useT } from "@/context/LocaleContext";
 
 export default function ListsPage() {
@@ -16,18 +20,21 @@ export default function ListsPage() {
   const [showNew, setShowNew] = useState(false);
   const [me, setMe] = useState<{ id: string } | null>(null);
 
-  useEffect(() => {
-    Promise.all([
+  async function fetchLists() {
+    const [ls, user] = await Promise.all([
       fetch("/api/lists").then((r) => r.json()) as Promise<List[]>,
       fetch("/api/auth/me").then((r) => r.json()) as Promise<{ id: string }>,
-    ]).then(([ls, user]) => {
-      // Suppress hasUnread for lists viewed this session (D1 replica lag workaround)
-      const viewed = new Set(JSON.parse(sessionStorage.getItem("viewedLists") ?? "[]") as string[]);
-      setLists(ls.map((l) => viewed.has(l.id) ? { ...l, hasUnread: false } : l));
-      setMe(user);
-      setLoading(false);
-    });
-  }, []);
+    ]);
+    // Suppress hasUnread for lists viewed this session (D1 replica lag workaround)
+    const viewed = new Set(JSON.parse(sessionStorage.getItem("viewedLists") ?? "[]") as string[]);
+    setLists(ls.map((l) => viewed.has(l.id) ? { ...l, hasUnread: false } : l));
+    setMe(user);
+    setLoading(false);
+  }
+
+  useEffect(() => { fetchLists(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const { indicatorRef, isRefreshing } = usePullToRefresh(fetchLists);
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -53,6 +60,8 @@ export default function ListsPage() {
           </button>
         </div>
       </header>
+
+      <PullIndicator ref={indicatorRef} isRefreshing={isRefreshing} />
 
       <main className="max-w-lg mx-auto px-4 py-4">
         {loading ? (
@@ -117,6 +126,8 @@ export default function ListsPage() {
         )}
       </main>
 
+      <FoodWheelFAB />
+      <DailyChallengeFAB loggedIn={true} />
       {showNew && <NewListModal onClose={() => setShowNew(false)} />}
     </div>
   );

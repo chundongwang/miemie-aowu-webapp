@@ -72,4 +72,5 @@ export const CATEGORIES: Record<
   screenshots: { emoji: "🖼️", secondaryLabel: "From",        label: "Screenshots"  },
   shopping:    { emoji: "🛍️", secondaryLabel: "Where to buy", label: "Shopping"     },
   tears:       { emoji: "🥹", secondaryLabel: "",             label: "Tears"        },
+  ielts:       { emoji: "🧠", secondaryLabel: "",             label: "IELTS Vocab"  },
 };

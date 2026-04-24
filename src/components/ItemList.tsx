@@ -172,7 +172,7 @@ function SortableRow({
   return (
     <li ref={setNodeRef} style={style} className="py-4 flex items-start gap-3">
       {/* drag handle */}
-      {isOwner && (
+      {(isOwner || isRecipient) && (
         <button
           {...attributes}
           {...listeners}
@@ -446,6 +446,111 @@ function WaterfallCard({
   );
 }
 
+// ── TextList ──────────────────────────────────────────────────────────────────
+
+type TextListProps = {
+  items: Item[];
+  canEdit: boolean;
+  listId: string;
+  comments: Comment[];
+  userDisplayName: string | null;
+  deleting: string | null;
+  fmtDate: (ts: number) => string;
+  onEdit: (item: Item) => void;
+  onDelete: (id: string) => void;
+  onReact: (itemId: string, type: "miemie" | "aowu") => void;
+  onCommentAdded: (c: Comment) => void;
+};
+
+function TextList({ items, canEdit, listId, comments, userDisplayName, deleting, fmtDate, onEdit, onDelete, onReact, onCommentAdded }: TextListProps) {
+  const t = useT();
+  const [openComments, setOpenComments] = useState<Set<string>>(new Set());
+
+  function toggleComments(id: string) {
+    setOpenComments((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  return (
+    <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+      {items.map((item) => {
+        const hasTitle = item.name && item.name !== item.reason?.split("\n")[0].slice(0, 80);
+        const body = item.reason?.trim();
+        const itemComments = comments.filter((c) => c.itemId === item.id);
+        const showComments = openComments.has(item.id);
+
+        return (
+          <li key={item.id} className="py-4">
+            <div className="flex gap-3 items-start">
+              {item.secondary && (
+                <span className="text-2xl shrink-0 mt-0.5">{item.secondary}</span>
+              )}
+              <div className="flex-1 min-w-0">
+                <button
+                  onClick={() => canEdit && onEdit(item)}
+                  className={`w-full text-left ${canEdit ? "hover:opacity-70" : ""}`}
+                  disabled={!canEdit}
+                >
+                  {hasTitle && (
+                    <p className="font-semibold text-gray-900 dark:text-gray-100 mb-1 leading-snug">{item.name}</p>
+                  )}
+                  {body ? (
+                    <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed whitespace-pre-wrap line-clamp-6">
+                      {body}
+                    </p>
+                  ) : (
+                    !hasTitle && <p className="text-gray-400 dark:text-gray-500 italic text-sm">{t("textEmptyNote")}</p>
+                  )}
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                    {fmtDate(item.updatedAt > item.createdAt ? item.updatedAt : item.createdAt)}
+                  </p>
+                </button>
+
+                {/* reaction bar + item comments — logged-in only */}
+                {userDisplayName !== null && (
+                  <>
+                    <ReactionBar
+                      item={item}
+                      itemComments={itemComments}
+                      onReact={onReact}
+                      showComments={showComments}
+                      onToggleComments={() => toggleComments(item.id)}
+                    />
+                    {showComments && (
+                      <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+                        <CommentThread
+                          listId={listId}
+                          itemId={item.id}
+                          comments={itemComments}
+                          userDisplayName={userDisplayName}
+                          onCommentAdded={onCommentAdded}
+                          compact
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+              {canEdit && (
+                <button
+                  onClick={() => onDelete(item.id)}
+                  disabled={deleting === item.id}
+                  className="text-gray-300 dark:text-gray-600 hover:text-red-400 text-lg leading-none shrink-0 mt-0.5"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 // ── ItemList ──────────────────────────────────────────────────────────────────
 
 type Props = {
@@ -594,49 +699,19 @@ export default function ItemList({
     }
     const canEdit = isOwner || isRecipient;
     return (
-      <ul className="divide-y divide-gray-100 dark:divide-gray-800">
-        {items.map((item) => {
-          const hasTitle = item.name && item.name !== item.reason?.split("\n")[0].slice(0, 80);
-          const body = item.reason?.trim();
-          return (
-            <li key={item.id} className="py-4">
-              <div className="flex gap-3 items-start">
-                {item.secondary && (
-                  <span className="text-2xl shrink-0 mt-0.5">{item.secondary}</span>
-                )}
-                <button
-                  onClick={() => canEdit && onEditItem(item)}
-                  className={`flex-1 text-left min-w-0 ${canEdit ? "hover:opacity-70" : ""}`}
-                  disabled={!canEdit}
-                >
-                  {hasTitle && (
-                    <p className="font-semibold text-gray-900 dark:text-gray-100 mb-1 leading-snug">{item.name}</p>
-                  )}
-                  {body ? (
-                    <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed whitespace-pre-wrap line-clamp-6">
-                      {body}
-                    </p>
-                  ) : (
-                    !hasTitle && <p className="text-gray-400 dark:text-gray-500 italic text-sm">{t("textEmptyNote")}</p>
-                  )}
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                    {fmtDate(item.updatedAt > item.createdAt ? item.updatedAt : item.createdAt)}
-                  </p>
-                </button>
-                {canEdit && (
-                  <button
-                    onClick={() => deleteItem(item.id)}
-                    disabled={deleting === item.id}
-                    className="text-gray-300 dark:text-gray-600 hover:text-red-400 text-lg leading-none shrink-0 mt-0.5"
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+      <TextList
+        items={items}
+        canEdit={canEdit}
+        listId={listId}
+        comments={comments}
+        userDisplayName={userDisplayName}
+        deleting={deleting}
+        fmtDate={fmtDate}
+        onEdit={onEditItem}
+        onDelete={deleteItem}
+        onReact={reactToItem}
+        onCommentAdded={onCommentAdded}
+      />
     );
   }
 

@@ -237,3 +237,22 @@ export const IELTS_WORDS: string[] = [
 export function pickRandomWord(): string {
   return IELTS_WORDS[Math.floor(Math.random() * IELTS_WORDS.length)];
 }
+
+/** Returns the current UTC period string: "YYYY-MM-DD-HH" */
+export function currentPeriod(): string {
+  const now = new Date();
+  return `${now.toISOString().slice(0, 10)}-${String(now.getUTCHours()).padStart(2, "0")}`;
+}
+
+/** Returns the same word for a given period string ("YYYY-MM-DD-HH"). */
+export function pickWordForPeriod(periodStr: string): string {
+  let h = 0;
+  for (let i = 0; i < periodStr.length; i++) h = (Math.imul(h, 31) + periodStr.charCodeAt(i)) | 0;
+  return IELTS_WORDS[Math.abs(h) % IELTS_WORDS.length];
+}
+
+/** @deprecated use pickWordForPeriod. Kept for any legacy callers. */
+export function pickDailyWord(dateStr?: string): string {
+  const d = (dateStr ?? new Date().toISOString().slice(0, 10)) + "-00";
+  return pickWordForPeriod(d);
+}
