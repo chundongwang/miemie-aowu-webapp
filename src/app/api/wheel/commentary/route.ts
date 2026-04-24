@@ -3,6 +3,8 @@ import { withErrorHandling } from "@/lib/api";
 import { callOpenRouter } from "@/lib/llm";
 import { getLunarContext } from "@/lib/lunar";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { getAuthUserId } from "@/lib/auth";
+import { getDB } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   return withErrorHandling("wheel.commentary", async () => {
@@ -12,6 +14,17 @@ export async function POST(req: NextRequest) {
     };
 
     if (!food?.zh) return NextResponse.json({ error: "food required" }, { status: 400 });
+
+    // Preferred display name — best-effort, falls back gracefully
+    let displayName = "";
+    try {
+      const userId = await getAuthUserId();
+      if (userId) {
+        const db = await getDB();
+        const row = await db.prepare("SELECT display_name FROM users WHERE id = ?").bind(userId).first<{ display_name: string }>();
+        displayName = row?.display_name ?? "";
+      }
+    } catch { /* non-critical */ }
 
     // Lunar context — pure computation, no API
     const lunar = getLunarContext();
@@ -60,7 +73,8 @@ export async function POST(req: NextRequest) {
       lunarLine,
     ].filter(Boolean).join("\n");
 
-    const systemPrompt = `你是用户贴心的男朋友。你温柔、体贴、懂生活，对中国美食文化和历史典故了如指掌。
+    const nameClause = displayName ? `用户的名字叫"${displayName}"，请自然地称呼她。` : "";
+    const systemPrompt = `你是用户贴心的男朋友。你温柔、体贴、懂生活，对中国美食文化和历史典故了如指掌。${nameClause ? "\n" + nameClause : ""}
 请根据以下信息，用中文写一段温暖的推荐语（3-4句话，不超过120字）。
 
 要求：
