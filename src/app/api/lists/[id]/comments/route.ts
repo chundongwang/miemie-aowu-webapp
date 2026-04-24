@@ -24,7 +24,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
     const rows = await db
       .prepare(
-        `SELECT c.id, c.list_id, c.item_id, c.author_name, c.body, c.created_at,
+        `SELECT c.id, c.list_id, c.item_id, c.user_id, c.author_name, c.body, c.created_at, c.updated_at,
                 i.name AS item_name
          FROM comments c
          LEFT JOIN items i ON i.id = c.item_id
@@ -40,9 +40,11 @@ export async function GET(_req: NextRequest, { params }: Params) {
       listId: r.list_id,
       itemId: r.item_id ?? null,
       itemName: r.item_name ?? null,
+      userId: r.user_id ?? null,
       authorName: r.author_name,
       body: r.body,
       createdAt: r.created_at,
+      updatedAt: r.updated_at ?? null,
     })));
   });
 }
@@ -110,9 +112,11 @@ export async function POST(req: NextRequest, { params }: Params) {
       listId: id,
       itemId: itemId ?? null,
       itemName,
+      userId: userId ?? null,
       authorName: name,
       body: body.trim(),
       createdAt: now,
+      updatedAt: null,
     }, { status: 201 });
   });
 }
