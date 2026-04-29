@@ -127,7 +127,7 @@ export default function ListDetailPage() {
         <div className="max-w-lg mx-auto flex items-center gap-3">
           <button
             onClick={() => me ? router.push("/lists") : router.push("/")}
-            className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 text-xl pr-1"
+            className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 text-3xl leading-none px-1 -ml-1"
           >
             ‹
           </button>
