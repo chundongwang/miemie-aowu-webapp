@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import PhotoUploadArea, { type StagedPhoto } from "@/components/PhotoUploadArea";
 import PhotoSearchModal from "@/components/PhotoSearchModal";
 import { useT } from "@/context/LocaleContext";
+import { saveDraft, verifyAndClear } from "@/lib/photoDrafts";
 
 type Props = {
   listId: string;
@@ -60,6 +61,9 @@ export default function AddItemModal({ listId, secondaryLabel, onClose }: Props)
       if (!res.ok || !data.id) { setError(t("errorAddItem")); return; }
 
       if (photos.length > 0) {
+        // Persist draft keyed by new item ID before attempting upload
+        await saveDraft(data.id, photos.map((p) => ({ blob: p.file, name: p.file.name }))).catch(() => {});
+
         const uploadResults = await Promise.all(
           photos.map(async (p) => {
             const fd = new FormData();
@@ -67,16 +71,23 @@ export default function AddItemModal({ listId, secondaryLabel, onClose }: Props)
             const r = await fetch(`/api/items/${data.id}/photos`, { method: "POST", body: fd });
             if (!r.ok) {
               const body = await r.text().catch(() => r.status.toString());
-              return `HTTP ${r.status}: ${body}`;
+              return { error: `HTTP ${r.status}: ${body}`, url: null };
             }
-            return null;
+            const result = await r.json() as { url: string };
+            return { error: null, url: result.url };
           })
         );
-        const failures = uploadResults.filter(Boolean);
+
+        const failures = uploadResults.filter((r) => r.error);
         if (failures.length > 0) {
-          setError(`Photo upload failed — ${failures[0]}`);
+          setError(`Photo upload failed — ${failures[0].error}. Draft saved; retry from the item in your list.`);
           return;
         }
+
+        // All succeeded — verify each photo is reachable, then clear draft
+        await Promise.all(
+          uploadResults.map((r) => r.url ? verifyAndClear(data.id, r.url) : Promise.resolve(false))
+        );
       }
 
       router.refresh();

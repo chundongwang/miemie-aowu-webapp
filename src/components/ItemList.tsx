@@ -23,6 +23,7 @@ import { useT } from "@/context/LocaleContext";
 import CommentThread from "@/components/CommentThread";
 import PhotoSearchModal from "@/components/PhotoSearchModal";
 import { compressToJpeg } from "@/lib/imageUtils";
+import { saveDraft, loadDraft, clearDraft, verifyAndClear } from "@/lib/photoDrafts";
 
 const STATUS_CYCLE: Record<string, string> = { unseen: "saved", saved: "done", done: "unseen" };
 const STATUS_LABEL: Record<string, string> = { unseen: "·", saved: "★", done: "✓" };
@@ -106,6 +107,15 @@ function SortableRow({
   const [uploadingPhoto,  setUploadingPhoto]  = useState(false);
   const [showComments,    setShowComments]    = useState(false);
   const [showPhotoSearch, setShowPhotoSearch] = useState(false);
+  const [draftBlob,       setDraftBlob]       = useState<{ blob: Blob; name: string } | null>(null);
+  const [uploadError,     setUploadError]     = useState<string | null>(null);
+
+  // Load any persisted draft for this item on mount
+  useEffect(() => {
+    loadDraft(item.id).then((photos) => {
+      if (photos?.[0]) setDraftBlob(photos[0]);
+    }).catch(() => {});
+  }, [item.id]);
 
   const itemComments = comments.filter((c) => c.itemId === item.id);
 
@@ -117,24 +127,51 @@ function SortableRow({
     opacity: isDragging ? 0.5 : 1,
   };
 
-  async function uploadPhoto(file: File) {
-    if (!file.type.startsWith("image/")) return;
+  async function doUpload(blob: Blob, name: string) {
     setUploadingPhoto(true);
+    setUploadError(null);
     try {
-      const toUpload = await compressToJpeg(file).catch(() => file);
+      const file = new File([blob], name, { type: "image/jpeg" });
       const fd = new FormData();
-      fd.append("file", toUpload);
+      fd.append("file", file);
       const res = await fetch(`/api/items/${item.id}/photos`, { method: "POST", body: fd });
       if (res.ok) {
         const data = await res.json() as { id: string; url: string };
         onPhotoAdded(item.id, data.id, data.url);
+        // Verify the photo is reachable on the server, then clear draft
+        verifyAndClear(item.id, data.url).then((confirmed) => {
+          if (confirmed) setDraftBlob(null);
+        });
       } else {
         const body = await res.text().catch(() => res.status.toString());
-        alert(`Upload failed (${res.status}): ${body}`);
+        setUploadError(`Upload failed (${res.status}): ${body}`);
       }
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setUploadingPhoto(false);
     }
+  }
+
+  async function uploadPhoto(file: File) {
+    if (!file.type.startsWith("image/")) return;
+    const compressed = await compressToJpeg(file).catch(() => file);
+    const draft = { blob: compressed, name: compressed.name };
+    // Persist draft before attempting upload
+    await saveDraft(item.id, [draft]).catch(() => {});
+    setDraftBlob(draft);
+    await doUpload(draft.blob, draft.name);
+  }
+
+  async function retryDraft() {
+    if (!draftBlob) return;
+    await doUpload(draftBlob.blob, draftBlob.name);
+  }
+
+  async function discardDraft() {
+    await clearDraft(item.id).catch(() => {});
+    setDraftBlob(null);
+    setUploadError(null);
   }
 
   async function handlePhotoInput(e: React.ChangeEvent<HTMLInputElement>) {
@@ -276,6 +313,25 @@ function SortableRow({
               </>
             )}
           </div>
+        )}
+
+        {/* Draft pending / upload error */}
+        {draftBlob && !uploadingPhoto && (
+          <div className="mt-2 flex items-center gap-2 text-xs">
+            <span className="text-amber-500">⏳ 1 photo pending</span>
+            <button
+              onClick={retryDraft}
+              className="text-[#2B4B8C] dark:text-blue-400 font-medium hover:opacity-70"
+            >
+              Retry
+            </button>
+            <button onClick={discardDraft} className="text-gray-400 dark:text-gray-500 hover:opacity-70">
+              Discard
+            </button>
+          </div>
+        )}
+        {uploadError && (
+          <p className="mt-1 text-xs text-red-500">{uploadError}</p>
         )}
 
         {/* reaction bar + comments — logged-in only */}
