@@ -3,7 +3,7 @@ import { getDB, getPhotoBucket } from "@/lib/db";
 import { withAuth } from "@/lib/api";
 
 
-const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_BYTES = 15 * 1024 * 1024; // 15 MB
 const MAX_PHOTOS = 3;
 
 type Params = { params: Promise<{ id: string }> };
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "File must be an image" }, { status: 400 });
     }
     if (file.size > MAX_BYTES) {
-      return NextResponse.json({ error: "File must be under 5 MB" }, { status: 400 });
+      return NextResponse.json({ error: "File must be under 15 MB" }, { status: 400 });
     }
 
     const photoId = crypto.randomUUID();
