@@ -22,6 +22,7 @@ import type { Item, ItemPhoto, Comment } from "@/types";
 import { useT } from "@/context/LocaleContext";
 import CommentThread from "@/components/CommentThread";
 import PhotoSearchModal from "@/components/PhotoSearchModal";
+import { compressToJpeg } from "@/lib/imageUtils";
 
 const STATUS_CYCLE: Record<string, string> = { unseen: "saved", saved: "done", done: "unseen" };
 const STATUS_LABEL: Record<string, string> = { unseen: "·", saved: "★", done: "✓" };
@@ -120,8 +121,9 @@ function SortableRow({
     if (!file.type.startsWith("image/")) return;
     setUploadingPhoto(true);
     try {
+      const toUpload = await compressToJpeg(file).catch(() => file);
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", toUpload);
       const res = await fetch(`/api/items/${item.id}/photos`, { method: "POST", body: fd });
       if (res.ok) {
         const data = await res.json() as { id: string; url: string };
