@@ -22,6 +22,7 @@ import type { Item, ItemPhoto, Comment } from "@/types";
 import { useT } from "@/context/LocaleContext";
 import CommentThread from "@/components/CommentThread";
 import PhotoSearchModal from "@/components/PhotoSearchModal";
+import { compressToJpeg } from "@/lib/imageUtils";
 import { saveDraft, loadDraft, clearDraft, verifyAndClear } from "@/lib/photoDrafts";
 
 const STATUS_CYCLE: Record<string, string> = { unseen: "saved", saved: "done", done: "unseen" };
@@ -130,7 +131,7 @@ function SortableRow({
     setUploadingPhoto(true);
     setUploadError(null);
     try {
-      const file = new File([blob], name, { type: blob.type || "image/jpeg" });
+      const file = new File([blob], name, { type: "image/jpeg" });
       const fd = new FormData();
       fd.append("file", file);
       const res = await fetch(`/api/items/${item.id}/photos`, { method: "POST", body: fd });
@@ -154,7 +155,8 @@ function SortableRow({
 
   async function uploadPhoto(file: File) {
     if (!file.type.startsWith("image/")) return;
-    const draft = { blob: file, name: file.name };
+    const compressed = await compressToJpeg(file).catch(() => file);
+    const draft = { blob: compressed, name: compressed.name };
     // Persist draft before attempting upload
     await saveDraft(item.id, [draft]).catch(() => {});
     setDraftBlob(draft);
