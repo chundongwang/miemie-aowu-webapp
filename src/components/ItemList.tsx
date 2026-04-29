@@ -119,14 +119,20 @@ function SortableRow({
   async function uploadPhoto(file: File) {
     if (!file.type.startsWith("image/")) return;
     setUploadingPhoto(true);
-    const fd = new FormData();
-    fd.append("file", file);
-    const res = await fetch(`/api/items/${item.id}/photos`, { method: "POST", body: fd });
-    if (res.ok) {
-      const data = await res.json() as { id: string; url: string };
-      onPhotoAdded(item.id, data.id, data.url);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`/api/items/${item.id}/photos`, { method: "POST", body: fd });
+      if (res.ok) {
+        const data = await res.json() as { id: string; url: string };
+        onPhotoAdded(item.id, data.id, data.url);
+      } else {
+        const body = await res.text().catch(() => res.status.toString());
+        alert(`Upload failed (${res.status}): ${body}`);
+      }
+    } finally {
+      setUploadingPhoto(false);
     }
-    setUploadingPhoto(false);
   }
 
   async function handlePhotoInput(e: React.ChangeEvent<HTMLInputElement>) {
