@@ -37,8 +37,8 @@ export default function ListDetailPage() {
   const [showNearby,   setShowNearby]   = useState(false);
   const [editingItem,  setEditingItem]  = useState<Item | null>(null);
 
-  const [viewMode,    setViewMode]    = useState<"list" | "waterfall">("list");
-  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"list" | "waterfall">("list");
+  const [lightbox, setLightbox] = useState<{ urls: string[]; index: number } | null>(null);
   const [comments,    setComments]    = useState<Comment[]>([]);
   const [reactionTotals, setReactionTotals] = useState({ miemie: 0, aowu: 0 });
 
@@ -221,7 +221,9 @@ export default function ListDetailPage() {
           userDisplayName={me?.displayName ?? null}
           currentUserId={me?.id ?? null}
           onEditItem={(item) => setEditingItem(item)}
-          onPhotoClick={setLightboxUrl}
+          onPhotoClick={(url, allUrls) =>
+            setLightbox({ urls: allUrls, index: Math.max(0, allUrls.indexOf(url)) })
+          }
           onCommentAdded={handleCommentAdded}
           onReactionsChanged={(m, a) => setReactionTotals({ miemie: m, aowu: a })}
         />
@@ -320,8 +322,8 @@ export default function ListDetailPage() {
           onClose={handleModalClose(setShowNearby)}
         />
       )}
-      {lightboxUrl && (
-        <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
+      {lightbox && (
+        <Lightbox urls={lightbox.urls} index={lightbox.index} onClose={() => setLightbox(null)} />
       )}
     </div>
   );
