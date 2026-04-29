@@ -61,14 +61,15 @@ export default function AddItemModal({ listId, secondaryLabel, onClose }: Props)
       if (!res.ok || !data.id) { setError(t("errorAddItem")); return; }
 
       if (photos.length > 0) {
+        const itemId = data.id!; // already validated above
         // Persist draft keyed by new item ID before attempting upload
-        await saveDraft(data.id, photos.map((p) => ({ blob: p.file, name: p.file.name }))).catch(() => {});
+        await saveDraft(itemId, photos.map((p) => ({ blob: p.file, name: p.file.name }))).catch(() => {});
 
         const uploadResults = await Promise.all(
           photos.map(async (p) => {
             const fd = new FormData();
             fd.append("file", p.file);
-            const r = await fetch(`/api/items/${data.id}/photos`, { method: "POST", body: fd });
+            const r = await fetch(`/api/items/${itemId}/photos`, { method: "POST", body: fd });
             if (!r.ok) {
               const body = await r.text().catch(() => r.status.toString());
               return { error: `HTTP ${r.status}: ${body}`, url: null };
@@ -86,7 +87,7 @@ export default function AddItemModal({ listId, secondaryLabel, onClose }: Props)
 
         // All succeeded — verify each photo is reachable, then clear draft
         await Promise.all(
-          uploadResults.map((r) => r.url ? verifyAndClear(data.id, r.url) : Promise.resolve(false))
+          uploadResults.map((r) => r.url ? verifyAndClear(itemId, r.url) : Promise.resolve(false))
         );
       }
 

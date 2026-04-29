@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import { useT } from "@/context/LocaleContext";
-import { compressToJpeg } from "@/lib/imageUtils";
 
 export type StagedPhoto = {
   file: File;
@@ -29,7 +28,7 @@ export default function PhotoUploadArea({ photos, onChange, max = 3 }: Props) {
       for (const item of Array.from(items)) {
         if (item.type.startsWith("image/")) {
           const file = item.getAsFile();
-          if (file) void addFile(file);
+          if (file) addFile(file);
           break;
         }
       }
@@ -39,16 +38,11 @@ export default function PhotoUploadArea({ photos, onChange, max = 3 }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [photos, canAdd]);
 
-  async function addFile(file: File) {
+  function addFile(file: File) {
     if (!file.type.startsWith("image/")) return;
     if (photos.length >= max) return;
-    try {
-      const compressed = await compressToJpeg(file);
-      const previewUrl = URL.createObjectURL(compressed);
-      onChange([...photos, { file: compressed, previewUrl }]);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Could not load image");
-    }
+    const previewUrl = URL.createObjectURL(file);
+    onChange([...photos, { file, previewUrl }]);
   }
 
   function removePhoto(index: number) {
@@ -60,7 +54,7 @@ export default function PhotoUploadArea({ photos, onChange, max = 3 }: Props) {
     const files = Array.from(e.target.files ?? []);
     for (const file of files) {
       if (photos.length >= max) break;
-      void addFile(file);
+      addFile(file);
     }
     e.target.value = "";
   }
