@@ -22,7 +22,7 @@ import type { Item, ItemPhoto, Comment } from "@/types";
 import { useT } from "@/context/LocaleContext";
 import CommentThread from "@/components/CommentThread";
 import PhotoSearchModal from "@/components/PhotoSearchModal";
-import { compressToJpeg } from "@/lib/imageUtils";
+import { compressToJpeg, UPLOAD_SIZE_LIMIT } from "@/lib/imageUtils";
 import { saveDraft, loadDraft, clearDraft, verifyAndClear } from "@/lib/photoDrafts";
 
 const STATUS_CYCLE: Record<string, string> = { unseen: "saved", saved: "done", done: "unseen" };
@@ -104,11 +104,12 @@ function SortableRow({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id });
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadingPhoto,  setUploadingPhoto]  = useState(false);
-  const [showComments,    setShowComments]    = useState(false);
-  const [showPhotoSearch, setShowPhotoSearch] = useState(false);
-  const [draftBlob,       setDraftBlob]       = useState<{ blob: Blob; name: string } | null>(null);
-  const [uploadError,     setUploadError]     = useState<string | null>(null);
+  const [uploadingPhoto,   setUploadingPhoto]   = useState(false);
+  const [compressingPhoto, setCompressingPhoto] = useState(false);
+  const [showComments,     setShowComments]     = useState(false);
+  const [showPhotoSearch,  setShowPhotoSearch]  = useState(false);
+  const [draftBlob,        setDraftBlob]        = useState<{ blob: Blob; name: string } | null>(null);
+  const [uploadError,      setUploadError]      = useState<string | null>(null);
 
   // Load any persisted draft for this item on mount
   useEffect(() => {
@@ -155,8 +156,13 @@ function SortableRow({
 
   async function uploadPhoto(file: File) {
     if (!file.type.startsWith("image/")) return;
-    const compressed = await compressToJpeg(file).catch(() => file);
-    const draft = { blob: compressed, name: compressed.name };
+    let toUpload = file;
+    if (file.size > UPLOAD_SIZE_LIMIT) {
+      setCompressingPhoto(true);
+      toUpload = await compressToJpeg(file).catch(() => file);
+      setCompressingPhoto(false);
+    }
+    const draft = { blob: toUpload, name: toUpload.name };
     // Persist draft before attempting upload
     await saveDraft(item.id, [draft]).catch(() => {});
     setDraftBlob(draft);
@@ -291,10 +297,12 @@ function SortableRow({
               <>
                 <button
                   onClick={handleAddPhotoClick}
-                  disabled={uploadingPhoto}
+                  disabled={uploadingPhoto || compressingPhoto}
                   className="w-16 h-16 shrink-0 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center text-gray-300 dark:text-gray-600 hover:border-gray-400 hover:text-gray-400 transition-colors disabled:opacity-40"
                 >
-                  {uploadingPhoto ? (
+                  {compressingPhoto ? (
+                    <span className="text-[10px] text-center leading-tight px-1">Compressing…</span>
+                  ) : uploadingPhoto ? (
                     <span className="text-xs">…</span>
                   ) : (
                     <>

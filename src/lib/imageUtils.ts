@@ -1,3 +1,6 @@
+/** Files larger than this are compressed before upload. Must match server MAX_BYTES. */
+export const UPLOAD_SIZE_LIMIT = 15 * 1024 * 1024; // 15 MB
+
 /**
  * Compress and convert an image file to JPEG via canvas.
  * Works for JPEG, PNG, WebP, and HEIC/HEIF on platforms with OS-level

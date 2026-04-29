@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useT } from "@/context/LocaleContext";
-import { compressToJpeg } from "@/lib/imageUtils";
+import { compressToJpeg, UPLOAD_SIZE_LIMIT } from "@/lib/imageUtils";
 
 export type StagedPhoto = {
   file: File;
@@ -19,6 +19,7 @@ export default function PhotoUploadArea({ photos, onChange, max = 3 }: Props) {
   const t = useT();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canAdd = photos.length < max;
+  const [compressing, setCompressing] = useState(false);
 
   // ── Paste from clipboard ────────────────────────────────────────────────────
   useEffect(() => {
@@ -42,13 +43,22 @@ export default function PhotoUploadArea({ photos, onChange, max = 3 }: Props) {
   async function addFile(file: File) {
     if (!file.type.startsWith("image/")) return;
     if (photos.length >= max) return;
-    try {
-      const compressed = await compressToJpeg(file);
-      const previewUrl = URL.createObjectURL(compressed);
-      onChange([...photos, { file: compressed, previewUrl }]);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Could not load image");
+
+    let finalFile = file;
+    if (file.size > UPLOAD_SIZE_LIMIT) {
+      setCompressing(true);
+      try {
+        finalFile = await compressToJpeg(file);
+      } catch (err) {
+        alert(err instanceof Error ? err.message : "Could not compress image — try a JPEG or PNG");
+        setCompressing(false);
+        return;
+      }
+      setCompressing(false);
     }
+
+    const previewUrl = URL.createObjectURL(finalFile);
+    onChange([...photos, { file: finalFile, previewUrl }]);
   }
 
   function removePhoto(index: number) {
@@ -130,10 +140,19 @@ export default function PhotoUploadArea({ photos, onChange, max = 3 }: Props) {
           <button
             type="button"
             onClick={handleCameraButton}
-            className="w-20 h-20 shrink-0 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-gray-500 hover:text-gray-600 transition-colors"
+            disabled={compressing}
+            className="w-20 h-20 shrink-0 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-gray-500 hover:text-gray-600 transition-colors disabled:opacity-60"
           >
-            <span className="text-2xl leading-none">+</span>
-            <span className="text-xs mt-1">{t("photoButton")}</span>
+            {compressing ? (
+              <>
+                <span className="text-xs text-center leading-tight px-1">Compressing<br/>Live Photo…</span>
+              </>
+            ) : (
+              <>
+                <span className="text-2xl leading-none">+</span>
+                <span className="text-xs mt-1">{t("photoButton")}</span>
+              </>
+            )}
           </button>
         )}
       </div>
