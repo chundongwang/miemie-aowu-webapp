@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useT } from "@/context/LocaleContext";
+import { compressToJpeg } from "@/lib/imageUtils";
 
 export type StagedPhoto = {
   file: File;
@@ -28,7 +29,7 @@ export default function PhotoUploadArea({ photos, onChange, max = 3 }: Props) {
       for (const item of Array.from(items)) {
         if (item.type.startsWith("image/")) {
           const file = item.getAsFile();
-          if (file) addFile(file);
+          if (file) void addFile(file);
           break;
         }
       }
@@ -38,11 +39,16 @@ export default function PhotoUploadArea({ photos, onChange, max = 3 }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [photos, canAdd]);
 
-  function addFile(file: File) {
+  async function addFile(file: File) {
     if (!file.type.startsWith("image/")) return;
     if (photos.length >= max) return;
-    const previewUrl = URL.createObjectURL(file);
-    onChange([...photos, { file, previewUrl }]);
+    try {
+      const compressed = await compressToJpeg(file);
+      const previewUrl = URL.createObjectURL(compressed);
+      onChange([...photos, { file: compressed, previewUrl }]);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not load image");
+    }
   }
 
   function removePhoto(index: number) {
@@ -54,7 +60,7 @@ export default function PhotoUploadArea({ photos, onChange, max = 3 }: Props) {
     const files = Array.from(e.target.files ?? []);
     for (const file of files) {
       if (photos.length >= max) break;
-      addFile(file);
+      void addFile(file);
     }
     e.target.value = "";
   }
@@ -86,7 +92,7 @@ export default function PhotoUploadArea({ photos, onChange, max = 3 }: Props) {
         if (!image.dataUrl) return;
         const res = await fetch(image.dataUrl);
         const blob = await res.blob();
-        addFile(new File([blob], "photo.jpg", { type: blob.type || "image/jpeg" }));
+        void addFile(new File([blob], "photo.jpg", { type: blob.type || "image/jpeg" }));
       } catch {
         // permission denied or cancelled — nothing to do
       }
