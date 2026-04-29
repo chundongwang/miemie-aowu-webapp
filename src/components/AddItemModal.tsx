@@ -60,13 +60,23 @@ export default function AddItemModal({ listId, secondaryLabel, onClose }: Props)
       if (!res.ok || !data.id) { setError(t("errorAddItem")); return; }
 
       if (photos.length > 0) {
-        await Promise.all(
-          photos.map((p) => {
+        const uploadResults = await Promise.all(
+          photos.map(async (p) => {
             const fd = new FormData();
             fd.append("file", p.file);
-            return fetch(`/api/items/${data.id}/photos`, { method: "POST", body: fd });
+            const r = await fetch(`/api/items/${data.id}/photos`, { method: "POST", body: fd });
+            if (!r.ok) {
+              const body = await r.text().catch(() => r.status.toString());
+              return `HTTP ${r.status}: ${body}`;
+            }
+            return null;
           })
         );
+        const failures = uploadResults.filter(Boolean);
+        if (failures.length > 0) {
+          setError(`Photo upload failed — ${failures[0]}`);
+          return;
+        }
       }
 
       router.refresh();
