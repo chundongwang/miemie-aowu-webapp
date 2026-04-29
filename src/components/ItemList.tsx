@@ -90,7 +90,7 @@ type RowProps = {
   onDelete: (id: string) => void;
   onPhotoAdded: (itemId: string, photoId: string, url: string) => void;
   onPhotoRemoved: (itemId: string, photoId: string) => void;
-  onPhotoClick: (url: string) => void;
+  onPhotoClick: (url: string, allUrls: string[]) => void;
   onReact: (itemId: string, type: "miemie" | "aowu") => void;
   onCommentAdded: (c: Comment) => void;
 };
@@ -281,7 +281,7 @@ function SortableRow({
                   src={photo.url}
                   alt=""
                   className="w-16 h-16 object-cover rounded-lg border border-gray-100 dark:border-gray-800 cursor-zoom-in"
-                  onClick={() => onPhotoClick(photo.url)}
+                  onClick={() => onPhotoClick(photo.url, item.photos.map((p) => p.url))}
                 />
                 {canEdit && (
                   <button
@@ -417,7 +417,7 @@ type CardProps = {
   onCycle: (item: Item) => void;
   onEdit: (item: Item) => void;
   onDelete: (id: string) => void;
-  onPhotoClick: (url: string) => void;
+  onPhotoClick: (url: string, allUrls: string[]) => void;
   onReact: (itemId: string, type: "miemie" | "aowu") => void;
   onCommentAdded: (c: Comment) => void;
 };
@@ -440,7 +440,7 @@ function WaterfallCard({
           src={photo.url}
           alt=""
           className="w-full object-cover cursor-zoom-in"
-          onClick={() => onPhotoClick(photo.url)}
+          onClick={() => onPhotoClick(photo.url, item.photos.map((p) => p.url))}
         />
       )}
 
@@ -643,7 +643,7 @@ type Props = {
   userDisplayName: string | null;
   currentUserId: string | null;
   onEditItem: (item: Item) => void;
-  onPhotoClick: (url: string) => void;
+  onPhotoClick: (url: string, allUrls: string[]) => void;
   onCommentAdded: (c: Comment) => void;
   onReactionsChanged: (totalMiemie: number, totalAowu: number) => void;
 };
