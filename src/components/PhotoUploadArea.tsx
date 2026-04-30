@@ -50,10 +50,14 @@ export default function PhotoUploadArea({ photos, onChange, max = 3 }: Props) {
       setCompressing(true);
       try {
         finalFile = await compressToJpeg(file);
-      } catch (err) {
-        alert(err instanceof Error ? err.message : "Could not compress image — try a JPEG or PNG");
-        setCompressing(false);
-        return;
+      } catch {
+        if (file.size > UPLOAD_SIZE_LIMIT) {
+          alert("This image is too large to upload. Please try on Safari or iPhone where HEIC conversion is supported.");
+          setCompressing(false);
+          return;
+        }
+        // Under the limit: fall back to uploading original HEIC as-is
+        finalFile = file;
       }
       setCompressing(false);
     }
