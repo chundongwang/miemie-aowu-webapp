@@ -17,6 +17,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
   headers.set("Content-Type", object.httpMetadata?.contentType ?? "application/octet-stream");
   headers.set("Cache-Control", "public, max-age=31536000, immutable");
 
-  const buffer = await object.arrayBuffer();
-  return new NextResponse(buffer, { headers });
+  // Use native Response (not NextResponse) — R2 ReadableStream streams
+  // correctly through Cloudflare Workers without buffering into memory.
+  // NextResponse wrapping caused hangs; arrayBuffer() caused 1102 CPU limits.
+  return new Response(object.body as ReadableStream, { headers });
 }
