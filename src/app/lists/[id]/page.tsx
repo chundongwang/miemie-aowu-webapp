@@ -84,14 +84,15 @@ export default function ListDetailPage() {
           const res = await fetch(photo.url);
           if (!res.ok) continue;
           const contentType = res.headers.get("content-type") ?? "";
+          // Only backfill safe formats — HEIC/HEIF canvas rendering is unreliable
+          // on Chrome (produces blank output). New HEIC uploads are converted to
+          // JPEG at upload time so future photos will always backfill correctly.
+          const safeForCanvas = ["image/jpeg", "image/png", "image/webp"].includes(contentType);
+          if (!safeForCanvas) continue;
           const blob = await res.blob();
-          const { compressToJpeg, generateThumbnail } = await import("@/lib/imageUtils");
-          // For HEIC/HEIF: createImageBitmap extracts the still frame (drops video),
-          // compresses to JPEG — then generate thumbnail from the JPEG
-          const isHeic = contentType.includes("heic") || contentType.includes("heif");
-          const src = new File([blob], "photo.jpg", { type: contentType || "image/jpeg" });
-          const jpegSrc = isHeic ? await compressToJpeg(src) : src;
-          const thumbFile = await generateThumbnail(jpegSrc);
+          const { generateThumbnail } = await import("@/lib/imageUtils");
+          const src = new File([blob], "photo.jpg", { type: contentType });
+          const thumbFile = await generateThumbnail(src);
           const fd = new FormData();
           fd.append("thumb", thumbFile);
           const r = await fetch(`/api/items/${itemId}/photos/${photo.id}`, { method: "PATCH", body: fd });

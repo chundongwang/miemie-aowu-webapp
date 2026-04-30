@@ -3,11 +3,7 @@ export const UPLOAD_SIZE_LIMIT = 15 * 1024 * 1024; // 15 MB
 
 /**
  * Compress and convert an image file to JPEG via createImageBitmap + canvas.
- * createImageBitmap is more reliable than HTMLImageElement for HEIC/HEIF —
- * it bypasses the GPU compositing issue that causes black pixels when drawing
- * HEIC via ctx.drawImage(imgElement). It also correctly extracts the still
- * frame from Live Photos, dropping the video component.
- * Throws if the platform cannot decode the format.
+ * Throws if the platform cannot decode the format or the output looks blank.
  */
 export async function compressToJpeg(
   file: File,
@@ -15,6 +11,11 @@ export async function compressToJpeg(
   quality = 0.85
 ): Promise<File> {
   const bitmap = await createImageBitmap(file);
+
+  if (bitmap.width === 0 || bitmap.height === 0) {
+    bitmap.close();
+    throw new Error("Image decoded with zero dimensions");
+  }
 
   let { width, height } = bitmap;
   if (width > maxSizePx || height > maxSizePx) {
@@ -35,26 +36,21 @@ export async function compressToJpeg(
   ctx.drawImage(bitmap, 0, 0, width, height);
   bitmap.close();
 
-  // Detect blank output — HEIC on Chrome: createImageBitmap "succeeds" but
-  // draws nothing, leaving the canvas as pure white fill.
-  // Sample a 4×4 grid; if every point is still the fill colour, the draw failed.
-  {
-    const xs = [0.2, 0.4, 0.6, 0.8];
-    const ys = [0.2, 0.4, 0.6, 0.8];
-    let allBlank = true;
-    outer: for (const xr of xs) {
-      for (const yr of ys) {
-        const px = ctx.getImageData(Math.floor(xr * width), Math.floor(yr * height), 1, 1).data;
-        if (px[0] !== 255 || px[1] !== 255 || px[2] !== 255) { allBlank = false; break outer; }
-      }
-    }
-    if (allBlank) throw new Error("HEIC canvas draw produced blank output — not supported in this browser");
-  }
-
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
         if (!blob) { reject(new Error("Conversion failed")); return; }
+
+        // A blank/white canvas produces a tiny JPEG (just header + uniform blocks).
+        // A real photo at 300px/50% quality is always several KB.
+        // At 2048px/85% quality it's typically 100KB+.
+        // Threshold: 6 KB for thumbnails, 50 KB for full-size.
+        const minBytes = maxSizePx <= 300 ? 6 * 1024 : 50 * 1024;
+        if (blob.size < minBytes) {
+          reject(new Error(`Output too small (${blob.size} B) — canvas draw likely failed`));
+          return;
+        }
+
         const name = file.name.replace(/\.[^.]+$/, ".jpg");
         resolve(new File([blob], name, { type: "image/jpeg" }));
       },
