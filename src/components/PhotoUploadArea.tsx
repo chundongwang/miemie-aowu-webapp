@@ -45,7 +45,8 @@ export default function PhotoUploadArea({ photos, onChange, max = 3 }: Props) {
     if (photos.length >= max) return;
 
     let finalFile = file;
-    if (file.size > UPLOAD_SIZE_LIMIT) {
+    const isHeic = file.type.includes("heic") || file.type.includes("heif");
+    if (isHeic || file.size > UPLOAD_SIZE_LIMIT) {
       setCompressing(true);
       try {
         finalFile = await compressToJpeg(file);

@@ -136,10 +136,7 @@ function SortableRow({
       const fd = new FormData();
       fd.append("file", file);
       try {
-        // Always generate thumbnail from JPEG — compress first if HEIC/HEIF
-        const isHeic = file.type.includes("heic") || file.type.includes("heif");
-        const jpegSrc = isHeic ? await compressToJpeg(file) : file;
-        const thumb = await generateThumbnail(jpegSrc);
+        const thumb = await generateThumbnail(file);
         fd.append("thumb", thumb);
       } catch { /* thumbnail is optional */ }
       const res = await fetch(`/api/items/${item.id}/photos`, { method: "POST", body: fd });
@@ -164,7 +161,8 @@ function SortableRow({
   async function uploadPhoto(file: File) {
     if (!file.type.startsWith("image/")) return;
     let toUpload = file;
-    if (file.size > UPLOAD_SIZE_LIMIT) {
+    const isHeic = file.type.includes("heic") || file.type.includes("heif");
+    if (isHeic || file.size > UPLOAD_SIZE_LIMIT) {
       setCompressingPhoto(true);
       toUpload = await compressToJpeg(file).catch(() => file);
       setCompressingPhoto(false);
