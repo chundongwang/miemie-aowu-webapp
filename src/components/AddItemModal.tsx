@@ -6,6 +6,7 @@ import PhotoUploadArea, { type StagedPhoto } from "@/components/PhotoUploadArea"
 import PhotoSearchModal from "@/components/PhotoSearchModal";
 import { useT } from "@/context/LocaleContext";
 import { saveDraft, verifyAndClear } from "@/lib/photoDrafts";
+import { generateThumbnail } from "@/lib/imageUtils";
 
 type Props = {
   listId: string;
@@ -69,6 +70,10 @@ export default function AddItemModal({ listId, secondaryLabel, onClose }: Props)
           photos.map(async (p) => {
             const fd = new FormData();
             fd.append("file", p.file);
+            try {
+              const thumb = await generateThumbnail(p.file);
+              fd.append("thumb", thumb);
+            } catch { /* thumbnail is optional */ }
             const r = await fetch(`/api/items/${itemId}/photos`, { method: "POST", body: fd });
             if (!r.ok) {
               const body = await r.text().catch(() => r.status.toString());
