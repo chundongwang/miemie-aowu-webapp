@@ -23,7 +23,11 @@ export async function compressToJpeg(
 
     img.onload = () => {
       URL.revokeObjectURL(url);
-      let { width, height } = img;
+      const nw = img.naturalWidth;
+      const nh = img.naturalHeight;
+      if (!nw || !nh) { reject(new Error("Image decoded with no dimensions")); return; }
+      let width = nw;
+      let height = nh;
       if (width > maxSizePx || height > maxSizePx) {
         const scale = Math.min(maxSizePx / width, maxSizePx / height);
         width = Math.round(width * scale);
@@ -34,6 +38,9 @@ export async function compressToJpeg(
       canvas.height = height;
       const ctx = canvas.getContext("2d");
       if (!ctx) { reject(new Error("Canvas unavailable")); return; }
+      // Fill white so transparent areas don't become black pixels in JPEG output
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, width, height);
       ctx.drawImage(img, 0, 0, width, height);
       canvas.toBlob(
         (blob) => {
