@@ -6,7 +6,7 @@ import PhotoUploadArea, { type StagedPhoto } from "@/components/PhotoUploadArea"
 import PhotoSearchModal from "@/components/PhotoSearchModal";
 import { useT } from "@/context/LocaleContext";
 import { saveDraft, verifyAndClear } from "@/lib/photoDrafts";
-import { generateThumbnail } from "@/lib/imageUtils";
+import { generateThumbnail, compressToJpeg } from "@/lib/imageUtils";
 
 type Props = {
   listId: string;
@@ -71,7 +71,10 @@ export default function AddItemModal({ listId, secondaryLabel, onClose }: Props)
             const fd = new FormData();
             fd.append("file", p.file);
             try {
-              const thumb = await generateThumbnail(p.file);
+              // Always generate thumbnail from JPEG — compress first if HEIC/HEIF
+              const isHeic = p.file.type.includes("heic") || p.file.type.includes("heif");
+              const jpegSrc = isHeic ? await compressToJpeg(p.file) : p.file;
+              const thumb = await generateThumbnail(jpegSrc);
               fd.append("thumb", thumb);
             } catch { /* thumbnail is optional */ }
             const r = await fetch(`/api/items/${itemId}/photos`, { method: "POST", body: fd });
