@@ -164,7 +164,16 @@ function SortableRow({
     const isHeic = file.type.includes("heic") || file.type.includes("heif");
     if (isHeic || file.size > UPLOAD_SIZE_LIMIT) {
       setCompressingPhoto(true);
-      toUpload = await compressToJpeg(file).catch(() => file);
+      try {
+        toUpload = await compressToJpeg(file);
+      } catch {
+        if (file.size > UPLOAD_SIZE_LIMIT) {
+          setUploadError("Image too large. Please try on Safari or iPhone where HEIC conversion is supported.");
+          setCompressingPhoto(false);
+          return;
+        }
+        // Under the limit: upload original HEIC as-is
+      }
       setCompressingPhoto(false);
     }
     const draft = { blob: toUpload, name: toUpload.name };

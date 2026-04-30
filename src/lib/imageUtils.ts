@@ -35,6 +35,22 @@ export async function compressToJpeg(
   ctx.drawImage(bitmap, 0, 0, width, height);
   bitmap.close();
 
+  // Detect blank output — HEIC on Chrome: createImageBitmap "succeeds" but
+  // draws nothing, leaving the canvas as pure white fill.
+  // Sample a 4×4 grid; if every point is still the fill colour, the draw failed.
+  {
+    const xs = [0.2, 0.4, 0.6, 0.8];
+    const ys = [0.2, 0.4, 0.6, 0.8];
+    let allBlank = true;
+    outer: for (const xr of xs) {
+      for (const yr of ys) {
+        const px = ctx.getImageData(Math.floor(xr * width), Math.floor(yr * height), 1, 1).data;
+        if (px[0] !== 255 || px[1] !== 255 || px[2] !== 255) { allBlank = false; break outer; }
+      }
+    }
+    if (allBlank) throw new Error("HEIC canvas draw produced blank output — not supported in this browser");
+  }
+
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
