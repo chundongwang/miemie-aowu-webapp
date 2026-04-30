@@ -136,7 +136,10 @@ function SortableRow({
       const fd = new FormData();
       fd.append("file", file);
       try {
-        const thumb = await generateThumbnail(file);
+        // Always generate thumbnail from JPEG — compress first if HEIC/HEIF
+        const isHeic = file.type.includes("heic") || file.type.includes("heif");
+        const jpegSrc = isHeic ? await compressToJpeg(file) : file;
+        const thumb = await generateThumbnail(jpegSrc);
         fd.append("thumb", thumb);
       } catch { /* thumbnail is optional */ }
       const res = await fetch(`/api/items/${item.id}/photos`, { method: "POST", body: fd });

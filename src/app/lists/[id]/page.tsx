@@ -80,12 +80,15 @@ export default function ListDetailPage() {
       for (const { itemId, photo } of missing) {
         if (cancelled) break;
         try {
-          // Fetch the full image and compress to thumbnail via canvas
+          // Fetch the full image
           const res = await fetch(photo.url);
           if (!res.ok) continue;
+          const contentType = res.headers.get("content-type") ?? "";
+          // HEIC/HEIF drawn to canvas produces black pixels in Chrome — skip them
+          if (contentType.includes("heic") || contentType.includes("heif")) continue;
           const blob = await res.blob();
           const { generateThumbnail } = await import("@/lib/imageUtils");
-          const thumbFile = await generateThumbnail(new File([blob], "photo.jpg", { type: blob.type || "image/jpeg" }));
+          const thumbFile = await generateThumbnail(new File([blob], "photo.jpg", { type: contentType || "image/jpeg" }));
           const fd = new FormData();
           fd.append("thumb", thumbFile);
           const r = await fetch(`/api/items/${itemId}/photos/${photo.id}`, { method: "PATCH", body: fd });
