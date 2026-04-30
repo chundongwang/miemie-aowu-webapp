@@ -67,6 +67,46 @@ export default function ListDetailPage() {
 
   const { indicatorRef, isRefreshing: pullRefreshing } = usePullToRefresh(async () => { load(); });
 
+  // Backfill thumbnails for existing photos that don't have one yet
+  useEffect(() => {
+    if (!list || !me) return;
+    const missing = list.items.flatMap((item) =>
+      item.photos.filter((p) => !p.thumbUrl).map((p) => ({ itemId: item.id, photo: p }))
+    );
+    if (missing.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      for (const { itemId, photo } of missing) {
+        if (cancelled) break;
+        try {
+          // Fetch the full image and compress to thumbnail via canvas
+          const res = await fetch(photo.url);
+          if (!res.ok) continue;
+          const blob = await res.blob();
+          const { generateThumbnail } = await import("@/lib/imageUtils");
+          const thumbFile = await generateThumbnail(new File([blob], "photo.jpg", { type: blob.type || "image/jpeg" }));
+          const fd = new FormData();
+          fd.append("thumb", thumbFile);
+          const r = await fetch(`/api/items/${itemId}/photos/${photo.id}`, { method: "PATCH", body: fd });
+          if (r.ok) {
+            const { thumbUrl } = await r.json() as { thumbUrl: string };
+            // Update local state so thumbs kick in immediately
+            setList((prev) => prev ? {
+              ...prev,
+              items: prev.items.map((it) =>
+                it.id === itemId
+                  ? { ...it, photos: it.photos.map((p) => p.id === photo.id ? { ...p, thumbUrl } : p) }
+                  : it
+              ),
+            } : prev);
+          }
+        } catch { /* skip — will retry on next load */ }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [list?.id, me?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Load comments once list is available
   useEffect(() => {
     if (!loading && list) {
