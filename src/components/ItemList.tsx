@@ -22,7 +22,7 @@ import type { Item, ItemPhoto, Comment } from "@/types";
 import { useT } from "@/context/LocaleContext";
 import CommentThread from "@/components/CommentThread";
 import PhotoSearchModal from "@/components/PhotoSearchModal";
-import { compressToJpeg, UPLOAD_SIZE_LIMIT } from "@/lib/imageUtils";
+import { compressToJpeg, generateThumbnail, UPLOAD_SIZE_LIMIT } from "@/lib/imageUtils";
 import { saveDraft, loadDraft, clearDraft, verifyAndClear } from "@/lib/photoDrafts";
 
 const STATUS_CYCLE: Record<string, string> = { unseen: "saved", saved: "done", done: "unseen" };
@@ -88,7 +88,7 @@ type RowProps = {
   onCycle: (item: Item) => void;
   onEdit: (item: Item) => void;
   onDelete: (id: string) => void;
-  onPhotoAdded: (itemId: string, photoId: string, url: string) => void;
+  onPhotoAdded: (itemId: string, photoId: string, url: string, thumbUrl: string | null) => void;
   onPhotoRemoved: (itemId: string, photoId: string) => void;
   onPhotoClick: (url: string, allUrls: string[]) => void;
   onReact: (itemId: string, type: "miemie" | "aowu") => void;
@@ -135,10 +135,14 @@ function SortableRow({
       const file = new File([blob], name, { type: "image/jpeg" });
       const fd = new FormData();
       fd.append("file", file);
+      try {
+        const thumb = await generateThumbnail(file);
+        fd.append("thumb", thumb);
+      } catch { /* thumbnail is optional */ }
       const res = await fetch(`/api/items/${item.id}/photos`, { method: "POST", body: fd });
       if (res.ok) {
-        const data = await res.json() as { id: string; url: string };
-        onPhotoAdded(item.id, data.id, data.url);
+        const data = await res.json() as { id: string; url: string; thumbUrl: string | null };
+        onPhotoAdded(item.id, data.id, data.url, data.thumbUrl ?? null);
         // Verify the photo is reachable on the server, then clear draft
         verifyAndClear(item.id, data.url).then((confirmed) => {
           if (confirmed) setDraftBlob(null);
@@ -278,7 +282,7 @@ function SortableRow({
               <div key={photo.id} className="relative shrink-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={photo.url}
+                  src={photo.thumbUrl ?? photo.url}
                   alt=""
                   className="w-16 h-16 object-cover rounded-lg border border-gray-100 dark:border-gray-800 cursor-zoom-in"
                   onClick={() => onPhotoClick(photo.url, item.photos.map((p) => p.url))}
@@ -392,7 +396,7 @@ function SortableRow({
         <PhotoSearchModal
           itemId={item.id}
           initialQuery={item.name}
-          onPhotoAdded={(photoId, url) => onPhotoAdded(item.id, photoId, url)}
+          onPhotoAdded={(photoId, url) => onPhotoAdded(item.id, photoId, url, null)}
           onClose={() => setShowPhotoSearch(false)}
         />
       )}
@@ -733,11 +737,11 @@ export default function ItemList({
     startTransition(() => router.refresh());
   }
 
-  function handlePhotoAdded(itemId: string, photoId: string, url: string) {
+  function handlePhotoAdded(itemId: string, photoId: string, url: string, thumbUrl: string | null) {
     setItems((prev) =>
       prev.map((i) =>
         i.id === itemId
-          ? { ...i, photos: [...i.photos, { id: photoId, r2Key: "", url, position: i.photos.length }] }
+          ? { ...i, photos: [...i.photos, { id: photoId, r2Key: "", url, thumbUrl, position: i.photos.length }] }
           : i
       )
     );

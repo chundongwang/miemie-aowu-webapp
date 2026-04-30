@@ -54,6 +54,7 @@ export type ItemPhoto = {
   id: string;
   r2Key: string;
   url: string;
+  thumbUrl: string | null;
   position: number;
 };
 

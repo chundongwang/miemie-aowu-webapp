@@ -33,7 +33,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
     const itemRows = await db
       .prepare(
-        `SELECT i.*, GROUP_CONCAT(p.id || '|' || p.r2_key || '|' || p.position) AS photos_raw
+        `SELECT i.*, GROUP_CONCAT(p.id || '|' || p.r2_key || '|' || p.position || '|' || COALESCE(p.thumb_r2_key, ''), ',') AS photos_raw
          FROM items i
          LEFT JOIN item_photos p ON p.item_id = i.id
          WHERE i.list_id = ?
@@ -80,8 +80,14 @@ export async function GET(_req: NextRequest, { params }: Params) {
       updatedAt: r.updated_at,
       photos: r.photos_raw
         ? r.photos_raw.split(",").map((chunk: string) => {
-            const [photoId, r2Key, pos] = chunk.split("|");
-            return { id: photoId, r2Key, position: Number(pos), url: `/api/photos/${r2Key}` };
+            const [photoId, r2Key, pos, thumbKey] = chunk.split("|");
+            return {
+              id: photoId,
+              r2Key,
+              position: Number(pos),
+              url: `/api/photos/${r2Key}`,
+              thumbUrl: thumbKey ? `/api/photos/${thumbKey}` : null,
+            };
           })
         : [],
     }));
