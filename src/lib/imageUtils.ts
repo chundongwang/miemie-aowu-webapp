@@ -60,7 +60,3 @@ export async function compressToJpeg(
   });
 }
 
-/** Generate a small thumbnail — 300px max, 50% quality. */
-export function generateThumbnail(file: File): Promise<File> {
-  return compressToJpeg(file, 300, 0.5);
-}

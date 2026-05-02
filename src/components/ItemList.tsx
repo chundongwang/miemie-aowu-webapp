@@ -22,7 +22,7 @@ import type { Item, ItemPhoto, Comment } from "@/types";
 import { useT } from "@/context/LocaleContext";
 import CommentThread from "@/components/CommentThread";
 import PhotoSearchModal from "@/components/PhotoSearchModal";
-import { compressToJpeg, generateThumbnail, UPLOAD_SIZE_LIMIT } from "@/lib/imageUtils";
+import { compressToJpeg, UPLOAD_SIZE_LIMIT } from "@/lib/imageUtils";
 import { saveDraft, loadDraft, clearDraft, verifyAndClear } from "@/lib/photoDrafts";
 
 const STATUS_CYCLE: Record<string, string> = { unseen: "saved", saved: "done", done: "unseen" };
@@ -88,7 +88,7 @@ type RowProps = {
   onCycle: (item: Item) => void;
   onEdit: (item: Item) => void;
   onDelete: (id: string) => void;
-  onPhotoAdded: (itemId: string, photoId: string, url: string, thumbUrl: string | null) => void;
+  onPhotoAdded: (itemId: string, photoId: string, url: string) => void;
   onPhotoRemoved: (itemId: string, photoId: string) => void;
   onPhotoClick: (url: string, allUrls: string[]) => void;
   onReact: (itemId: string, type: "miemie" | "aowu") => void;
@@ -135,14 +135,10 @@ function SortableRow({
       const file = new File([blob], name, { type: "image/jpeg" });
       const fd = new FormData();
       fd.append("file", file);
-      try {
-        const thumb = await generateThumbnail(file);
-        fd.append("thumb", thumb);
-      } catch { /* thumbnail is optional */ }
       const res = await fetch(`/api/items/${item.id}/photos`, { method: "POST", body: fd });
       if (res.ok) {
-        const data = await res.json() as { id: string; url: string; thumbUrl: string | null };
-        onPhotoAdded(item.id, data.id, data.url, data.thumbUrl ?? null);
+        const data = await res.json() as { id: string; url: string };
+        onPhotoAdded(item.id, data.id, data.url);
         // Verify the photo is reachable on the server, then clear draft
         verifyAndClear(item.id, data.url).then((confirmed) => {
           if (confirmed) setDraftBlob(null);
@@ -292,7 +288,7 @@ function SortableRow({
               <div key={photo.id} className="relative shrink-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={photo.thumbUrl ?? photo.url}
+                  src={photo.url}
                   alt=""
                   className="w-16 h-16 object-cover rounded-lg border border-gray-100 dark:border-gray-800 cursor-zoom-in"
                   onClick={() => onPhotoClick(photo.url, item.photos.map((p) => p.url))}
@@ -406,7 +402,7 @@ function SortableRow({
         <PhotoSearchModal
           itemId={item.id}
           initialQuery={item.name}
-          onPhotoAdded={(photoId, url) => onPhotoAdded(item.id, photoId, url, null)}
+          onPhotoAdded={(photoId, url) => onPhotoAdded(item.id, photoId, url)}
           onClose={() => setShowPhotoSearch(false)}
         />
       )}
@@ -673,8 +669,9 @@ export default function ItemList({
   const [items, setItems] = useState<Item[]>(initialItems);
   const [pending, setPending] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(5);
 
-  useEffect(() => { setItems(initialItems); }, [initialItems]);
+  useEffect(() => { setItems(initialItems); setVisibleCount(5); }, [initialItems]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -747,11 +744,11 @@ export default function ItemList({
     startTransition(() => router.refresh());
   }
 
-  function handlePhotoAdded(itemId: string, photoId: string, url: string, thumbUrl: string | null) {
+  function handlePhotoAdded(itemId: string, photoId: string, url: string) {
     setItems((prev) =>
       prev.map((i) =>
         i.id === itemId
-          ? { ...i, photos: [...i.photos, { id: photoId, r2Key: "", url, thumbUrl, position: i.photos.length }] }
+          ? { ...i, photos: [...i.photos, { id: photoId, r2Key: "", url, position: i.photos.length }] }
           : i
       )
     );
@@ -784,6 +781,15 @@ export default function ItemList({
     onCommentAdded,
   };
 
+  const showMoreBtn = items.length > visibleCount && (
+    <button
+      onClick={() => setVisibleCount((n) => n + 5)}
+      className="w-full py-3 text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-xl mt-3 transition-colors"
+    >
+      Show more · {items.length - visibleCount} remaining
+    </button>
+  );
+
   // ── Text list mode ──
   if (isTextList) {
     function fmtDate(ts: number) {
@@ -792,60 +798,69 @@ export default function ItemList({
     }
     const canEdit = isOwner || isRecipient;
     return (
-      <TextList
-        items={items}
-        canEdit={canEdit}
-        listId={listId}
-        comments={comments}
-        userDisplayName={userDisplayName}
-        currentUserId={currentUserId}
-        deleting={deleting}
-        fmtDate={fmtDate}
-        onEdit={onEditItem}
-        onDelete={deleteItem}
-        onReact={reactToItem}
-        onCommentAdded={onCommentAdded}
-      />
+      <>
+        <TextList
+          items={items.slice(0, visibleCount)}
+          canEdit={canEdit}
+          listId={listId}
+          comments={comments}
+          userDisplayName={userDisplayName}
+          currentUserId={currentUserId}
+          deleting={deleting}
+          fmtDate={fmtDate}
+          onEdit={onEditItem}
+          onDelete={deleteItem}
+          onReact={reactToItem}
+          onCommentAdded={onCommentAdded}
+        />
+        {showMoreBtn}
+      </>
     );
   }
 
   // ── Waterfall mode (one card per photo; items without photos get one card) ──
   if (viewMode === "waterfall") {
-    const entries = items.flatMap((item) =>
+    const entries = items.slice(0, visibleCount).flatMap((item) =>
       item.photos.length > 0
         ? item.photos.map((photo) => ({ item, photo }))
         : [{ item, photo: null as ItemPhoto | null }]
     );
     return (
-      <div className="columns-2 gap-3">
-        {entries.map(({ item, photo }) => (
-          <WaterfallCard
-            key={photo ? photo.id : item.id}
-            item={item}
-            photo={photo}
-            {...sharedProps}
-          />
-        ))}
-      </div>
+      <>
+        <div className="columns-2 gap-3">
+          {entries.map(({ item, photo }) => (
+            <WaterfallCard
+              key={photo ? photo.id : item.id}
+              item={item}
+              photo={photo}
+              {...sharedProps}
+            />
+          ))}
+        </div>
+        {showMoreBtn}
+      </>
     );
   }
 
   // ── List mode ──
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
-        <ul className="divide-y divide-gray-100 dark:divide-gray-800">
-          {items.map((item) => (
-            <SortableRow
-              key={item.id}
-              item={item}
-              {...sharedProps}
-              onPhotoAdded={handlePhotoAdded}
-              onPhotoRemoved={handlePhotoRemoved}
-            />
-          ))}
-        </ul>
-      </SortableContext>
-    </DndContext>
+    <>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+          <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+            {items.slice(0, visibleCount).map((item) => (
+              <SortableRow
+                key={item.id}
+                item={item}
+                {...sharedProps}
+                onPhotoAdded={handlePhotoAdded}
+                onPhotoRemoved={handlePhotoRemoved}
+              />
+            ))}
+          </ul>
+        </SortableContext>
+      </DndContext>
+      {showMoreBtn}
+    </>
   );
 }

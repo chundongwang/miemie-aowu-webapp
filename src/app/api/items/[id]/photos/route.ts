@@ -55,31 +55,17 @@ export async function POST(req: NextRequest, { params }: Params) {
       httpMetadata: { contentType: file.type },
     });
 
-    // Optional thumbnail
-    let thumbR2Key: string | null = null;
-    const thumb = formData.get("thumb") as File | null;
-    if (thumb && thumb.size > 0 && thumb.type.startsWith("image/")) {
-      thumbR2Key = `${r2Key}_thumb`;
-      await bucket.put(thumbR2Key, await thumb.arrayBuffer(), {
-        httpMetadata: { contentType: "image/jpeg" },
-      });
-    }
-
     const position = (countRow?.n ?? 0);
     const now = Date.now();
     await db
-      .prepare("INSERT INTO item_photos (id, item_id, r2_key, thumb_r2_key, position) VALUES (?, ?, ?, ?, ?)")
-      .bind(photoId, itemId, r2Key, thumbR2Key, position)
+      .prepare("INSERT INTO item_photos (id, item_id, r2_key, position) VALUES (?, ?, ?, ?)")
+      .bind(photoId, itemId, r2Key, position)
       .run();
     await db.prepare("UPDATE items SET updated_at = ? WHERE id = ?").bind(now, itemId).run();
     await db.prepare("UPDATE lists SET updated_at = ? WHERE id = ?").bind(now, item.list_id).run();
 
     return NextResponse.json(
-      {
-        id: photoId,
-        url: `/api/photos/${r2Key}`,
-        thumbUrl: thumbR2Key ? `/api/photos/${thumbR2Key}` : null,
-      },
+      { id: photoId, url: `/api/photos/${r2Key}` },
       { status: 201 }
     );
   });
