@@ -34,6 +34,22 @@ export default function ListsPage() {
 
   useEffect(() => { fetchLists(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Update PWA app-icon badge + document title whenever unread count changes
+  useEffect(() => {
+    const unread = lists.filter((l) => l.hasUnread).length;
+    const appName = "咩咩~嗷呜";
+    document.title = unread > 0 ? `(${unread}) ${appName}` : appName;
+    if ("setAppBadge" in navigator) {
+      if (unread > 0) {
+        (navigator as Navigator & { setAppBadge(n: number): Promise<void> })
+          .setAppBadge(unread).catch(() => {});
+      } else {
+        (navigator as Navigator & { clearAppBadge(): Promise<void> })
+          .clearAppBadge().catch(() => {});
+      }
+    }
+  }, [lists]);
+
   const { indicatorRef, isRefreshing } = usePullToRefresh(fetchLists);
 
   async function logout() {
