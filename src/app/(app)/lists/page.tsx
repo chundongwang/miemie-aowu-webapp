@@ -34,12 +34,36 @@ export default function ListsPage() {
 
   useEffect(() => { fetchLists(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Update PWA app-icon badge + document title whenever unread count changes
+  // Update app-icon badge + document title whenever unread count changes
   useEffect(() => {
     const unread = lists.filter((l) => l.hasUnread).length;
     const appName = "咩咩~嗷呜";
     document.title = unread > 0 ? `(${unread}) ${appName}` : appName;
-    if ("setAppBadge" in navigator) {
+
+    const isNative =
+      typeof window !== "undefined" &&
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).Capacitor?.isNativePlatform?.();
+
+    if (isNative) {
+      // Native iOS: use Capacitor Badge plugin
+      void (async () => {
+        try {
+          const { Badge } = await import("@capawesome/capacitor-badge");
+          const { display } = await Badge.checkPermissions();
+          if (display !== "granted") {
+            const { display: granted } = await Badge.requestPermissions();
+            if (granted !== "granted") return;
+          }
+          if (unread > 0) {
+            await Badge.set({ count: unread });
+          } else {
+            await Badge.clear();
+          }
+        } catch { /* badge not supported on this platform */ }
+      })();
+    } else if ("setAppBadge" in navigator) {
+      // Web PWA: use Badging API
       if (unread > 0) {
         (navigator as Navigator & { setAppBadge(n: number): Promise<void> })
           .setAppBadge(unread).catch(() => {});
