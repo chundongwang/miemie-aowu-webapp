@@ -9,8 +9,16 @@ import NewListModal from "@/components/NewListModal";
 import PullIndicator from "@/components/PullIndicator";
 import DailyChallengeFAB from "@/components/DailyChallengeFAB";
 import FoodWheelFAB from "@/components/FoodWheelFAB";
+import CheckInFAB from "@/components/CheckInFAB";
+import CheckInModal from "@/components/CheckInModal";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useT } from "@/context/LocaleContext";
+
+type CheckInData = {
+  totalDays: number;
+  todayCheckedIn: boolean;
+  todayEmoji: string | null;
+};
 
 export default function ListsPage() {
   const t = useT();
@@ -19,6 +27,9 @@ export default function ListsPage() {
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
   const [me, setMe] = useState<{ id: string } | null>(null);
+
+  const [checkIn, setCheckIn]         = useState<CheckInData | null>(null);
+  const [showCheckIn, setShowCheckIn] = useState(false);
 
   async function fetchLists() {
     const [ls, user] = await Promise.all([
@@ -32,7 +43,18 @@ export default function ListsPage() {
     setLoading(false);
   }
 
-  useEffect(() => { fetchLists(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  async function fetchCheckIn() {
+    const res = await fetch("/api/checkins");
+    if (res.ok) {
+      const data = await res.json() as CheckInData;
+      setCheckIn(data);
+    }
+  }
+
+  useEffect(() => {
+    fetchLists();
+    fetchCheckIn();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Update app-icon badge + document title whenever unread count changes
   useEffect(() => {
@@ -85,7 +107,25 @@ export default function ListsPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <header className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] flex items-center justify-between z-10">
         <h1 className="text-lg font-semibold">{t("myLists")}</h1>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {/* Check-in day badge */}
+          {checkIn !== null && (
+            <button
+              onClick={() => setShowCheckIn(true)}
+              className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                checkIn.todayCheckedIn
+                  ? "border-[#2B4B8C]/30 text-[#2B4B8C] dark:text-blue-400 bg-[#2B4B8C]/5"
+                  : "border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-[#2B4B8C]/40 hover:text-[#2B4B8C]"
+              }`}
+              title="打卡天数 · Check-in days"
+            >
+              <span>🗓️</span>
+              <span className="font-medium">{checkIn.totalDays}天</span>
+              {checkIn.todayCheckedIn && checkIn.todayEmoji && (
+                <span>{checkIn.todayEmoji}</span>
+              )}
+            </button>
+          )}
           <button
             onClick={() => setShowNew(true)}
             className="bg-[#2B4B8C] text-white text-sm font-medium px-3 py-1.5 rounded-lg"
@@ -168,6 +208,23 @@ export default function ListsPage() {
 
       <FoodWheelFAB />
       <DailyChallengeFAB loggedIn={true} />
+      <CheckInFAB
+        todayCheckedIn={checkIn?.todayCheckedIn ?? false}
+        onClick={() => setShowCheckIn(true)}
+      />
+
+      {showCheckIn && checkIn !== null && (
+        <CheckInModal
+          totalDays={checkIn.totalDays}
+          todayCheckedIn={checkIn.todayCheckedIn}
+          todayEmoji={checkIn.todayEmoji}
+          onClose={() => setShowCheckIn(false)}
+          onCheckIn={(newTotal, emoji) =>
+            setCheckIn({ totalDays: newTotal, todayCheckedIn: true, todayEmoji: emoji })
+          }
+        />
+      )}
+
       {showNew && <NewListModal onClose={() => setShowNew(false)} />}
     </div>
   );
