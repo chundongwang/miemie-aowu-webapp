@@ -65,6 +65,26 @@ export async function GET(_req: NextRequest, { params }: Params) {
       // reactions table not yet created — treat as zero counts
     }
 
+    // Fetch check-in counts (graceful fallback if table not yet migrated)
+    const checkInMap = new Map<string, number>();
+    try {
+      const checkInRows = await db
+        .prepare(
+          `SELECT item_id, COUNT(*) AS cnt
+           FROM check_ins
+           WHERE item_id IN (SELECT id FROM items WHERE list_id = ?)
+           GROUP BY item_id`
+        )
+        .bind(id)
+        .all();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const r of checkInRows.results as any[]) {
+        checkInMap.set(r.item_id, r.cnt ?? 0);
+      }
+    } catch {
+      // check_ins table not yet created — treat as zero counts
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const items = itemRows.results.map((r: any) => ({
       id: r.id,
@@ -76,6 +96,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
       position: r.position,
       miemieCount: reactionMap.get(r.id)?.miemie ?? 0,
       aowuCount:   reactionMap.get(r.id)?.aowu   ?? 0,
+      checkInCount: checkInMap.get(r.id) ?? 0,
       createdAt: r.created_at,
       updatedAt: r.updated_at,
       photos: r.photos_raw
