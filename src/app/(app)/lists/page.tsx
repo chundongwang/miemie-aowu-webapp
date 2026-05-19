@@ -114,13 +114,13 @@ export default function ListsPage() {
               onClick={() => setShowCheckIn(true)}
               className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border transition-colors ${
                 checkIn.todayCheckedIn
-                  ? "border-[#2B4B8C]/30 text-[#2B4B8C] dark:text-blue-400 bg-[#2B4B8C]/5"
-                  : "border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-[#2B4B8C]/40 hover:text-[#2B4B8C]"
+                  ? "border-yellow-300 text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20"
+                  : "border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-yellow-300 hover:text-yellow-600"
               }`}
-              title="打卡天数 · Check-in days"
+              title="金币 · Coins earned"
             >
-              <span>🗓️</span>
-              <span className="font-medium">{checkIn.totalDays}天</span>
+              <span>🪙</span>
+              <span className="font-medium">{checkIn.totalDays}</span>
               {checkIn.todayCheckedIn && checkIn.todayEmoji && (
                 <span>{checkIn.todayEmoji}</span>
               )}
