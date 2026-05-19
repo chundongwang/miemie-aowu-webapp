@@ -97,7 +97,7 @@ export default function CheckInModal({
           <div>
             <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide">打卡 Check In</p>
             <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-0.5">
-              🪙 {currentTotal}
+              💰 {currentTotal}
             </p>
           </div>
           <button
@@ -114,7 +114,7 @@ export default function CheckInModal({
             <div className="flex items-center gap-3 bg-green-50 dark:bg-green-900/20 rounded-xl px-4 py-3">
               <span className="text-3xl">{confirmedEmoji ?? "🫥"}</span>
               <div>
-                <p className="text-sm font-medium text-green-700 dark:text-green-400">今天已获得金币 🪙 ✓</p>
+                <p className="text-sm font-medium text-green-700 dark:text-green-400">今天已获得金币 💰 ✓</p>
                 <p className="text-xs text-gray-400 dark:text-gray-500">{fmtDate(today)}</p>
               </div>
             </div>

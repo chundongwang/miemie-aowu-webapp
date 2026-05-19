@@ -67,7 +67,7 @@ export default function CheckInFAB({ todayCheckedIn, onClick }: Props) {
         style={{ overflow: "visible" }}
         aria-label="Check in today"
       >
-        <span className="text-2xl">🪙</span>
+        <span className="text-2xl">💰</span>
         {/* Orbiting emojis */}
         <span className="checkin-orbit-emoji" style={{ animationDelay: `-${orbitOffset.toFixed(2)}s` }}>🐑</span>
         <span className="checkin-orbit-emoji" style={{ animationDelay: `-${((orbitOffset + 3) % 6).toFixed(2)}s` }}>🐺</span>
