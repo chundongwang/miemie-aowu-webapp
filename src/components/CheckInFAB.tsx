@@ -59,11 +59,15 @@ export default function CheckInFAB({ todayCheckedIn, onClick }: Props) {
       {/* FAB */}
       <button
         onClick={onClick}
-        className="relative w-14 h-14 rounded-full bg-[#2B4B8C] shadow-lg hover:bg-[#1e3a70] active:scale-95 transition-transform flex items-center justify-center"
+        className={`relative w-14 h-14 rounded-full shadow-lg active:scale-95 transition-all flex items-center justify-center ${
+          todayCheckedIn
+            ? "bg-yellow-400 hover:bg-yellow-500"
+            : "bg-[#2B4B8C] hover:bg-[#1e3a70]"
+        }`}
         style={{ overflow: "visible" }}
         aria-label="Check in today"
       >
-        <span className="text-2xl">{todayCheckedIn ? "✅" : "🗓️"}</span>
+        <span className="text-2xl">🪙</span>
         {/* Orbiting emojis */}
         <span className="checkin-orbit-emoji" style={{ animationDelay: `-${orbitOffset.toFixed(2)}s` }}>🐑</span>
         <span className="checkin-orbit-emoji" style={{ animationDelay: `-${((orbitOffset + 3) % 6).toFixed(2)}s` }}>🐺</span>

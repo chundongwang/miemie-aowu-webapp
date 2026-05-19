@@ -97,8 +97,7 @@ export default function CheckInModal({
           <div>
             <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide">打卡 Check In</p>
             <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-0.5">
-              {currentTotal}
-              <span className="text-lg font-semibold text-gray-400 dark:text-gray-500 ml-1">天</span>
+              🪙 {currentTotal}
             </p>
           </div>
           <button
@@ -115,7 +114,7 @@ export default function CheckInModal({
             <div className="flex items-center gap-3 bg-green-50 dark:bg-green-900/20 rounded-xl px-4 py-3">
               <span className="text-3xl">{confirmedEmoji ?? "🫥"}</span>
               <div>
-                <p className="text-sm font-medium text-green-700 dark:text-green-400">今天已打卡 ✓</p>
+                <p className="text-sm font-medium text-green-700 dark:text-green-400">今天已获得金币 🪙 ✓</p>
                 <p className="text-xs text-gray-400 dark:text-gray-500">{fmtDate(today)}</p>
               </div>
             </div>
@@ -143,7 +142,7 @@ export default function CheckInModal({
                 disabled={submitting}
                 className="w-full bg-[#2B4B8C] text-white rounded-xl py-2.5 text-sm font-medium hover:bg-[#1e3a70] disabled:opacity-50 transition-colors"
               >
-                {submitting ? "打卡中…" : `${selected} 打卡`}
+                {submitting ? "领取中…" : `${selected} 领取金币`}
               </button>
             </>
           )}
@@ -151,11 +150,11 @@ export default function CheckInModal({
 
         {/* History */}
         <div className="border-t border-gray-100 dark:border-gray-800 px-5 py-3 max-h-52 overflow-y-auto">
-          <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">最近打卡</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">最近金币</p>
           {loadingHistory ? (
             <p className="text-xs text-gray-300 dark:text-gray-600 py-2 text-center">…</p>
           ) : history.length === 0 ? (
-            <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-2">还没有打卡记录</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-2">还没有金币，今天领取第一枚！</p>
           ) : (
             <ul className="space-y-1.5">
               {history.map((ci) => (
