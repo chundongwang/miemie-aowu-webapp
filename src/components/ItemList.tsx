@@ -22,7 +22,6 @@ import type { Item, ItemPhoto, Comment } from "@/types";
 import { useT } from "@/context/LocaleContext";
 import CommentThread from "@/components/CommentThread";
 import PhotoSearchModal from "@/components/PhotoSearchModal";
-import CheckInModal from "@/components/CheckInModal";
 import { compressToJpeg, UPLOAD_SIZE_LIMIT } from "@/lib/imageUtils";
 import { saveDraft, loadDraft, clearDraft, verifyAndClear } from "@/lib/photoDrafts";
 
@@ -44,10 +43,9 @@ type ReactionBarProps = {
   onReact: (itemId: string, type: "miemie" | "aowu") => void;
   showComments: boolean;
   onToggleComments: () => void;
-  onCheckIn: (item: Item) => void;
 };
 
-function ReactionBar({ item, itemComments, onReact, showComments, onToggleComments, onCheckIn }: ReactionBarProps) {
+function ReactionBar({ item, itemComments, onReact, showComments, onToggleComments }: ReactionBarProps) {
   return (
     <div className="flex items-center gap-3 mt-2">
       <button
@@ -61,16 +59,6 @@ function ReactionBar({ item, itemComments, onReact, showComments, onToggleCommen
         className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 hover:text-[#2B4B8C] transition-colors"
       >
         <span>嗷～</span><span>{item.aowuCount}</span>
-      </button>
-      <button
-        onClick={() => onCheckIn(item)}
-        className={`flex items-center gap-1 text-xs transition-colors ${
-          item.checkInCount > 0
-            ? "text-[#2B4B8C] dark:text-blue-400"
-            : "text-gray-400 dark:text-gray-500 hover:text-[#2B4B8C]"
-        }`}
-      >
-        <span>📍</span><span>{item.checkInCount}</span>
       </button>
       <button
         onClick={onToggleComments}
@@ -105,14 +93,12 @@ type RowProps = {
   onPhotoClick: (url: string, allUrls: string[]) => void;
   onReact: (itemId: string, type: "miemie" | "aowu") => void;
   onCommentAdded: (c: Comment) => void;
-  onCheckInCountChanged: (itemId: string, newCount: number) => void;
 };
 
 function SortableRow({
   item, isOwner, isRecipient, secondaryLabel,
   pending, deleting, listId, comments, userDisplayName, currentUserId,
   onCycle, onEdit, onDelete, onPhotoAdded, onPhotoRemoved, onPhotoClick, onReact, onCommentAdded,
-  onCheckInCountChanged,
 }: RowProps) {
   const t = useT();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -122,7 +108,6 @@ function SortableRow({
   const [compressingPhoto, setCompressingPhoto] = useState(false);
   const [showComments,     setShowComments]     = useState(false);
   const [showPhotoSearch,  setShowPhotoSearch]  = useState(false);
-  const [showCheckIn,      setShowCheckIn]      = useState(false);
   const [draftBlob,        setDraftBlob]        = useState<{ blob: Blob; name: string } | null>(null);
   const [uploadError,      setUploadError]      = useState<string | null>(null);
 
@@ -376,7 +361,6 @@ function SortableRow({
               onReact={onReact}
               showComments={showComments}
               onToggleComments={() => setShowComments((v) => !v)}
-              onCheckIn={(i) => { setShowCheckIn(true); void i; }}
             />
             {showComments && (
               <div className="mt-2 pl-3 border-l-2 border-gray-100 dark:border-gray-800">
@@ -422,15 +406,6 @@ function SortableRow({
           onClose={() => setShowPhotoSearch(false)}
         />
       )}
-
-      {showCheckIn && (
-        <CheckInModal
-          itemId={item.id}
-          itemName={item.name}
-          onClose={() => setShowCheckIn(false)}
-          onCheckInCreated={(newCount) => onCheckInCountChanged(item.id, newCount)}
-        />
-      )}
     </li>
   );
 }
@@ -455,18 +430,15 @@ type CardProps = {
   onPhotoClick: (url: string, allUrls: string[]) => void;
   onReact: (itemId: string, type: "miemie" | "aowu") => void;
   onCommentAdded: (c: Comment) => void;
-  onCheckInCountChanged: (itemId: string, newCount: number) => void;
 };
 
 function WaterfallCard({
   item, photo, isOwner, isRecipient, secondaryLabel, listId, comments, userDisplayName, currentUserId,
   pending, deleting, onCycle, onEdit, onDelete, onPhotoClick, onReact, onCommentAdded,
-  onCheckInCountChanged,
 }: CardProps) {
   const t = useT();
   const canEdit = isOwner || isRecipient;
   const [showComments, setShowComments] = useState(false);
-  const [showCheckIn,  setShowCheckIn]  = useState(false);
   const itemComments = comments.filter((c) => c.itemId === item.id);
 
   return (
@@ -539,7 +511,6 @@ function WaterfallCard({
               onReact={onReact}
               showComments={showComments}
               onToggleComments={() => setShowComments((v) => !v)}
-              onCheckIn={() => setShowCheckIn(true)}
             />
             {showComments && (
               <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
@@ -557,14 +528,6 @@ function WaterfallCard({
           </>
         )}
       </div>
-      {showCheckIn && (
-        <CheckInModal
-          itemId={item.id}
-          itemName={item.name}
-          onClose={() => setShowCheckIn(false)}
-          onCheckInCreated={(newCount) => onCheckInCountChanged(item.id, newCount)}
-        />
-      )}
     </div>
   );
 }
@@ -584,13 +547,11 @@ type TextListProps = {
   onDelete: (id: string) => void;
   onReact: (itemId: string, type: "miemie" | "aowu") => void;
   onCommentAdded: (c: Comment) => void;
-  onCheckInCountChanged: (itemId: string, newCount: number) => void;
 };
 
-function TextList({ items, canEdit, listId, comments, userDisplayName, currentUserId, deleting, fmtDate, onEdit, onDelete, onReact, onCommentAdded, onCheckInCountChanged }: TextListProps) {
+function TextList({ items, canEdit, listId, comments, userDisplayName, currentUserId, deleting, fmtDate, onEdit, onDelete, onReact, onCommentAdded }: TextListProps) {
   const t = useT();
-  const [openComments,  setOpenComments]  = useState<Set<string>>(new Set());
-  const [checkInItemId, setCheckInItemId] = useState<string | null>(null);
+  const [openComments, setOpenComments] = useState<Set<string>>(new Set());
 
   function toggleComments(id: string) {
     setOpenComments((prev) => {
@@ -601,7 +562,6 @@ function TextList({ items, canEdit, listId, comments, userDisplayName, currentUs
   }
 
   return (
-    <>
     <ul className="divide-y divide-gray-100 dark:divide-gray-800">
       {items.map((item) => {
         const hasTitle = item.name && item.name !== item.reason?.split("\n")[0].slice(0, 80);
@@ -645,7 +605,6 @@ function TextList({ items, canEdit, listId, comments, userDisplayName, currentUs
                       onReact={onReact}
                       showComments={showComments}
                       onToggleComments={() => toggleComments(item.id)}
-                      onCheckIn={(i) => setCheckInItemId(i.id)}
                     />
                     {showComments && (
                       <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
@@ -677,20 +636,6 @@ function TextList({ items, canEdit, listId, comments, userDisplayName, currentUs
         );
       })}
     </ul>
-
-    {checkInItemId && (() => {
-
-      const ci = items.find((i) => i.id === checkInItemId);
-      return ci ? (
-        <CheckInModal
-          itemId={ci.id}
-          itemName={ci.name}
-          onClose={() => setCheckInItemId(null)}
-          onCheckInCreated={(newCount) => { onCheckInCountChanged(ci.id, newCount); }}
-        />
-      ) : null;
-    })()}
-    </>
   );
 }
 
@@ -817,12 +762,6 @@ export default function ItemList({
     );
   }
 
-  function handleCheckInCountChanged(itemId: string, newCount: number) {
-    setItems((prev) =>
-      prev.map((i) => i.id === itemId ? { ...i, checkInCount: newCount } : i)
-    );
-  }
-
   if (items.length === 0) {
     return (
       <p className="text-center text-gray-400 dark:text-gray-500 text-sm py-16">
@@ -840,7 +779,6 @@ export default function ItemList({
     onPhotoClick,
     onReact: reactToItem,
     onCommentAdded,
-    onCheckInCountChanged: handleCheckInCountChanged,
   };
 
   const showMoreBtn = items.length > visibleCount && (
@@ -874,7 +812,6 @@ export default function ItemList({
           onDelete={deleteItem}
           onReact={reactToItem}
           onCommentAdded={onCommentAdded}
-          onCheckInCountChanged={handleCheckInCountChanged}
         />
         {showMoreBtn}
       </>
