@@ -34,21 +34,8 @@ export type Item = {
   photos: ItemPhoto[];
   miemieCount: number;
   aowuCount: number;
-  checkInCount: number;
   createdAt: number;
   updatedAt: number;
-};
-
-export type CheckIn = {
-  id: string;
-  itemId: string;
-  listId: string;
-  userId: string;
-  userDisplayName: string;
-  latitude: number | null;
-  longitude: number | null;
-  note: string | null;
-  createdAt: number;
 };
 
 export type Comment = {

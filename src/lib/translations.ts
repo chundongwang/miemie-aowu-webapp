@@ -194,20 +194,6 @@ export const translations = {
     // modals
     unsavedChanges: "You have unsaved changes. Discard them?",
 
-    // check-in
-    checkIn: "Check In",
-    checkInButton: "📍",
-    checkInTitle: "Check Ins",
-    checkInHere: "Check in here",
-    checkInNote: "Add a note (optional)",
-    checkInNotePlaceholder: "What's it like here?",
-    checkInSubmitting: "Checking in…",
-    checkInSuccess: "Checked in!",
-    checkInGettingLocation: "Getting your location…",
-    checkInLocationDenied: "Location unavailable",
-    checkInEmpty: "No check-ins yet. Be the first!",
-    checkInAgo: "{n} ago",
-
     // errors
     errorRequired: "Username and password are required",
     errorUsernamePattern: "Username must be 3-30 letters, numbers, or underscores",
@@ -393,20 +379,6 @@ export const translations = {
     itemCommentHint: "关于 {item}",
 
     unsavedChanges: "有未保存的修改，确认丢弃？",
-
-    // check-in
-    checkIn: "打卡",
-    checkInButton: "📍",
-    checkInTitle: "打卡记录",
-    checkInHere: "在这里打卡",
-    checkInNote: "添加备注（可选）",
-    checkInNotePlaceholder: "这里怎么样？",
-    checkInSubmitting: "打卡中…",
-    checkInSuccess: "已打卡！",
-    checkInGettingLocation: "获取位置中…",
-    checkInLocationDenied: "无法获取位置",
-    checkInEmpty: "还没有打卡记录，成为第一个！",
-    checkInAgo: "{n}前",
 
     errorRequired: "用户名和密码为必填",
     errorUsernamePattern: "用户名须为 3-30 个字母、数字或下划线",
