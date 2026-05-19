@@ -119,7 +119,7 @@ export default function ListsPage() {
               }`}
               title="金币 · Coins earned"
             >
-              <span>🪙</span>
+              <span>💰</span>
               <span className="font-medium">{checkIn.totalDays}</span>
               {checkIn.todayCheckedIn && checkIn.todayEmoji && (
                 <span>{checkIn.todayEmoji}</span>
