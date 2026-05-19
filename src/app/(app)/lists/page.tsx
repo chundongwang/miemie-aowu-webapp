@@ -112,7 +112,7 @@ export default function ListsPage() {
           {checkIn !== null && (
             <button
               onClick={() => setShowCheckIn(true)}
-              className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border transition-colors ${
+              className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full border transition-colors ${
                 checkIn.todayCheckedIn
                   ? "border-yellow-300 text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20"
                   : "border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-yellow-300 hover:text-yellow-600"
