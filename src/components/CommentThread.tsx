@@ -168,7 +168,9 @@ export default function CommentThread({
 
           return (
             <div key={c.id} className="flex gap-2 items-start">
-              <Avatar name={c.authorName} size={avatarSize} />
+              <div className="mt-3.5 shrink-0">
+                <Avatar name={c.authorName} size={avatarSize} />
+              </div>
               <div className="flex-1 min-w-0">
                 <div className={`bg-gray-50 dark:bg-gray-800 rounded-2xl ${bubblePad}`}>
                   <div className="flex items-center justify-between gap-2 mb-1">
