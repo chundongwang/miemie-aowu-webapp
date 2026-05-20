@@ -16,6 +16,7 @@ import BulkImportModal from "@/components/BulkImportModal";
 import NearbyFoodModal from "@/components/NearbyFoodModal";
 import PullIndicator from "@/components/PullIndicator";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { useSwipeBack } from "@/hooks/useSwipeBack";
 import { useT } from "@/context/LocaleContext";
 
 type Me = { id: string; displayName: string };
@@ -66,6 +67,9 @@ export default function ListDetailPage() {
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { indicatorRef, isRefreshing: pullRefreshing } = usePullToRefresh(async () => { load(); });
+
+  const anyModalOpen = showAddItem || showShare || showEditList || showImport || showNearby || !!editingItem || !!lightbox;
+  const swipeProgress = useSwipeBack(me ? "/lists" : "/", !loading && !anyModalOpen);
 
   // Load comments once list is available
   useEffect(() => {
@@ -123,6 +127,19 @@ export default function ListDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+
+      {/* Swipe-back indicator */}
+      {swipeProgress > 0 && (
+        <div
+          className="fixed left-0 top-1/2 -translate-y-1/2 z-50 pointer-events-none"
+          style={{ opacity: swipeProgress }}
+        >
+          <div className="bg-white dark:bg-gray-800 shadow-lg rounded-r-2xl px-2.5 py-3 text-gray-500 dark:text-gray-300 text-2xl leading-none">
+            ‹
+          </div>
+        </div>
+      )}
+
       <header className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] z-10">
         <div className="max-w-lg mx-auto flex items-center gap-3">
           <button
