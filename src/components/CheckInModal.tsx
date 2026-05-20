@@ -1,8 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const FEELING_EMOJIS = ["😊", "🥰", "🤩", "😎", "😌", "🥳", "😴", "🤔", "😤", "😭", "🥹", "🫥"];
+
+const COIN_CSS = `
+@keyframes coinFloatUp {
+  0%   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-48px) scale(1.25); }
+}
+.coin-float-up { animation: coinFloatUp 1.1s ease-out forwards; }
+`;
 
 type CheckInEntry = {
   id: string;
@@ -32,9 +40,11 @@ export default function CheckInModal({
   onClose,
   onCheckIn,
 }: Props) {
-  const [selected, setSelected]   = useState<string>(todayEmoji ?? "🫥");
+  const [selected, setSelected]    = useState<string>(todayEmoji ?? "🫥");
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone]            = useState(todayCheckedIn);
+  const [done, setDone]             = useState(todayCheckedIn);
+  const [showCoin, setShowCoin]     = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
   const [confirmedEmoji, setConfirmedEmoji] = useState<string | null>(todayEmoji);
   const [currentTotal, setCurrentTotal]     = useState(totalDays);
   const [history, setHistory]  = useState<CheckInEntry[]>([]);
@@ -69,6 +79,8 @@ export default function CheckInModal({
         setConfirmedEmoji(data.emoji);
         setDone(true);
         onCheckIn(data.totalDays, data.emoji);
+        setShowCoin(true);
+        setTimeout(() => setShowCoin(false), 1200);
         // Refresh history
         const freshEntry: CheckInEntry = {
           id: "today",
@@ -92,6 +104,7 @@ export default function CheckInModal({
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-sm shadow-xl overflow-hidden">
+        <style>{COIN_CSS}</style>
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3">
           <div>
@@ -137,13 +150,21 @@ export default function CheckInModal({
                   </button>
                 ))}
               </div>
-              <button
-                onClick={handleCheckIn}
-                disabled={submitting}
-                className="w-full bg-[#2B4B8C] text-white rounded-xl py-2.5 text-sm font-medium hover:bg-[#1e3a70] disabled:opacity-50 transition-colors"
-              >
-                {submitting ? "领取中…" : `${selected} 领取金币`}
-              </button>
+              <div className="relative">
+                {showCoin && (
+                  <span className="coin-float-up absolute top-0 left-1/2 text-base font-bold text-yellow-500 pointer-events-none whitespace-nowrap z-10">
+                    💰 +1
+                  </span>
+                )}
+                <button
+                  ref={btnRef}
+                  onClick={handleCheckIn}
+                  disabled={submitting}
+                  className="w-full bg-[#2B4B8C] text-white rounded-xl py-2.5 text-sm font-medium hover:bg-[#1e3a70] disabled:opacity-50 transition-colors"
+                >
+                  {submitting ? "领取中…" : `${selected} 领取金币`}
+                </button>
+              </div>
             </>
           )}
         </div>
