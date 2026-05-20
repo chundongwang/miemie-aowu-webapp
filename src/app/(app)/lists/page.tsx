@@ -12,6 +12,7 @@ import FoodWheelFAB from "@/components/FoodWheelFAB";
 import CheckInFAB from "@/components/CheckInFAB";
 import CheckInModal from "@/components/CheckInModal";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { useSwipeBack } from "@/hooks/useSwipeBack";
 import { useT } from "@/context/LocaleContext";
 
 type CheckInData = {
@@ -97,6 +98,7 @@ export default function ListsPage() {
   }, [lists]);
 
   const { indicatorRef, isRefreshing } = usePullToRefresh(fetchLists);
+  const swipeProgress = useSwipeBack("/", !showNew && !showCheckIn);
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -105,6 +107,18 @@ export default function ListsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+
+      {swipeProgress > 0 && (
+        <div
+          className="fixed left-0 top-1/2 -translate-y-1/2 z-50 pointer-events-none"
+          style={{ opacity: swipeProgress }}
+        >
+          <div className="bg-white dark:bg-gray-800 shadow-lg rounded-r-2xl px-2.5 py-3 text-gray-500 dark:text-gray-300 text-2xl leading-none">
+            ‹
+          </div>
+        </div>
+      )}
+
       <header className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] flex items-center justify-between z-10">
         <h1 className="text-lg font-semibold">{t("myLists")}</h1>
         <div className="flex items-center gap-2">
