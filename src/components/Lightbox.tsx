@@ -1,32 +1,52 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
-  urls: string[];
-  index: number;
+  items: { photos: { url: string }[] }[];
+  itemIndex: number;
+  photoIndex: number;
   onClose: () => void;
 };
 
-export default function Lightbox({ urls, index: initialIndex, onClose }: Props) {
-  const [idx, setIdx]     = useState(initialIndex);
+export default function Lightbox({ items, itemIndex, photoIndex, onClose }: Props) {
+  // Flatten all photos across items into one array
+  const allUrls = useMemo(
+    () => items.flatMap((item) => item.photos.map((p) => p.url)),
+    [items],
+  );
+
+  // Per-item photo counts for dot grouping
+  const photoCounts = useMemo(
+    () => items.map((item) => item.photos.length),
+    [items],
+  );
+
+  // Starting flat index
+  const startIndex = useMemo(() => {
+    let offset = 0;
+    for (let i = 0; i < itemIndex; i++) offset += items[i].photos.length;
+    return offset + photoIndex;
+  }, [items, itemIndex, photoIndex]);
+
+  const [idx, setIdx] = useState(startIndex);
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
 
   const prev = () => setIdx((i) => Math.max(0, i - 1));
-  const next = () => setIdx((i) => Math.min(urls.length - 1, i + 1));
+  const next = () => setIdx((i) => Math.min(allUrls.length - 1, i + 1));
 
   // Keyboard nav
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape")      onClose();
-      if (e.key === "ArrowLeft")   prev();
-      if (e.key === "ArrowRight")  next();
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft") prev();
+      if (e.key === "ArrowRight") next();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onClose]);
 
   function onTouchStart(e: React.TouchEvent) {
@@ -38,7 +58,7 @@ export default function Lightbox({ urls, index: initialIndex, onClose }: Props) 
   function onTouchMove(e: React.TouchEvent) {
     if (!touchStart.current) return;
     const dy = e.touches[0].clientY - touchStart.current.y;
-    if (dy > 0) setDragY(dy); // only follow downward drag
+    if (dy > 0) setDragY(dy);
   }
 
   function onTouchEnd(e: React.TouchEvent) {
@@ -53,13 +73,25 @@ export default function Lightbox({ urls, index: initialIndex, onClose }: Props) 
     const ady = Math.abs(dy);
 
     if (dy > 100 && ady > adx) {
-      onClose();                          // swipe down → close
+      onClose();
     } else if (adx > 50 && adx > ady) {
-      dx < 0 ? next() : prev();          // swipe left/right → navigate
+      dx < 0 ? next() : prev();
     }
   }
 
   const dragOpacity = isDragging ? Math.max(0.2, 1 - dragY / 250) : 1;
+
+  // Compute which item the current flat index belongs to
+  let currentItemIndex = 0;
+  let offset = 0;
+  for (let i = 0; i < photoCounts.length; i++) {
+    if (idx < offset + photoCounts[i]) {
+      currentItemIndex = i;
+      break;
+    }
+    offset += photoCounts[i];
+  }
+  const currentPhotoInItem = idx - offset;
 
   return (
     <div
@@ -91,7 +123,7 @@ export default function Lightbox({ urls, index: initialIndex, onClose }: Props) 
       )}
 
       {/* Next */}
-      {idx < urls.length - 1 && (
+      {idx < allUrls.length - 1 && (
         <button
           className="absolute right-3 top-1/2 -translate-y-1/2 text-white text-5xl leading-none opacity-60 hover:opacity-100 z-10 select-none"
           onClick={(e) => { e.stopPropagation(); next(); }}
@@ -104,8 +136,8 @@ export default function Lightbox({ urls, index: initialIndex, onClose }: Props) 
       {/* Image */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        key={urls[idx]}
-        src={urls[idx]}
+        key={allUrls[idx]}
+        src={allUrls[idx]}
         alt=""
         className="max-w-[95vw] max-h-[90vh] object-contain rounded-lg"
         style={{
@@ -117,16 +149,22 @@ export default function Lightbox({ urls, index: initialIndex, onClose }: Props) 
         draggable={false}
       />
 
-      {/* Dot indicators */}
-      {urls.length > 1 && (
-        <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2 pointer-events-none">
-          {urls.map((_, i) => (
-            <span
-              key={i}
-              className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                i === idx ? "bg-white" : "bg-white/35"
-              }`}
-            />
+      {/* Dot indicators — grouped by item */}
+      {allUrls.length > 1 && (
+        <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-3 pointer-events-none">
+          {photoCounts.map((count, i) => (
+            <div key={i} className="flex gap-1.5">
+              {Array.from({ length: count }).map((_, j) => (
+                <span
+                  key={j}
+                  className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                    i === currentItemIndex && j === currentPhotoInItem
+                      ? "bg-white"
+                      : "bg-white/35"
+                  }`}
+                />
+              ))}
+            </div>
           ))}
         </div>
       )}

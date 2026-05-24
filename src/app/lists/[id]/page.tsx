@@ -39,7 +39,7 @@ export default function ListDetailPage() {
   const [editingItem,  setEditingItem]  = useState<Item | null>(null);
 
   const [viewMode, setViewMode] = useState<"list" | "waterfall">("list");
-  const [lightbox, setLightbox] = useState<{ urls: string[]; index: number } | null>(null);
+  const [lightbox, setLightbox] = useState<{ items: Item[]; itemIndex: number; photoIndex: number } | null>(null);
   const [comments,    setComments]    = useState<Comment[]>([]);
   const [reactionTotals, setReactionTotals] = useState({ miemie: 0, aowu: 0 });
 
@@ -238,8 +238,8 @@ export default function ListDetailPage() {
           userDisplayName={me?.displayName ?? null}
           currentUserId={me?.id ?? null}
           onEditItem={(item) => setEditingItem(item)}
-          onPhotoClick={(url, allUrls) =>
-            setLightbox({ urls: allUrls, index: Math.max(0, allUrls.indexOf(url)) })
+          onPhotoClick={(itemIndex, photoIndex) =>
+            setLightbox({ items: list.items, itemIndex, photoIndex })
           }
           onCommentAdded={handleCommentAdded}
           onReactionsChanged={(m, a) => setReactionTotals({ miemie: m, aowu: a })}
@@ -340,7 +340,7 @@ export default function ListDetailPage() {
         />
       )}
       {lightbox && (
-        <Lightbox urls={lightbox.urls} index={lightbox.index} onClose={() => setLightbox(null)} />
+        <Lightbox items={lightbox.items} itemIndex={lightbox.itemIndex} photoIndex={lightbox.photoIndex} onClose={() => setLightbox(null)} />
       )}
     </div>
   );
