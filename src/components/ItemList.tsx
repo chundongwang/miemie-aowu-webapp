@@ -90,13 +90,14 @@ type RowProps = {
   onDelete: (id: string) => void;
   onPhotoAdded: (itemId: string, photoId: string, url: string) => void;
   onPhotoRemoved: (itemId: string, photoId: string) => void;
-  onPhotoClick: (url: string, allUrls: string[]) => void;
+  itemIndex: number;
+  onPhotoClick: (itemIndex: number, photoIndex: number) => void;
   onReact: (itemId: string, type: "miemie" | "aowu") => void;
   onCommentAdded: (c: Comment) => void;
 };
 
 function SortableRow({
-  item, isOwner, isRecipient, secondaryLabel,
+  item, itemIndex, isOwner, isRecipient, secondaryLabel,
   pending, deleting, listId, comments, userDisplayName, currentUserId,
   onCycle, onEdit, onDelete, onPhotoAdded, onPhotoRemoved, onPhotoClick, onReact, onCommentAdded,
 }: RowProps) {
@@ -291,7 +292,7 @@ function SortableRow({
                   src={photo.url}
                   alt=""
                   className="w-16 h-16 object-cover rounded-lg border border-gray-100 dark:border-gray-800 cursor-zoom-in"
-                  onClick={() => onPhotoClick(photo.url, item.photos.map((p) => p.url))}
+                  onClick={() => onPhotoClick(itemIndex, item.photos.indexOf(photo))}
                 />
                 {canEdit && (
                   <button
@@ -427,13 +428,14 @@ type CardProps = {
   onCycle: (item: Item) => void;
   onEdit: (item: Item) => void;
   onDelete: (id: string) => void;
-  onPhotoClick: (url: string, allUrls: string[]) => void;
+  itemIndex: number;
+  onPhotoClick: (itemIndex: number, photoIndex: number) => void;
   onReact: (itemId: string, type: "miemie" | "aowu") => void;
   onCommentAdded: (c: Comment) => void;
 };
 
 function WaterfallCard({
-  item, photo, isOwner, isRecipient, secondaryLabel, listId, comments, userDisplayName, currentUserId,
+  item, itemIndex, photo, isOwner, isRecipient, secondaryLabel, listId, comments, userDisplayName, currentUserId,
   pending, deleting, onCycle, onEdit, onDelete, onPhotoClick, onReact, onCommentAdded,
 }: CardProps) {
   const t = useT();
@@ -450,7 +452,7 @@ function WaterfallCard({
           src={photo.url}
           alt=""
           className="w-full object-cover cursor-zoom-in"
-          onClick={() => onPhotoClick(photo.url, item.photos.map((p) => p.url))}
+          onClick={() => onPhotoClick(itemIndex, item.photos.indexOf(photo))}
         />
       )}
 
@@ -653,7 +655,7 @@ type Props = {
   userDisplayName: string | null;
   currentUserId: string | null;
   onEditItem: (item: Item) => void;
-  onPhotoClick: (url: string, allUrls: string[]) => void;
+  onPhotoClick: (itemIndex: number, photoIndex: number) => void;
   onCommentAdded: (c: Comment) => void;
   onReactionsChanged: (totalMiemie: number, totalAowu: number) => void;
 };
@@ -776,7 +778,6 @@ export default function ItemList({
     onCycle: cycleStatus,
     onEdit: onEditItem,
     onDelete: deleteItem,
-    onPhotoClick,
     onReact: reactToItem,
     onCommentAdded,
   };
@@ -820,20 +821,22 @@ export default function ItemList({
 
   // ── Waterfall mode (one card per photo; items without photos get one card) ──
   if (viewMode === "waterfall") {
-    const entries = items.slice(0, visibleCount).flatMap((item) =>
+    const entries = items.slice(0, visibleCount).flatMap((item, itemIdx) =>
       item.photos.length > 0
-        ? item.photos.map((photo) => ({ item, photo }))
-        : [{ item, photo: null as ItemPhoto | null }]
+        ? item.photos.map((photo) => ({ item, itemIdx, photo }))
+        : [{ item, itemIdx, photo: null as ItemPhoto | null }]
     );
     return (
       <>
         <div className="columns-2 gap-3">
-          {entries.map(({ item, photo }) => (
+          {entries.map(({ item, itemIdx, photo }) => (
             <WaterfallCard
               key={photo ? photo.id : item.id}
               item={item}
+              itemIndex={itemIdx}
               photo={photo}
               {...sharedProps}
+              onPhotoClick={onPhotoClick}
             />
           ))}
         </div>
@@ -848,11 +851,13 @@ export default function ItemList({
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
           <ul className="divide-y divide-gray-100 dark:divide-gray-800">
-            {items.slice(0, visibleCount).map((item) => (
+            {items.slice(0, visibleCount).map((item, i) => (
               <SortableRow
                 key={item.id}
                 item={item}
+                itemIndex={i}
                 {...sharedProps}
+                onPhotoClick={onPhotoClick}
                 onPhotoAdded={handlePhotoAdded}
                 onPhotoRemoved={handlePhotoRemoved}
               />
