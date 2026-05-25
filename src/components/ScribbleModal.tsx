@@ -32,9 +32,10 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
   const drawingBlobRef = useRef<Blob | null>(null);
 
   const [step, setStep] = useState<Step>("loading");
-  const [word, setWord] = useState("");
-  const [sentenceEn, setSentenceEn] = useState("");
-  const [sentenceZh, setSentenceZh] = useState("");
+  const [idiomId, setIdiomId] = useState<number | null>(null);
+  const [idiom, setIdiom] = useState("");
+  const [pinyin, setPinyin] = useState("");
+  const [explanation, setExplanation] = useState("");
 
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [brushColor, setBrushColor] = useState("#000000");
@@ -48,17 +49,18 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
   const [selectedReceiver, setSelectedReceiver] = useState<Contact | null>(null);
   const [submitError, setSubmitError] = useState("");
 
-  // Fetch word on mount (guard against StrictMode double-invoke)
+  // Fetch idiom on mount (guard against StrictMode double-invoke)
   const hasFetchedWordRef = useRef(false);
   useEffect(() => {
     if (hasFetchedWordRef.current) return;
     hasFetchedWordRef.current = true;
     fetch("/api/scribble/word")
-      .then((r) => r.json() as Promise<{ word: string; sentence_en: string | null; sentence_zh: string | null }>)
+      .then((r) => r.json() as Promise<{ idiomId: number; idiom: string; pinyin: string; explanation: string }>)
       .then((data) => {
-        setWord(data.word);
-        setSentenceEn(data.sentence_en ?? "");
-        setSentenceZh(data.sentence_zh ?? "");
+        setIdiomId(data.idiomId);
+        setIdiom(data.idiom);
+        setPinyin(data.pinyin);
+        setExplanation(data.explanation);
         setStep("drawing");
       })
       .catch(() => setStep("error"));
@@ -226,9 +228,12 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
     try {
       const fd = new FormData();
       fd.append("file", blob, "scribble.png");
-      fd.append("word", word);
-      fd.append("sentence_en", sentenceEn);
-      fd.append("sentence_zh", sentenceZh);
+      if (idiomId == null) {
+        setSubmitError("Missing idiom");
+        setSubmitting(false);
+        return;
+      }
+      fd.append("idiomId", String(idiomId));
       fd.append("receiverUsername", selectedReceiver.username);
 
       const res = await fetch("/api/scribble/submit", { method: "POST", body: fd });
@@ -264,14 +269,14 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
       <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700 shrink-0" style={{ paddingTop: "calc(0.5rem + env(safe-area-inset-top))" }}>
         <button onClick={onClose} className="text-white text-2xl leading-none opacity-60 hover:opacity-100">×</button>
         <div className="text-center flex-1 mx-2 min-w-0">
-          {step === "loading" && <p className="text-sm text-gray-400 animate-pulse">Loading word...</p>}
+          {step === "loading" && <p className="text-sm text-gray-400 animate-pulse">抽取成语中…</p>}
           {step === "error" && <p className="text-sm text-red-400">Failed to load. <button onClick={onClose} className="underline">Close</button></p>}
           {(step === "drawing" || step === "sharing" || step === "done") && (
             <>
-              <p className="text-xs text-gray-400">Draw this word</p>
-              <p className="text-lg font-bold">{word}</p>
-              {sentenceEn && <p className="text-xs text-gray-300 mt-0.5">{sentenceEn}</p>}
-              {sentenceZh && <p className="text-xs text-gray-400">{sentenceZh}</p>}
+              <p className="text-xs text-gray-400">画这个成语</p>
+              <p className="text-lg font-bold tracking-wider">{idiom}</p>
+              {pinyin && <p className="text-xs text-gray-300 mt-0.5">{pinyin}</p>}
+              {explanation && <p className="text-xs text-gray-400 line-clamp-2">{explanation}</p>}
             </>
           )}
           {step === "done" && <p className="text-green-400 text-sm mt-1">Sent!</p>}
@@ -461,7 +466,7 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
           <p className="text-4xl">✏️</p>
           <p className="text-lg font-semibold">Scribble sent!</p>
           <p className="text-sm text-gray-400">
-            @{selectedReceiver?.username} will see your drawing of <strong>{word}</strong>
+            @{selectedReceiver?.username} will see your drawing of <strong>{idiom}</strong>
           </p>
           <button
             onClick={onClose}
