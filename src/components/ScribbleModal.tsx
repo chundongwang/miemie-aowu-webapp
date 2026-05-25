@@ -36,6 +36,7 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
   const [idiom, setIdiom] = useState("");
   const [pinyin, setPinyin] = useState("");
   const [explanation, setExplanation] = useState("");
+  const [example, setExample] = useState("");
 
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [brushColor, setBrushColor] = useState("#000000");
@@ -57,12 +58,13 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
     if (hasFetchedWordRef.current) return;
     hasFetchedWordRef.current = true;
     fetch("/api/scribble/word")
-      .then((r) => r.json() as Promise<{ idiomId: number; idiom: string; pinyin: string; explanation: string }>)
+      .then((r) => r.json() as Promise<{ idiomId: number; idiom: string; pinyin: string; explanation: string; example: string }>)
       .then((data) => {
         setIdiomId(data.idiomId);
         setIdiom(data.idiom);
         setPinyin(data.pinyin);
         setExplanation(data.explanation);
+        setExample(data.example);
         setStep("drawing");
       })
       .catch(() => setStep("error"));
@@ -205,11 +207,12 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
     try {
       const res = await fetch("/api/scribble/word");
       if (!res.ok) throw new Error("fetch failed");
-      const data = (await res.json()) as { idiomId: number; idiom: string; pinyin: string; explanation: string };
+      const data = (await res.json()) as { idiomId: number; idiom: string; pinyin: string; explanation: string; example: string };
       setIdiomId(data.idiomId);
       setIdiom(data.idiom);
       setPinyin(data.pinyin);
       setExplanation(data.explanation);
+      setExample(data.example);
       // Different idiom → wipe canvas so the drawing matches the prompt.
       strokesRef.current = [];
       redraw();
@@ -289,31 +292,76 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-gray-900 text-white">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700 shrink-0" style={{ paddingTop: "calc(0.5rem + env(safe-area-inset-top))" }}>
-        <button onClick={onClose} className="text-white text-2xl leading-none opacity-60 hover:opacity-100">×</button>
-        <div className="text-center flex-1 mx-2 min-w-0">
-          {step === "loading" && <p className="text-sm text-gray-400 animate-pulse">抽取成语中…</p>}
-          {step === "error" && <p className="text-sm text-red-400">Failed to load. <button onClick={onClose} className="underline">Close</button></p>}
-          {(step === "drawing" || step === "sharing" || step === "done") && (
-            <>
-              <p className="text-xs text-gray-400">画这个成语</p>
-              <p className={`text-lg font-bold tracking-wider transition-opacity ${skipping ? "opacity-30" : ""}`}>{idiom}</p>
-              {pinyin && <p className={`text-xs text-gray-300 mt-0.5 transition-opacity ${skipping ? "opacity-30" : ""}`}>{pinyin}</p>}
-              {explanation && <p className={`text-xs text-gray-400 line-clamp-2 transition-opacity ${skipping ? "opacity-30" : ""}`}>{explanation}</p>}
+      <div className="flex items-start gap-2 px-4 py-2 bg-gray-800 border-b border-gray-700 shrink-0" style={{ paddingTop: "calc(0.5rem + env(safe-area-inset-top))" }}>
+        <button
+          onClick={onClose}
+          className="text-white text-2xl leading-none opacity-60 hover:opacity-100 shrink-0"
+          aria-label="Close"
+        >
+          ×
+        </button>
+
+        {step === "loading" && (
+          <p className="flex-1 text-sm text-gray-400 animate-pulse text-center py-2">抽取成语中…</p>
+        )}
+        {step === "error" && (
+          <p className="flex-1 text-sm text-red-400 text-center py-2">
+            Failed to load. <button onClick={onClose} className="underline">Close</button>
+          </p>
+        )}
+
+        {(step === "drawing" || step === "sharing" || step === "done") && (
+          <div className="flex-1 grid grid-cols-2 gap-3 min-w-0">
+            {/* LEFT: idiom */}
+            <div className="text-center min-w-0">
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider">画这个成语</p>
+              <p
+                className={`text-2xl font-bold tracking-wider transition-opacity ${skipping ? "opacity-30" : ""}`}
+              >
+                {idiom}
+              </p>
+              {pinyin && (
+                <p
+                  className={`text-[11px] text-gray-300 mt-0.5 break-words transition-opacity ${skipping ? "opacity-30" : ""}`}
+                >
+                  {pinyin}
+                </p>
+              )}
+            </div>
+
+            {/* RIGHT: explanation / example / refresh */}
+            <div className="text-left text-[11px] leading-snug min-w-0 space-y-1">
+              {explanation && (
+                <p
+                  className={`text-gray-300 line-clamp-2 transition-opacity ${skipping ? "opacity-30" : ""}`}
+                >
+                  {explanation}
+                </p>
+              )}
+              {example && (
+                <p
+                  className={`text-gray-500 line-clamp-2 transition-opacity ${skipping ? "opacity-30" : ""}`}
+                  title={example}
+                >
+                  <span className="text-gray-400">例：</span>{example}
+                </p>
+              )}
               {step === "drawing" && (
                 <button
                   onClick={() => void handleSkipIdiom()}
                   disabled={skipsLeft === 0 || skipping}
-                  className="mt-1 text-[11px] text-blue-300 hover:text-blue-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="text-blue-300 hover:text-blue-200 disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  {skipsLeft === 0 ? "没有机会了" : skipping ? "换一个…" : `🔄 换一个 (剩 ${skipsLeft})`}
+                  {skipsLeft === 0
+                    ? "没有机会了"
+                    : skipping
+                      ? "换一个…"
+                      : `🔄 换一个 (剩 ${skipsLeft})`}
                 </button>
               )}
-            </>
-          )}
-          {step === "done" && <p className="text-green-400 text-sm mt-1">Sent!</p>}
-        </div>
-        <div className="w-8" /> {/* spacer */}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Step: drawing */}

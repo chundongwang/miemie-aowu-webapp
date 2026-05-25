@@ -8,7 +8,7 @@ export async function GET() {
     const db = await getDB();
     const row = await db
       .prepare(
-        `SELECT id, idiom, pinyin, explanation
+        `SELECT id, idiom, pinyin, explanation, example
          FROM idioms
          ORDER BY RANDOM()
          LIMIT 1`
@@ -18,6 +18,7 @@ export async function GET() {
         idiom: string;
         pinyin: string;
         explanation: string | null;
+        example: string | null;
       }>();
 
     if (!row) {
@@ -29,6 +30,7 @@ export async function GET() {
       idiom: row.idiom,
       pinyin: row.pinyin,
       explanation: row.explanation ?? "",
+      example: row.example ?? "",
     });
   });
 }
