@@ -42,6 +42,8 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
   const [brushSize, setBrushSize] = useState(3);
 
   const [submitting, setSubmitting] = useState(false);
+  const [skipsLeft, setSkipsLeft] = useState(3);
+  const [skipping, setSkipping] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Contact[]>([]);
@@ -197,6 +199,27 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
     redraw();
   }
 
+  async function handleSkipIdiom() {
+    if (skipsLeft <= 0 || skipping) return;
+    setSkipping(true);
+    try {
+      const res = await fetch("/api/scribble/word");
+      if (!res.ok) throw new Error("fetch failed");
+      const data = (await res.json()) as { idiomId: number; idiom: string; pinyin: string; explanation: string };
+      setIdiomId(data.idiomId);
+      setIdiom(data.idiom);
+      setPinyin(data.pinyin);
+      setExplanation(data.explanation);
+      // Different idiom → wipe canvas so the drawing matches the prompt.
+      strokesRef.current = [];
+      redraw();
+      setSkipsLeft((n) => n - 1);
+    } catch {
+      // ignore — keep the current idiom
+    }
+    setSkipping(false);
+  }
+
   function handleSubmit() {
     if (strokesRef.current.length === 0 || strokesRef.current.every((s) => s.points.length < 2)) {
       return; // empty canvas
@@ -274,9 +297,18 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
           {(step === "drawing" || step === "sharing" || step === "done") && (
             <>
               <p className="text-xs text-gray-400">画这个成语</p>
-              <p className="text-lg font-bold tracking-wider">{idiom}</p>
-              {pinyin && <p className="text-xs text-gray-300 mt-0.5">{pinyin}</p>}
-              {explanation && <p className="text-xs text-gray-400 line-clamp-2">{explanation}</p>}
+              <p className={`text-lg font-bold tracking-wider transition-opacity ${skipping ? "opacity-30" : ""}`}>{idiom}</p>
+              {pinyin && <p className={`text-xs text-gray-300 mt-0.5 transition-opacity ${skipping ? "opacity-30" : ""}`}>{pinyin}</p>}
+              {explanation && <p className={`text-xs text-gray-400 line-clamp-2 transition-opacity ${skipping ? "opacity-30" : ""}`}>{explanation}</p>}
+              {step === "drawing" && (
+                <button
+                  onClick={() => void handleSkipIdiom()}
+                  disabled={skipsLeft === 0 || skipping}
+                  className="mt-1 text-[11px] text-blue-300 hover:text-blue-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  {skipsLeft === 0 ? "没有机会了" : skipping ? "换一个…" : `🔄 换一个 (剩 ${skipsLeft})`}
+                </button>
+              )}
             </>
           )}
           {step === "done" && <p className="text-green-400 text-sm mt-1">Sent!</p>}
