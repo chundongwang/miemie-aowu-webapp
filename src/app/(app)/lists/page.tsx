@@ -116,7 +116,7 @@ export default function ListsPage() {
   const { indicatorRef, isRefreshing } = usePullToRefresh(fetchLists);
   const swipeProgress = useSwipeBack("/", !showNew && !showCheckIn && !showScribble && !showScribbleInbox);
 
-  const unreadScribbles = scribbleInbox.filter((s) => s.viewedAt === null).length;
+  const unreadScribbles = scribbleInbox.filter((s) => s.guessGrade === null).length;
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -259,7 +259,10 @@ export default function ListsPage() {
         )}
         <div className="relative">
           <ScribbleFAB
-            onClick={() => setShowScribble(true)}
+            onClick={() => {
+              if (unreadScribbles > 0) setShowScribbleInbox(true);
+              else setShowScribble(true);
+            }}
             className="bg-[#2B4B8C] text-white w-14 h-14 rounded-full text-xl shadow-lg hover:bg-[#1e3a70] active:scale-95 transition-transform flex items-center justify-center"
           />
           {unreadScribbles > 0 && (
@@ -292,9 +295,21 @@ export default function ListsPage() {
         <ScribbleInboxModal
           scribbles={scribbleInbox}
           onClose={() => setShowScribbleInbox(false)}
-          onAllViewed={() =>
+          onGuessed={(id, result) =>
             setScribbleInbox((prev) =>
-              prev.map((s) => (s.viewedAt === null ? { ...s, viewedAt: Date.now() } : s))
+              prev.map((s) =>
+                s.id === id
+                  ? {
+                      ...s,
+                      guess: result.guess,
+                      guessGrade: result.grade,
+                      guessedAt: Date.now(),
+                      word: result.word,
+                      sentenceEn: result.sentenceEn,
+                      sentenceZh: result.sentenceZh,
+                    }
+                  : s
+              )
             )
           }
         />

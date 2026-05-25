@@ -10,6 +10,7 @@ export async function GET() {
       .prepare(
         `SELECT s.id, s.word, s.sentence_en, s.sentence_zh, s.drawing_r2_key,
                 s.created_at, s.viewed_at,
+                s.guess_text, s.guess_grade, s.guessed_at,
                 u.display_name AS sender_name, u.username AS sender_username
          FROM scribbles s
          JOIN users u ON u.id = s.sender_id
@@ -26,21 +27,31 @@ export async function GET() {
         drawing_r2_key: string;
         created_at: number;
         viewed_at: number | null;
+        guess_text: string | null;
+        guess_grade: string | null;
+        guessed_at: number | null;
         sender_name: string;
         sender_username: string;
       }>();
 
-    const results = (rows.results ?? []).map((r) => ({
-      id: r.id,
-      word: r.word,
-      sentenceEn: r.sentence_en,
-      sentenceZh: r.sentence_zh,
-      imageUrl: `/api/photos/${r.drawing_r2_key}`,
-      createdAt: r.created_at,
-      viewedAt: r.viewed_at,
-      senderName: r.sender_name,
-      senderUsername: r.sender_username,
-    }));
+    const results = (rows.results ?? []).map((r) => {
+      const guessed = r.guess_grade !== null;
+      return {
+        id: r.id,
+        // Hide the answer (word + sentences) until the receiver has guessed.
+        word: guessed ? r.word : null,
+        sentenceEn: guessed ? r.sentence_en : null,
+        sentenceZh: guessed ? r.sentence_zh : null,
+        imageUrl: `/api/photos/${r.drawing_r2_key}`,
+        createdAt: r.created_at,
+        viewedAt: r.viewed_at,
+        guess: r.guess_text,
+        guessGrade: r.guess_grade as "exact" | "similar" | "wrong" | null,
+        guessedAt: r.guessed_at,
+        senderName: r.sender_name,
+        senderUsername: r.sender_username,
+      };
+    });
 
     return NextResponse.json(results);
   });
