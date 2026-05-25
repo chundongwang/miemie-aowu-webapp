@@ -27,6 +27,9 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
   const isDrawingRef = useRef(false);
   const lastPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const redrawRef = useRef<() => void>(() => {});
+  // Holds the rendered PNG once the user leaves the drawing step. The canvas
+  // is unmounted while step !== "drawing", so we must capture before transition.
+  const drawingBlobRef = useRef<Blob | null>(null);
 
   const [step, setStep] = useState<Step>("loading");
   const [word, setWord] = useState("");
@@ -152,20 +155,38 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
   function onMouseUp() { endDraw(); }
   function onMouseLeave() { endDraw(); }
 
-  // Touch
-  function onTouchStart(e: React.TouchEvent) {
-    if (e.touches.length !== 1) return;
-    e.preventDefault();
-    const pos = getCanvasPos(e.touches[0]);
-    startDraw(pos.x, pos.y);
-  }
-  function onTouchMove(e: React.TouchEvent) {
-    if (e.touches.length !== 1) return;
-    e.preventDefault();
-    const pos = getCanvasPos(e.touches[0]);
-    moveDraw(pos.x, pos.y);
-  }
-  function onTouchEnd() { endDraw(); }
+  // Touch — must be native non-passive listeners; React's synthetic touchmove
+  // is passive by default, which makes preventDefault() a no-op (and prints
+  // a console warning). Attached via useEffect below.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (step !== "drawing" || !canvas) return;
+
+    function onTouchStart(e: TouchEvent) {
+      if (e.touches.length !== 1) return;
+      e.preventDefault();
+      const pos = getCanvasPos(e.touches[0]);
+      startDraw(pos.x, pos.y);
+    }
+    function onTouchMove(e: TouchEvent) {
+      if (e.touches.length !== 1) return;
+      e.preventDefault();
+      const pos = getCanvasPos(e.touches[0]);
+      moveDraw(pos.x, pos.y);
+    }
+    function onTouchEnd() { endDraw(); }
+
+    canvas.addEventListener("touchstart", onTouchStart, { passive: false });
+    canvas.addEventListener("touchmove", onTouchMove, { passive: false });
+    canvas.addEventListener("touchend", onTouchEnd);
+    canvas.addEventListener("touchcancel", onTouchEnd);
+    return () => {
+      canvas.removeEventListener("touchstart", onTouchStart);
+      canvas.removeEventListener("touchmove", onTouchMove);
+      canvas.removeEventListener("touchend", onTouchEnd);
+      canvas.removeEventListener("touchcancel", onTouchEnd);
+    };
+  }, [step, brushColor, brushSize]);
 
   // --- Actions ------------------------------------------------------------------
 
@@ -178,26 +199,31 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
     if (strokesRef.current.length === 0 || strokesRef.current.every((s) => s.points.length < 2)) {
       return; // empty canvas
     }
-    setStep("sharing");
-    // Load contacts
-    fetch("/api/contacts")
-      .then((r) => (r.ok ? r.json() as Promise<Contact[]> : Promise.resolve([])))
-      .then((data) => setContacts(data))
-      .catch(() => {});
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    // Capture the PNG NOW — the canvas is unmounted once step !== "drawing".
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        setSubmitError("Failed to capture drawing");
+        return;
+      }
+      drawingBlobRef.current = blob;
+      setStep("sharing");
+      fetch("/api/contacts")
+        .then((r) => (r.ok ? r.json() as Promise<Contact[]> : Promise.resolve([])))
+        .then((data) => setContacts(data))
+        .catch(() => {});
+    }, "image/png");
   }
 
   async function handleSend() {
     if (!selectedReceiver) return;
+    const blob = drawingBlobRef.current;
+    if (!blob) { setSubmitError("Drawing not captured"); return; }
+
     setSubmitting(true);
     setSubmitError("");
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
     try {
-      const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/png"));
-      if (!blob) { setSubmitError("Failed to create image"); setSubmitting(false); return; }
-
       const fd = new FormData();
       fd.append("file", blob, "scribble.png");
       fd.append("word", word);
@@ -214,8 +240,9 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
       }
     } catch {
       setSubmitError("Network error");
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   }
 
   // --- User search --------------------------------------------------------------
@@ -309,7 +336,7 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
             </div>
           </div>
 
-          {/* Canvas */}
+          {/* Canvas — touch handlers attached via useEffect (non-passive) */}
           <canvas
             ref={canvasRef}
             className="w-full touch-none"
@@ -318,9 +345,6 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
             onMouseMove={onMouseMove}
             onMouseUp={onMouseUp}
             onMouseLeave={onMouseLeave}
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
           />
 
           {/* Actions */}
