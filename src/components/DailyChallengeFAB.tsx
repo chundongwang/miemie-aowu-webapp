@@ -19,7 +19,7 @@ export default function DailyChallengeFAB({ loggedIn }: { loggedIn: boolean }) {
   }, []);
 
   return (
-    <div className="fixed bottom-40 right-6 sm:right-[calc(50%-208px)] z-20 flex flex-col items-end">
+    <div className="fixed bottom-[10.5rem] right-6 sm:right-[calc(50%-208px)] z-20 flex flex-col items-end">
       {/* Popup bubble */}
       <div
         className={`mb-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 shadow-md text-xs text-gray-700 dark:text-gray-200 whitespace-nowrap transition-all duration-300 ${

@@ -11,6 +11,9 @@ import DailyChallengeFAB from "@/components/DailyChallengeFAB";
 import FoodWheelFAB from "@/components/FoodWheelFAB";
 import CheckInFAB from "@/components/CheckInFAB";
 import CheckInModal from "@/components/CheckInModal";
+import ScribbleModal from "@/components/ScribbleModal";
+import ScribbleFAB from "@/components/ScribbleFAB";
+import ScribbleInboxModal, { type InboxScribble } from "@/components/ScribbleInboxModal";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useSwipeBack } from "@/hooks/useSwipeBack";
 import { useT } from "@/context/LocaleContext";
@@ -27,10 +30,14 @@ export default function ListsPage() {
   const [lists, setLists] = useState<List[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
+  const [showScribble, setShowScribble] = useState(false);
   const [me, setMe] = useState<{ id: string } | null>(null);
 
   const [checkIn, setCheckIn]         = useState<CheckInData | null>(null);
   const [showCheckIn, setShowCheckIn] = useState(false);
+
+  const [scribbleInbox, setScribbleInbox] = useState<InboxScribble[]>([]);
+  const [showScribbleInbox, setShowScribbleInbox] = useState(false);
 
   async function fetchLists() {
     const [ls, user] = await Promise.all([
@@ -52,9 +59,18 @@ export default function ListsPage() {
     }
   }
 
+  async function fetchScribbleInbox() {
+    const res = await fetch("/api/scribble/inbox");
+    if (res.ok) {
+      const data = (await res.json()) as InboxScribble[];
+      setScribbleInbox(data);
+    }
+  }
+
   useEffect(() => {
     fetchLists();
     fetchCheckIn();
+    fetchScribbleInbox();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Update app-icon badge + document title whenever unread count changes
@@ -98,7 +114,9 @@ export default function ListsPage() {
   }, [lists]);
 
   const { indicatorRef, isRefreshing } = usePullToRefresh(fetchLists);
-  const swipeProgress = useSwipeBack("/", !showNew && !showCheckIn);
+  const swipeProgress = useSwipeBack("/", !showNew && !showCheckIn && !showScribble && !showScribbleInbox);
+
+  const unreadScribbles = scribbleInbox.filter((s) => s.guessGrade === null).length;
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -225,7 +243,39 @@ export default function ListsPage() {
       <CheckInFAB
         todayCheckedIn={checkIn?.todayCheckedIn ?? false}
         onClick={() => setShowCheckIn(true)}
+        className="fixed bottom-24 right-6 sm:right-[calc(50%-208px)] z-20 flex flex-col items-end"
       />
+      <div className="fixed bottom-6 right-6 sm:right-[calc(50%-208px)] z-20 flex flex-row items-center gap-2">
+        {unreadScribbles > 0 && (
+          <button
+            onClick={() => setShowScribbleInbox(true)}
+            className="relative bg-pink-500 text-white rounded-xl px-3 py-2 shadow-lg text-xs font-medium whitespace-nowrap hover:bg-pink-600 active:scale-95 transition-all"
+          >
+            ✏️ {unreadScribbles === 1
+              ? "1 个成语等你猜!"
+              : `${unreadScribbles} 个成语等你猜!`}
+            <span className="absolute top-1/2 -translate-y-1/2 -right-1.5 w-3 h-3 bg-pink-500 rotate-45" />
+          </button>
+        )}
+        <div className="relative">
+          <ScribbleFAB
+            onClick={() => {
+              if (unreadScribbles > 0) setShowScribbleInbox(true);
+              else setShowScribble(true);
+            }}
+            className="bg-[#2B4B8C] text-white w-14 h-14 rounded-full text-xl shadow-lg hover:bg-[#1e3a70] active:scale-95 transition-transform flex items-center justify-center"
+          />
+          {unreadScribbles > 0 && (
+            <button
+              onClick={() => setShowScribbleInbox(true)}
+              className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-pink-500 text-white text-[10px] font-bold flex items-center justify-center shadow-md ring-2 ring-white dark:ring-gray-900"
+              aria-label={`${unreadScribbles} unread scribbles`}
+            >
+              {unreadScribbles}
+            </button>
+          )}
+        </div>
+      </div>
 
       {showCheckIn && checkIn !== null && (
         <CheckInModal
@@ -240,6 +290,30 @@ export default function ListsPage() {
       )}
 
       {showNew && <NewListModal onClose={() => setShowNew(false)} />}
+      {showScribble && <ScribbleModal onClose={() => setShowScribble(false)} />}
+      {showScribbleInbox && (
+        <ScribbleInboxModal
+          scribbles={scribbleInbox}
+          onClose={() => setShowScribbleInbox(false)}
+          onGuessed={(id, result) =>
+            setScribbleInbox((prev) =>
+              prev.map((s) =>
+                s.id === id
+                  ? {
+                      ...s,
+                      guess: result.guess,
+                      guessGrade: result.grade,
+                      guessedAt: Date.now(),
+                      idiom: result.idiom,
+                      pinyin: result.pinyin,
+                      explanation: result.explanation,
+                    }
+                  : s
+              )
+            )
+          }
+        />
+      )}
     </div>
   );
 }
