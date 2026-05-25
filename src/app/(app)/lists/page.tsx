@@ -228,7 +228,7 @@ export default function ListsPage() {
       <CheckInFAB
         todayCheckedIn={checkIn?.todayCheckedIn ?? false}
         onClick={() => setShowCheckIn(true)}
-        className="fixed bottom-28 right-6 sm:right-[calc(50%-208px)] z-20 flex flex-col items-end"
+        className="fixed bottom-24 right-6 sm:right-[calc(50%-208px)] z-20 flex flex-col items-end"
       />
       <ScribbleFAB
         onClick={() => setShowScribble(true)}
