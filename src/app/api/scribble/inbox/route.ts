@@ -49,7 +49,7 @@ export async function GET() {
         createdAt: r.created_at,
         viewedAt: r.viewed_at,
         guess: r.guess_text,
-        guessGrade: r.guess_grade as "exact" | "similar" | "wrong" | null,
+        guessGrade: r.guess_grade as "exact" | "similar" | "wrong" | "revealed" | null,
         guessedAt: r.guessed_at,
         senderName: r.sender_name,
         senderUsername: r.sender_username,

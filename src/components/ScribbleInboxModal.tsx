@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-export type Grade = "exact" | "similar" | "wrong";
+export type Grade = "exact" | "similar" | "wrong" | "revealed";
 
 export type InboxScribble = {
   id: string;
@@ -61,6 +61,13 @@ const GRADE_DISPLAY: Record<Grade, { emoji: string; title: string; subtitle: str
     color: "text-gray-300",
     ring: "ring-gray-500",
   },
+  revealed: {
+    emoji: "👀",
+    title: "看了答案",
+    subtitle: "下次试着猜猜看",
+    color: "text-gray-300",
+    ring: "ring-gray-500",
+  },
 };
 
 export default function ScribbleInboxModal({ scribbles, onClose, onGuessed }: Props) {
@@ -105,6 +112,42 @@ export default function ScribbleInboxModal({ scribbles, onClose, onGuessed }: Pr
 
   const guessed = active.guessGrade !== null;
   const grade = active.guessGrade;
+
+  async function handleReveal() {
+    if (!active) return;
+    if (!confirm("看答案？这道题就不再算作未猜。")) return;
+    setSubmitting(true);
+    setError("");
+    try {
+      const res = await fetch("/api/scribble/reveal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: active.id }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        setError(data.error ?? "Failed to reveal");
+        setSubmitting(false);
+        return;
+      }
+      const data = await res.json() as {
+        grade: Grade;
+        idiom: string;
+        pinyin: string;
+        explanation: string;
+      };
+      onGuessed(active.id, {
+        grade: data.grade,
+        idiom: data.idiom,
+        pinyin: data.pinyin,
+        explanation: data.explanation,
+        guess: "",
+      });
+    } catch {
+      setError("Network error");
+    }
+    setSubmitting(false);
+  }
 
   async function handleSubmitGuess() {
     if (!active) return;
@@ -197,6 +240,15 @@ export default function ScribbleInboxModal({ scribbles, onClose, onGuessed }: Pr
               {submitting ? "…" : "猜"}
             </button>
           </div>
+          <div className="flex justify-end">
+            <button
+              onClick={() => void handleReveal()}
+              disabled={submitting}
+              className="text-[11px] text-gray-400 hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed underline"
+            >
+              👀 看答案
+            </button>
+          </div>
           {error && <p className="text-xs text-red-400">{error}</p>}
         </div>
       ) : (
@@ -219,8 +271,12 @@ export default function ScribbleInboxModal({ scribbles, onClose, onGuessed }: Pr
           )}
 
           <div className="space-y-1 text-center">
-            <p className="text-xs text-gray-400">你猜的是</p>
-            <p className="text-sm text-gray-200">「{active.guess}」</p>
+            {grade !== "revealed" && active.guess && (
+              <>
+                <p className="text-xs text-gray-400">你猜的是</p>
+                <p className="text-sm text-gray-200">「{active.guess}」</p>
+              </>
+            )}
             <p className="text-xs text-gray-400 mt-2">正确答案</p>
             <p className="text-2xl font-bold tracking-wider">{active.idiom}</p>
             {active.pinyin && <p className="text-xs text-gray-300 mt-1">{active.pinyin}</p>}
@@ -252,7 +308,9 @@ export default function ScribbleInboxModal({ scribbles, onClose, onGuessed }: Pr
                       ? "bg-yellow-300"
                       : s.guessGrade === "similar"
                         ? "bg-green-400"
-                        : "bg-gray-600"
+                        : s.guessGrade === "revealed"
+                          ? "bg-gray-500"
+                          : "bg-gray-600"
               }`}
               aria-label={`Go to scribble ${i + 1}`}
             />
