@@ -1,0 +1,452 @@
+"use client";
+
+import { useEffect, useRef, useState, useCallback } from "react";
+
+type Stroke = {
+  color: string;
+  size: number;
+  points: { x: number; y: number }[];
+};
+
+type Contact = { username: string; displayName: string };
+
+const BG_COLORS = [
+  "#FFFFFF", "#000000", "#EF4444", "#3B82F6", "#22C55E",
+  "#EAB308", "#F97316", "#A855F7", "#EC4899", "#9CA3AF",
+];
+const BRUSH_COLORS = [
+  "#000000", "#FFFFFF", "#EF4444", "#3B82F6", "#22C55E",
+  "#EAB308", "#F97316", "#A855F7", "#EC4899", "#9CA3AF", "#8B4513",
+];
+
+type Step = "loading" | "drawing" | "sharing" | "done" | "error";
+
+export default function ScribbleModal({ onClose }: { onClose: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const strokesRef = useRef<Stroke[]>([]);
+  const isDrawingRef = useRef(false);
+  const lastPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const redrawRef = useRef<() => void>(() => {});
+
+  const [step, setStep] = useState<Step>("loading");
+  const [word, setWord] = useState("");
+  const [sentenceEn, setSentenceEn] = useState("");
+  const [sentenceZh, setSentenceZh] = useState("");
+
+  const [bgColor, setBgColor] = useState("#FFFFFF");
+  const [brushColor, setBrushColor] = useState("#000000");
+  const [brushSize, setBrushSize] = useState(3);
+
+  const [submitting, setSubmitting] = useState(false);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Contact[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [selectedReceiver, setSelectedReceiver] = useState<Contact | null>(null);
+  const [submitError, setSubmitError] = useState("");
+
+  // Fetch word on mount (guard against StrictMode double-invoke)
+  const hasFetchedWordRef = useRef(false);
+  useEffect(() => {
+    if (hasFetchedWordRef.current) return;
+    hasFetchedWordRef.current = true;
+    fetch("/api/scribble/word")
+      .then((r) => r.json() as Promise<{ word: string; sentence_en: string | null; sentence_zh: string | null }>)
+      .then((data) => {
+        setWord(data.word);
+        setSentenceEn(data.sentence_en ?? "");
+        setSentenceZh(data.sentence_zh ?? "");
+        setStep("drawing");
+      })
+      .catch(() => setStep("error"));
+  }, []);
+
+  // --- Canvas drawing -----------------------------------------------------------
+
+  const redraw = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.scale(dpr, dpr);
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, rect.width, rect.height);
+    for (const stroke of strokesRef.current) {
+      if (stroke.points.length < 2) continue;
+      ctx.beginPath();
+      ctx.strokeStyle = stroke.color;
+      ctx.lineWidth = stroke.size;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+      for (let i = 1; i < stroke.points.length; i++) {
+        ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+      }
+      ctx.stroke();
+    }
+  }, [bgColor]);
+
+  redrawRef.current = redraw;
+
+  // Initial canvas setup + resize handler. `step` is a dep so redraw fires
+  // once the canvas actually mounts (it only renders when step === "drawing").
+  useEffect(() => {
+    redraw();
+    function onResize() { redraw(); }
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [redraw, step]);
+
+  // Redraw when bgColor changes (redraw already depends on bgColor via useCallback)
+  useEffect(() => { redraw(); }, [bgColor, redraw]);
+
+  function getCanvasPos(e: { clientX: number; clientY: number }) {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+
+  function startDraw(x: number, y: number) {
+    isDrawingRef.current = true;
+    lastPosRef.current = { x, y };
+    strokesRef.current.push({ color: brushColor, size: brushSize, points: [{ x, y }] });
+  }
+
+  function moveDraw(x: number, y: number) {
+    if (!isDrawingRef.current) return;
+    const ctx = canvasRef.current?.getContext("2d");
+    if (!ctx) return;
+    const last = lastPosRef.current;
+    ctx.beginPath();
+    ctx.moveTo(last.x, last.y);
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = brushColor;
+    ctx.lineWidth = brushSize;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.stroke();
+    lastPosRef.current = { x, y };
+    const currentStroke = strokesRef.current[strokesRef.current.length - 1];
+    currentStroke.points.push({ x, y });
+  }
+
+  function endDraw() {
+    isDrawingRef.current = false;
+  }
+
+  // Mouse
+  function onMouseDown(e: React.MouseEvent) {
+    e.preventDefault();
+    const pos = getCanvasPos(e);
+    startDraw(pos.x, pos.y);
+  }
+  function onMouseMove(e: React.MouseEvent) {
+    const pos = getCanvasPos(e);
+    moveDraw(pos.x, pos.y);
+  }
+  function onMouseUp() { endDraw(); }
+  function onMouseLeave() { endDraw(); }
+
+  // Touch
+  function onTouchStart(e: React.TouchEvent) {
+    if (e.touches.length !== 1) return;
+    e.preventDefault();
+    const pos = getCanvasPos(e.touches[0]);
+    startDraw(pos.x, pos.y);
+  }
+  function onTouchMove(e: React.TouchEvent) {
+    if (e.touches.length !== 1) return;
+    e.preventDefault();
+    const pos = getCanvasPos(e.touches[0]);
+    moveDraw(pos.x, pos.y);
+  }
+  function onTouchEnd() { endDraw(); }
+
+  // --- Actions ------------------------------------------------------------------
+
+  function handleClear() {
+    strokesRef.current = [];
+    redraw();
+  }
+
+  function handleSubmit() {
+    if (strokesRef.current.length === 0 || strokesRef.current.every((s) => s.points.length < 2)) {
+      return; // empty canvas
+    }
+    setStep("sharing");
+    // Load contacts
+    fetch("/api/contacts")
+      .then((r) => (r.ok ? r.json() as Promise<Contact[]> : Promise.resolve([])))
+      .then((data) => setContacts(data))
+      .catch(() => {});
+  }
+
+  async function handleSend() {
+    if (!selectedReceiver) return;
+    setSubmitting(true);
+    setSubmitError("");
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    try {
+      const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/png"));
+      if (!blob) { setSubmitError("Failed to create image"); setSubmitting(false); return; }
+
+      const fd = new FormData();
+      fd.append("file", blob, "scribble.png");
+      fd.append("word", word);
+      fd.append("sentence_en", sentenceEn);
+      fd.append("sentence_zh", sentenceZh);
+      fd.append("receiverUsername", selectedReceiver.username);
+
+      const res = await fetch("/api/scribble/submit", { method: "POST", body: fd });
+      if (res.ok) {
+        setStep("done");
+      } else {
+        const data = await (res.json() as Promise<{ error?: string }>).catch(() => ({ error: "Unknown error" }));
+        setSubmitError(data.error ?? "Failed to send");
+      }
+    } catch {
+      setSubmitError("Network error");
+    }
+    setSubmitting(false);
+  }
+
+  // --- User search --------------------------------------------------------------
+
+  function handleSearch(q: string) {
+    setSearchQuery(q);
+    if (q.length < 1) { setSearchResults([]); return; }
+    setSearching(true);
+    fetch(`/api/users/search?q=${encodeURIComponent(q)}`)
+      .then((r) => (r.ok ? r.json() as Promise<Contact[]> : Promise.resolve([])))
+      .then((data) => setSearchResults(data))
+      .catch(() => {})
+      .finally(() => setSearching(false));
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-gray-900 text-white">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700 shrink-0" style={{ paddingTop: "calc(0.5rem + env(safe-area-inset-top))" }}>
+        <button onClick={onClose} className="text-white text-2xl leading-none opacity-60 hover:opacity-100">×</button>
+        <div className="text-center flex-1 mx-2 min-w-0">
+          {step === "loading" && <p className="text-sm text-gray-400 animate-pulse">Loading word...</p>}
+          {step === "error" && <p className="text-sm text-red-400">Failed to load. <button onClick={onClose} className="underline">Close</button></p>}
+          {(step === "drawing" || step === "sharing" || step === "done") && (
+            <>
+              <p className="text-xs text-gray-400">Draw this word</p>
+              <p className="text-lg font-bold">{word}</p>
+              {sentenceEn && <p className="text-xs text-gray-300 mt-0.5">{sentenceEn}</p>}
+              {sentenceZh && <p className="text-xs text-gray-400">{sentenceZh}</p>}
+            </>
+          )}
+          {step === "done" && <p className="text-green-400 text-sm mt-1">Sent!</p>}
+        </div>
+        <div className="w-8" /> {/* spacer */}
+      </div>
+
+      {/* Step: drawing */}
+      {step === "drawing" && (
+        <>
+          {/* Toolbar */}
+          <div className="px-3 py-2 bg-gray-800 border-b border-gray-700 shrink-0 space-y-2">
+            {/* Background colors */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-gray-400 w-8 shrink-0">BG</span>
+              {BG_COLORS.map((c) => (
+                <button
+                  key={c}
+                  className={`w-5 h-5 rounded-full border-2 shrink-0 ${
+                    bgColor === c ? "border-white scale-110" : "border-gray-600"
+                  }`}
+                  style={{ backgroundColor: c }}
+                  onClick={() => setBgColor(c)}
+                />
+              ))}
+            </div>
+
+            {/* Brush colors */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-gray-400 w-8 shrink-0">Brush</span>
+              {BRUSH_COLORS.map((c) => (
+                <button
+                  key={c}
+                  className={`w-5 h-5 rounded-full border-2 shrink-0 ${
+                    brushColor === c ? "border-white scale-110" : "border-gray-600"
+                  }`}
+                  style={{ backgroundColor: c }}
+                  onClick={() => setBrushColor(c)}
+                />
+              ))}
+            </div>
+
+            {/* Brush size */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-gray-400 w-8 shrink-0">Size</span>
+              <input
+                type="range"
+                min="1"
+                max="20"
+                value={brushSize}
+                onChange={(e) => setBrushSize(Number(e.target.value))}
+                className="flex-1 h-1 accent-white"
+              />
+              <span
+                className="shrink-0 rounded-full border border-gray-500"
+                style={{
+                  width: brushSize + 4,
+                  height: brushSize + 4,
+                  backgroundColor: brushColor,
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Canvas */}
+          <canvas
+            ref={canvasRef}
+            className="w-full touch-none"
+            style={{ flex: 1, backgroundColor: bgColor }}
+            onMouseDown={onMouseDown}
+            onMouseMove={onMouseMove}
+            onMouseUp={onMouseUp}
+            onMouseLeave={onMouseLeave}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+          />
+
+          {/* Actions */}
+          <div className="flex items-center gap-3 px-4 py-3 bg-gray-800 border-t border-gray-700 shrink-0">
+            <button
+              onClick={handleClear}
+              className="px-4 py-2 text-sm text-gray-300 border border-gray-600 rounded-lg hover:bg-gray-700"
+            >
+              Clear
+            </button>
+            <button
+              onClick={handleSubmit}
+              className="flex-1 py-2 text-sm font-semibold bg-[#2B4B8C] text-white rounded-lg hover:bg-[#1e3a70] transition-colors"
+            >
+              Submit
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Step: sharing (pick receiver) */}
+      {step === "sharing" && (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-700">
+            <p className="text-sm text-gray-300 mb-2">Send to...</p>
+            <input
+              type="text"
+              placeholder="Search username..."
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-sm text-white placeholder-gray-400 focus:outline-none focus:border-[#2B4B8C]"
+            />
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-4 py-2">
+            {searchQuery.length > 0 ? (
+              searching ? (
+                <p className="text-sm text-gray-400 text-center py-4">Searching...</p>
+              ) : searchResults.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-4">No users found</p>
+              ) : (
+                searchResults.map((u) => (
+                  <button
+                    key={u.username}
+                    onClick={() => setSelectedReceiver(u)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left ${
+                      selectedReceiver?.username === u.username
+                        ? "bg-[#2B4B8C] text-white"
+                        : "hover:bg-gray-700"
+                    }`}
+                  >
+                    <span className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-sm font-bold shrink-0">
+                      {u.displayName.charAt(0).toUpperCase()}
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium">{u.displayName}</p>
+                      <p className="text-xs text-gray-400">@{u.username}</p>
+                    </div>
+                  </button>
+                ))
+              )
+            ) : contacts.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">
+                No recent contacts. Search for a user by username.
+              </p>
+            ) : (
+              <>
+                <p className="text-xs text-gray-500 mb-2">Recent contacts</p>
+                {contacts.map((u) => (
+                  <button
+                    key={u.username}
+                    onClick={() => setSelectedReceiver(u)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left ${
+                      selectedReceiver?.username === u.username
+                        ? "bg-[#2B4B8C] text-white"
+                        : "hover:bg-gray-700"
+                    }`}
+                  >
+                    <span className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-sm font-bold shrink-0">
+                      {u.displayName.charAt(0).toUpperCase()}
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium">{u.displayName}</p>
+                      <p className="text-xs text-gray-400">@{u.username}</p>
+                    </div>
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
+
+          <div className="px-4 py-3 border-t border-gray-700 shrink-0 space-y-2">
+            {submitError && <p className="text-sm text-red-400">{submitError}</p>}
+            <button
+              onClick={handleSend}
+              disabled={!selectedReceiver || submitting}
+              className="w-full py-2.5 text-sm font-semibold bg-[#2B4B8C] text-white rounded-lg hover:bg-[#1e3a70] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {submitting ? "Sending..." : "Send Scribble"}
+            </button>
+            <button
+              onClick={() => setStep("drawing")}
+              className="w-full py-2 text-sm text-gray-400 hover:text-white"
+            >
+              Back to drawing
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step: done */}
+      {step === "done" && (
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 px-4">
+          <p className="text-4xl">✏️</p>
+          <p className="text-lg font-semibold">Scribble sent!</p>
+          <p className="text-sm text-gray-400">
+            @{selectedReceiver?.username} will see your drawing of <strong>{word}</strong>
+          </p>
+          <button
+            onClick={onClose}
+            className="px-6 py-2.5 bg-[#2B4B8C] text-white rounded-lg font-semibold hover:bg-[#1e3a70] transition-colors"
+          >
+            Done
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

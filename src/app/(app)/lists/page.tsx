@@ -11,6 +11,8 @@ import DailyChallengeFAB from "@/components/DailyChallengeFAB";
 import FoodWheelFAB from "@/components/FoodWheelFAB";
 import CheckInFAB from "@/components/CheckInFAB";
 import CheckInModal from "@/components/CheckInModal";
+import ScribbleModal from "@/components/ScribbleModal";
+import ScribbleFAB from "@/components/ScribbleFAB";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useSwipeBack } from "@/hooks/useSwipeBack";
 import { useT } from "@/context/LocaleContext";
@@ -27,6 +29,7 @@ export default function ListsPage() {
   const [lists, setLists] = useState<List[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
+  const [showScribble, setShowScribble] = useState(false);
   const [me, setMe] = useState<{ id: string } | null>(null);
 
   const [checkIn, setCheckIn]         = useState<CheckInData | null>(null);
@@ -98,7 +101,7 @@ export default function ListsPage() {
   }, [lists]);
 
   const { indicatorRef, isRefreshing } = usePullToRefresh(fetchLists);
-  const swipeProgress = useSwipeBack("/", !showNew && !showCheckIn);
+  const swipeProgress = useSwipeBack("/", !showNew && !showCheckIn && !showScribble);
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -225,6 +228,11 @@ export default function ListsPage() {
       <CheckInFAB
         todayCheckedIn={checkIn?.todayCheckedIn ?? false}
         onClick={() => setShowCheckIn(true)}
+        className="fixed bottom-28 right-6 sm:right-[calc(50%-208px)] z-20 flex flex-col items-end"
+      />
+      <ScribbleFAB
+        onClick={() => setShowScribble(true)}
+        className="fixed bottom-6 right-6 sm:right-[calc(50%-208px)] z-20 bg-[#2B4B8C] text-white w-14 h-14 rounded-full text-xl shadow-lg hover:bg-[#1e3a70] active:scale-95 transition-transform flex items-center justify-center"
       />
 
       {showCheckIn && checkIn !== null && (
@@ -240,6 +248,7 @@ export default function ListsPage() {
       )}
 
       {showNew && <NewListModal onClose={() => setShowNew(false)} />}
+      {showScribble && <ScribbleModal onClose={() => setShowScribble(false)} />}
     </div>
   );
 }

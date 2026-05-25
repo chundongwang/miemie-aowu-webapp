@@ -23,11 +23,14 @@ const ORBIT_CSS = `
 type Props = {
   todayCheckedIn: boolean;
   onClick: () => void;
+  className?: string;
 };
 
-export default function CheckInFAB({ todayCheckedIn, onClick }: Props) {
+export default function CheckInFAB({ todayCheckedIn, onClick, className }: Props) {
   const [showPopup, setShowPopup]   = useState(false);
-  const [orbitOffset] = useState(() => Math.random() * 6);
+  const [orbitOffset, setOrbitOffset] = useState(0);
+
+  useEffect(() => { setOrbitOffset(Math.random() * 6); }, []);
 
   useEffect(() => {
     if (todayCheckedIn) return; // don't nag if already checked in
@@ -42,7 +45,7 @@ export default function CheckInFAB({ todayCheckedIn, onClick }: Props) {
   }, [todayCheckedIn]);
 
   return (
-    <div className="fixed bottom-6 right-6 sm:right-[calc(50%-208px)] z-20 flex flex-col items-end">
+    <div className={className ?? "fixed bottom-6 right-6 sm:right-[calc(50%-208px)] z-20 flex flex-col items-end"}>
       <style>{ORBIT_CSS}</style>
 
       {/* Popup bubble */}
