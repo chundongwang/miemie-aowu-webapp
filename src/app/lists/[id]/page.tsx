@@ -11,6 +11,8 @@ import TextItemEditor from "@/components/TextItemEditor";
 import ShareModal from "@/components/ShareModal";
 import EditListModal from "@/components/EditListModal";
 import Lightbox from "@/components/Lightbox";
+import ScribbleModal from "@/components/ScribbleModal";
+import ScribbleFAB from "@/components/ScribbleFAB";
 import CommentThread from "@/components/CommentThread";
 import BulkImportModal from "@/components/BulkImportModal";
 import NearbyFoodModal from "@/components/NearbyFoodModal";
@@ -36,6 +38,7 @@ export default function ListDetailPage() {
   const [showEditList, setShowEditList] = useState(false);
   const [showImport,   setShowImport]   = useState(false);
   const [showNearby,   setShowNearby]   = useState(false);
+  const [showScribble, setShowScribble] = useState(false);
   const [editingItem,  setEditingItem]  = useState<Item | null>(null);
 
   const [viewMode, setViewMode] = useState<"list" | "waterfall">("list");
@@ -68,7 +71,7 @@ export default function ListDetailPage() {
 
   const { indicatorRef, isRefreshing: pullRefreshing } = usePullToRefresh(async () => { load(); });
 
-  const anyModalOpen = showAddItem || showShare || showEditList || showImport || showNearby || !!editingItem || !!lightbox;
+  const anyModalOpen = showAddItem || showShare || showEditList || showImport || showNearby || showScribble || !!editingItem || !!lightbox;
   const swipeProgress = useSwipeBack(me ? "/lists" : "/", !loading && !anyModalOpen);
 
   // Load comments once list is available
@@ -273,12 +276,12 @@ export default function ListDetailPage() {
       )}
 
       {(isOwner || isRecipient) && (
-        <div className="fixed bottom-6 right-6 sm:right-[calc(50%-208px)] flex flex-col items-center gap-3">
+        <div className="fixed bottom-6 right-6 sm:right-[calc(50%-208px)] flex flex-col items-end gap-3">
           {!isTextList && (
             <button
               onClick={() => setShowImport(true)}
               title={t("importTitle")}
-              className="bg-white dark:bg-gray-900 text-[#2B4B8C] border-2 border-[#2B4B8C] w-11 h-11 rounded-full text-xs font-bold shadow-md dark:shadow-none hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center justify-center"
+              className="bg-white dark:bg-gray-900 text-[#2B4B8C] border-2 border-[#2B4B8C] w-9 h-9 rounded-full text-[10px] font-bold shadow-md dark:shadow-none hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center justify-center"
             >
               {t("importButton")}
             </button>
@@ -287,17 +290,18 @@ export default function ListDetailPage() {
             <button
               onClick={() => setShowNearby(true)}
               title="Find nearby food"
-              className="bg-white dark:bg-gray-900 text-[#2B4B8C] border-2 border-[#2B4B8C] w-11 h-11 rounded-full text-xl shadow-md dark:shadow-none hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center justify-center"
+              className="bg-white dark:bg-gray-900 text-[#2B4B8C] border-2 border-[#2B4B8C] w-9 h-9 rounded-full text-base shadow-md dark:shadow-none hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center justify-center"
             >
               📍
             </button>
           )}
           <button
             onClick={() => setShowAddItem(true)}
-            className="bg-[#2B4B8C] text-white w-14 h-14 rounded-full text-2xl shadow-lg hover:bg-[#1e3a70] flex items-center justify-center"
+            className="bg-white dark:bg-gray-900 text-[#2B4B8C] border-2 border-[#2B4B8C] w-9 h-9 rounded-full text-sm font-bold shadow-md dark:shadow-none hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center justify-center"
           >
             +
           </button>
+          <ScribbleFAB onClick={() => setShowScribble(true)} />
         </div>
       )}
 
@@ -338,6 +342,9 @@ export default function ListDetailPage() {
           secondaryLabel={list.secondaryLabel}
           onClose={handleModalClose(setShowNearby)}
         />
+      )}
+      {showScribble && (
+        <ScribbleModal onClose={() => { setShowScribble(false); load(); }} />
       )}
       {lightbox && (
         <Lightbox items={lightbox.items} itemIndex={lightbox.itemIndex} photoIndex={lightbox.photoIndex} onClose={() => setLightbox(null)} />
