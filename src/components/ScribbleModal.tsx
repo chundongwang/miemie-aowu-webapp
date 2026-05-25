@@ -6,6 +6,7 @@ type Stroke = {
   color: string;
   size: number;
   points: { x: number; y: number }[];
+  isEraser?: boolean;
 };
 
 type Contact = { username: string; displayName: string };
@@ -41,6 +42,7 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [brushColor, setBrushColor] = useState("#000000");
   const [brushSize, setBrushSize] = useState(3);
+  const [isErasing, setIsErasing] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [skipsLeft, setSkipsLeft] = useState(3);
@@ -87,7 +89,7 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
     for (const stroke of strokesRef.current) {
       if (stroke.points.length < 2) continue;
       ctx.beginPath();
-      ctx.strokeStyle = stroke.color;
+      ctx.strokeStyle = stroke.isEraser ? bgColor : stroke.color;
       ctx.lineWidth = stroke.size;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
@@ -123,7 +125,12 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
   function startDraw(x: number, y: number) {
     isDrawingRef.current = true;
     lastPosRef.current = { x, y };
-    strokesRef.current.push({ color: brushColor, size: brushSize, points: [{ x, y }] });
+    strokesRef.current.push({
+      color: brushColor,
+      size: brushSize,
+      points: [{ x, y }],
+      isEraser: isErasing,
+    });
   }
 
   function moveDraw(x: number, y: number) {
@@ -134,7 +141,7 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
     ctx.beginPath();
     ctx.moveTo(last.x, last.y);
     ctx.lineTo(x, y);
-    ctx.strokeStyle = brushColor;
+    ctx.strokeStyle = isErasing ? bgColor : brushColor;
     ctx.lineWidth = brushSize;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -192,7 +199,7 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
       canvas.removeEventListener("touchend", onTouchEnd);
       canvas.removeEventListener("touchcancel", onTouchEnd);
     };
-  }, [step, brushColor, brushSize]);
+  }, [step, brushColor, brushSize, isErasing, bgColor]);
 
   // --- Actions ------------------------------------------------------------------
 
@@ -384,19 +391,31 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
               ))}
             </div>
 
-            {/* Brush colors */}
+            {/* Brush colors + eraser */}
             <div className="flex items-center gap-1.5">
               <span className="text-[10px] text-gray-400 w-8 shrink-0">Brush</span>
               {BRUSH_COLORS.map((c) => (
                 <button
                   key={c}
                   className={`w-5 h-5 rounded-full border-2 shrink-0 ${
-                    brushColor === c ? "border-white scale-110" : "border-gray-600"
+                    !isErasing && brushColor === c ? "border-white scale-110" : "border-gray-600"
                   }`}
                   style={{ backgroundColor: c }}
-                  onClick={() => setBrushColor(c)}
+                  onClick={() => { setBrushColor(c); setIsErasing(false); }}
                 />
               ))}
+              <button
+                aria-label="Eraser"
+                title="Eraser"
+                onClick={() => setIsErasing(true)}
+                className={`w-5 h-5 rounded-full border-2 shrink-0 ${
+                  isErasing ? "border-white scale-110" : "border-gray-600"
+                }`}
+                style={{
+                  backgroundImage:
+                    "repeating-linear-gradient(45deg, #FFFFFF 0px, #FFFFFF 2px, #6B7280 2px, #6B7280 4px)",
+                }}
+              />
             </div>
 
             {/* Brush size */}
@@ -415,7 +434,13 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
                 style={{
                   width: brushSize + 4,
                   height: brushSize + 4,
-                  backgroundColor: brushColor,
+                  backgroundColor: isErasing ? bgColor : brushColor,
+                  ...(isErasing
+                    ? {
+                        backgroundImage:
+                          "repeating-linear-gradient(45deg, #FFFFFF 0px, #FFFFFF 2px, #6B7280 2px, #6B7280 4px)",
+                      }
+                    : {}),
                 }}
               />
             </div>
