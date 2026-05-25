@@ -22,6 +22,39 @@ const BRUSH_COLORS = [
 
 type Step = "loading" | "drawing" | "sharing" | "done" | "error";
 
+const DRAFT_KEY = "scribble:draft:v1";
+
+type Draft = {
+  idiomId: number;
+  idiom: string;
+  pinyin: string;
+  explanation: string;
+  example: string;
+  strokes: Stroke[];
+  bgColor: string;
+  brushColor: string;
+  brushSize: number;
+  isErasing: boolean;
+  skipsLeft: number;
+  savedAt: number;
+};
+
+function loadDraft(): Draft | null {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Draft;
+    if (!parsed || typeof parsed !== "object" || !parsed.idiom) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function clearDraft() {
+  try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+}
+
 export default function ScribbleModal({ onClose }: { onClose: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const strokesRef = useRef<Stroke[]>([]);
@@ -54,23 +87,76 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
   const [selectedReceiver, setSelectedReceiver] = useState<Contact | null>(null);
   const [submitError, setSubmitError] = useState("");
 
-  // Fetch idiom on mount (guard against StrictMode double-invoke)
-  const hasFetchedWordRef = useRef(false);
+  async function fetchAndUseNewIdiom() {
+    const res = await fetch("/api/scribble/word");
+    if (!res.ok) throw new Error("fetch failed");
+    const data = (await res.json()) as { idiomId: number; idiom: string; pinyin: string; explanation: string; example: string };
+    setIdiomId(data.idiomId);
+    setIdiom(data.idiom);
+    setPinyin(data.pinyin);
+    setExplanation(data.explanation);
+    setExample(data.example);
+    return data;
+  }
+
+  // Restore draft if present, else fetch a fresh idiom. Guards against
+  // React Strict Mode's double-invoke.
+  const hasInitedRef = useRef(false);
   useEffect(() => {
-    if (hasFetchedWordRef.current) return;
-    hasFetchedWordRef.current = true;
-    fetch("/api/scribble/word")
-      .then((r) => r.json() as Promise<{ idiomId: number; idiom: string; pinyin: string; explanation: string; example: string }>)
-      .then((data) => {
-        setIdiomId(data.idiomId);
-        setIdiom(data.idiom);
-        setPinyin(data.pinyin);
-        setExplanation(data.explanation);
-        setExample(data.example);
-        setStep("drawing");
-      })
+    if (hasInitedRef.current) return;
+    hasInitedRef.current = true;
+
+    const draft = loadDraft();
+    if (draft) {
+      setIdiomId(draft.idiomId);
+      setIdiom(draft.idiom);
+      setPinyin(draft.pinyin);
+      setExplanation(draft.explanation);
+      setExample(draft.example);
+      strokesRef.current = draft.strokes ?? [];
+      setBgColor(draft.bgColor);
+      setBrushColor(draft.brushColor);
+      setBrushSize(draft.brushSize);
+      setIsErasing(draft.isErasing);
+      setSkipsLeft(draft.skipsLeft);
+      setStep("drawing");
+      return;
+    }
+
+    fetchAndUseNewIdiom()
+      .then(() => setStep("drawing"))
       .catch(() => setStep("error"));
   }, []);
+
+  // Auto-save the current draft. Pulled into a ref so handlers (which run
+  // outside React's batched render) can call it with up-to-date values.
+  const saveDraftRef = useRef<() => void>(() => {});
+  saveDraftRef.current = () => {
+    if (idiomId == null || !idiom) return;
+    try {
+      const draft: Draft = {
+        idiomId,
+        idiom,
+        pinyin,
+        explanation,
+        example,
+        strokes: strokesRef.current,
+        bgColor,
+        brushColor,
+        brushSize,
+        isErasing,
+        skipsLeft,
+        savedAt: Date.now(),
+      };
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    } catch { /* quota exceeded — ignore */ }
+  };
+
+  // Persist whenever any React-tracked piece of state changes.
+  useEffect(() => {
+    if (step !== "drawing") return;
+    saveDraftRef.current();
+  }, [step, idiomId, bgColor, brushColor, brushSize, isErasing, skipsLeft]);
 
   // --- Canvas drawing -----------------------------------------------------------
 
@@ -152,7 +238,10 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
   }
 
   function endDraw() {
+    if (!isDrawingRef.current) return;
     isDrawingRef.current = false;
+    // Stroke is now in strokesRef.current — persist drawing progress.
+    saveDraftRef.current();
   }
 
   // Mouse
@@ -212,14 +301,7 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
     if (skipsLeft <= 0 || skipping) return;
     setSkipping(true);
     try {
-      const res = await fetch("/api/scribble/word");
-      if (!res.ok) throw new Error("fetch failed");
-      const data = (await res.json()) as { idiomId: number; idiom: string; pinyin: string; explanation: string; example: string };
-      setIdiomId(data.idiomId);
-      setIdiom(data.idiom);
-      setPinyin(data.pinyin);
-      setExplanation(data.explanation);
-      setExample(data.example);
+      await fetchAndUseNewIdiom();
       // Different idiom → wipe canvas so the drawing matches the prompt.
       strokesRef.current = [];
       redraw();
@@ -228,6 +310,20 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
       // ignore — keep the current idiom
     }
     setSkipping(false);
+  }
+
+  async function handleDeleteDraft() {
+    if (!confirm("删除草稿并换一个新的成语？")) return;
+    clearDraft();
+    strokesRef.current = [];
+    setSkipsLeft(3);
+    setStep("loading");
+    try {
+      await fetchAndUseNewIdiom();
+      setStep("drawing");
+    } catch {
+      setStep("error");
+    }
   }
 
   function handleSubmit() {
@@ -271,6 +367,7 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
 
       const res = await fetch("/api/scribble/submit", { method: "POST", body: fd });
       if (res.ok) {
+        clearDraft();
         setStep("done");
       } else {
         const data = await (res.json() as Promise<{ error?: string }>).catch(() => ({ error: "Unknown error" }));
@@ -301,11 +398,19 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
       {/* Header */}
       <div className="flex items-start gap-2 px-4 py-2 bg-gray-800 border-b border-gray-700 shrink-0" style={{ paddingTop: "calc(0.5rem + env(safe-area-inset-top))" }}>
         <button
-          onClick={onClose}
+          onClick={() => {
+            if (step === "sharing") {
+              // Submitted the drawing but not yet sent → back to drawing.
+              setStep("drawing");
+              setSubmitError("");
+            } else {
+              onClose();
+            }
+          }}
           className="text-white text-2xl leading-none opacity-60 hover:opacity-100 shrink-0"
-          aria-label="Close"
+          aria-label={step === "sharing" ? "Back to drawing" : "Close"}
         >
-          ×
+          {step === "sharing" ? "←" : "×"}
         </button>
 
         {step === "loading" && (
@@ -458,10 +563,18 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
           />
 
           {/* Actions */}
-          <div className="flex items-center gap-3 px-4 py-3 bg-gray-800 border-t border-gray-700 shrink-0">
+          <div className="flex items-center gap-2 px-4 py-3 bg-gray-800 border-t border-gray-700 shrink-0">
+            <button
+              onClick={() => void handleDeleteDraft()}
+              title="删除草稿，换新成语"
+              aria-label="Delete draft"
+              className="px-3 py-2 text-sm text-gray-300 border border-gray-600 rounded-lg hover:bg-gray-700"
+            >
+              🗑
+            </button>
             <button
               onClick={handleClear}
-              className="px-4 py-2 text-sm text-gray-300 border border-gray-600 rounded-lg hover:bg-gray-700"
+              className="px-3 py-2 text-sm text-gray-300 border border-gray-600 rounded-lg hover:bg-gray-700"
             >
               Clear
             </button>
