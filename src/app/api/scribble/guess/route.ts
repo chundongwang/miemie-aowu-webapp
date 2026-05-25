@@ -17,15 +17,12 @@ function parseGrade(raw: string): Grade | null {
   }
 }
 
-function localFallbackGrade(word: string, guess: string): Grade {
-  const a = word.trim().toLowerCase();
-  const b = guess.trim().toLowerCase();
+// Local fallback when the LLM errors. Only catches true exact matches.
+function localFallbackGrade(idiom: string, guess: string): Grade {
+  const a = idiom.replace(/\s+/g, "").trim();
+  const b = guess.replace(/\s+/g, "").trim();
   if (!a || !b) return "wrong";
-  if (a === b) return "exact";
-  // trivial plural/tense variants
-  const variants = [a, a + "s", a + "es", a + "ed", a + "ing", a.replace(/s$/, "")];
-  if (variants.includes(b)) return "exact";
-  return "wrong";
+  return a === b ? "exact" : "wrong";
 }
 
 export async function POST(req: NextRequest) {
@@ -42,17 +39,18 @@ export async function POST(req: NextRequest) {
     const db = await getDB();
     const row = await db
       .prepare(
-        `SELECT id, word, sentence_en, sentence_zh, guess_grade
-         FROM scribbles
-         WHERE id = ? AND receiver_id = ?
+        `SELECT s.id, s.word AS idiom, i.pinyin, i.explanation, s.guess_grade
+         FROM scribbles s
+         JOIN idioms i ON i.id = s.idiom_id
+         WHERE s.id = ? AND s.receiver_id = ?
          LIMIT 1`
       )
       .bind(id, userId)
       .first<{
         id: string;
-        word: string;
-        sentence_en: string;
-        sentence_zh: string;
+        idiom: string;
+        pinyin: string;
+        explanation: string | null;
         guess_grade: string | null;
       }>();
 
@@ -64,21 +62,23 @@ export async function POST(req: NextRequest) {
     let grade: Grade;
     try {
       const raw = await callOpenRouter(
-        `Target word: "${row.word}"
-User's guess: "${guess}"`,
-        `You judge a vocabulary guessing game. The user saw a drawing of an English target word and typed their guess.
+        `成语 (target): "${row.idiom}"
+拼音: "${row.pinyin}"
+释义: "${row.explanation ?? ""}"
+玩家的猜测 (user's guess): "${guess}"`,
+        `你正在评判一个汉语成语猜谜游戏。玩家看到一幅画着某个成语的图，然后写下了他们猜测的成语。
 
-Grade semantically, ignoring case, plurals, tense, and typos:
-- "exact": same word or trivial variant (case/plural/tense/spelling)
-- "similar": different word but very close meaning — synonym, near-synonym, or same concept the drawing likely conveys
-- "wrong": unrelated or only loosely related
+判断标准（忽略大小写、空格、繁简体差异）：
+- "exact"：完全相同的成语（即使一两个字写错或繁简体不同，但整体明显就是这个成语）。玩家如果写出正确拼音（如 "ai cai ruo ke"），也算 exact。
+- "similar"：不是同一个成语，但意思非常接近 —— 同义、近义、或者描述的是同一个画面/概念。
+- "wrong"：完全不相关，或者只有非常微弱的联系。
 
-Return ONLY valid JSON, no markdown:
+只返回 JSON，不要 markdown：
 {"grade": "exact" | "similar" | "wrong"}`
       );
-      grade = parseGrade(raw) ?? localFallbackGrade(row.word, guess);
+      grade = parseGrade(raw) ?? localFallbackGrade(row.idiom, guess);
     } catch {
-      grade = localFallbackGrade(row.word, guess);
+      grade = localFallbackGrade(row.idiom, guess);
     }
 
     const now = Date.now();
@@ -93,9 +93,9 @@ Return ONLY valid JSON, no markdown:
 
     return NextResponse.json({
       grade,
-      word: row.word,
-      sentenceEn: row.sentence_en,
-      sentenceZh: row.sentence_zh,
+      idiom: row.idiom,
+      pinyin: row.pinyin,
+      explanation: row.explanation ?? "",
       guessedAt: now,
     });
   });

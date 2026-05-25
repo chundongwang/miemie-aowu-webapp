@@ -252,8 +252,8 @@ export default function ListsPage() {
             className="relative bg-pink-500 text-white rounded-xl px-3 py-2 shadow-lg text-xs font-medium whitespace-nowrap hover:bg-pink-600 active:scale-95 transition-all"
           >
             ✏️ {unreadScribbles === 1
-              ? "1 scribble waiting!"
-              : `${unreadScribbles} scribbles waiting!`}
+              ? "1 个成语等你猜!"
+              : `${unreadScribbles} 个成语等你猜!`}
             <span className="absolute top-1/2 -translate-y-1/2 -right-1.5 w-3 h-3 bg-pink-500 rotate-45" />
           </button>
         )}
@@ -304,9 +304,9 @@ export default function ListsPage() {
                       guess: result.guess,
                       guessGrade: result.grade,
                       guessedAt: Date.now(),
-                      word: result.word,
-                      sentenceEn: result.sentenceEn,
-                      sentenceZh: result.sentenceZh,
+                      idiom: result.idiom,
+                      pinyin: result.pinyin,
+                      explanation: result.explanation,
                     }
                   : s
               )
