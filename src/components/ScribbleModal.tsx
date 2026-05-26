@@ -187,8 +187,16 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
 
   // Auto-save the current draft. Pulled into a ref so handlers (which run
   // outside React's batched render) can call it with up-to-date values.
+  //
+  // IMPORTANT: bail when we're not in the drawing step. Without this guard,
+  // the 75s timer interval keeps ticking after a successful send (which only
+  // changes `step`, not `timerState`). When the timer hit zero it re-wrote
+  // the just-cleared draft back to localStorage with the same promptId,
+  // causing the next modal open to restore that prompt — and users ended up
+  // sending two scribbles with the same prompt_id.
   const saveDraftRef = useRef<() => void>(() => {});
   saveDraftRef.current = () => {
+    if (step !== "drawing") return;
     if (!promptId || !word) return;
     try {
       const draft: Draft = {
@@ -514,6 +522,10 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
         return;
       }
       drawingBlobRef.current = blob;
+      // Pause the running timer so its 100ms interval can't fire after we
+      // leave the drawing step — otherwise it could re-save the draft via
+      // saveDraftRef and resurrect a prompt that was just sent.
+      if (timerStateRef.current === "running") pauseTimer();
       setStep("sharing");
       fetch("/api/contacts")
         .then((r) => (r.ok ? r.json() as Promise<Contact[]> : Promise.resolve([])))
