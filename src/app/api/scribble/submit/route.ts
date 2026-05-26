@@ -54,6 +54,17 @@ export async function POST(req: NextRequest) {
       if (!promptRow) {
         return NextResponse.json({ error: "Prompt not found" }, { status: 404 });
       }
+      // Prompts are single-use. Without this guard, a stale draft (e.g. one
+      // resurrected by the timer-after-submit bug) could resubmit the same
+      // prompt and create a duplicate scribble. The client should also
+      // prevent this, but the server is the last line of defense.
+      const alreadyUsed = await db
+        .prepare("SELECT id FROM scribbles WHERE prompt_id = ? LIMIT 1")
+        .bind(promptId)
+        .first<{ id: string }>();
+      if (alreadyUsed) {
+        return NextResponse.json({ error: "Prompt already used" }, { status: 409 });
+      }
       answerWord = promptRow.word;
       promptIdValue = promptRow.id;
     } else {

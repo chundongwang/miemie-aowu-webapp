@@ -11,8 +11,6 @@ import TextItemEditor from "@/components/TextItemEditor";
 import ShareModal from "@/components/ShareModal";
 import EditListModal from "@/components/EditListModal";
 import Lightbox from "@/components/Lightbox";
-import ScribbleModal from "@/components/ScribbleModal";
-import ScribbleFAB from "@/components/ScribbleFAB";
 import CommentThread from "@/components/CommentThread";
 import BulkImportModal from "@/components/BulkImportModal";
 import NearbyFoodModal from "@/components/NearbyFoodModal";
@@ -38,7 +36,6 @@ export default function ListDetailPage() {
   const [showEditList, setShowEditList] = useState(false);
   const [showImport,   setShowImport]   = useState(false);
   const [showNearby,   setShowNearby]   = useState(false);
-  const [showScribble, setShowScribble] = useState(false);
   const [editingItem,  setEditingItem]  = useState<Item | null>(null);
 
   const [viewMode, setViewMode] = useState<"list" | "waterfall">("list");
@@ -71,7 +68,7 @@ export default function ListDetailPage() {
 
   const { indicatorRef, isRefreshing: pullRefreshing } = usePullToRefresh(async () => { load(); });
 
-  const anyModalOpen = showAddItem || showShare || showEditList || showImport || showNearby || showScribble || !!editingItem || !!lightbox;
+  const anyModalOpen = showAddItem || showShare || showEditList || showImport || showNearby || !!editingItem || !!lightbox;
   const swipeProgress = useSwipeBack(me ? "/lists" : "/", !loading && !anyModalOpen);
 
   // Load comments once list is available
@@ -301,7 +298,6 @@ export default function ListDetailPage() {
           >
             +
           </button>
-          <ScribbleFAB onClick={() => setShowScribble(true)} />
         </div>
       )}
 
@@ -342,9 +338,6 @@ export default function ListDetailPage() {
           secondaryLabel={list.secondaryLabel}
           onClose={handleModalClose(setShowNearby)}
         />
-      )}
-      {showScribble && (
-        <ScribbleModal onClose={() => { setShowScribble(false); load(); }} />
       )}
       {lightbox && (
         <Lightbox items={lightbox.items} itemIndex={lightbox.itemIndex} photoIndex={lightbox.photoIndex} onClose={() => setLightbox(null)} />
