@@ -26,7 +26,13 @@ const CATEGORIES = [
   "乐器",
   "服装",
   "电影/电视剧",
+  "贵州特色",
 ];
+
+// 贵州 is a featured theme of this app — its food, landmarks, and minority
+// culture are pinned into every prompt's category hint so the LLM sees it
+// every round and picks it more often.
+const FEATURED_CATEGORY = "贵州特色";
 
 function shuffled<T>(arr: readonly T[]): T[] {
   const a = arr.slice();
@@ -69,7 +75,10 @@ function parseGenerated(raw: string): GeneratedPrompt | null {
 
 export async function POST() {
   return withAuth(async (userId) => {
-    const categoryHint = shuffled(CATEGORIES).slice(0, 8).join("、");
+    // Pin the featured category into every hint (in a shuffled position) so
+    // the LLM sees it every round; the remaining slots are random picks.
+    const others = shuffled(CATEGORIES.filter((c) => c !== FEATURED_CATEGORY)).slice(0, 7);
+    const categoryHint = shuffled([FEATURED_CATEGORY, ...others]).join("、");
 
     const systemPrompt = `你正在为一个画图猜词的中文小游戏出题。
 游戏规则：画图玩家拿到一个词后用 75 秒画出来，猜词玩家根据画来猜。
@@ -103,6 +112,11 @@ export async function POST() {
   · 乐器：古筝、二胡、唢呐、马林巴
   · 服装：旗袍、汉服、西装三件套、和服
   · 电影/电视剧：让子弹飞、流浪地球、武林外传、甄嬛传
+  · 贵州特色（这是本游戏的主题之一，请适当多出，约占 25% 题目）：
+    - 黔菜：酸汤鱼、丝娃娃、肠旺面、糕粑稀饭、恋爱豆腐果、米豆腐、糟辣椒、折耳根（鱼腥草）、贵州牛肉粉、豆花面
+    - 饮料 / 特产：刺梨汁、茅台酒、都匀毛尖、刺梨干、独山盐酸菜
+    - 地标 / 景点：黄果树瀑布、梵净山、镇远古镇、西江千户苗寨、荔波小七孔、龙宫、青岩古镇
+    - 民族文化（苗族 / 侗族）：苗族银饰、苗绣、风雨桥、鼓楼、蜡染、芦笙、苗族百褶裙
 - 不出真人名人，也不要纯文字概念（数学公式、网络抽象词等）。
 - 答案不能在 guesserClue 里出现（一字也不能）。
 - 不要使用 emoji。
