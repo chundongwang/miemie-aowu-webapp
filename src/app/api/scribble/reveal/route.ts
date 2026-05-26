@@ -13,31 +13,40 @@ export async function POST(req: NextRequest) {
     const db = await getDB();
     const row = await db
       .prepare(
-        `SELECT s.id, s.word AS idiom, i.pinyin, i.explanation, s.guess_grade
+        `SELECT s.id, s.word AS answer, s.prompt_id, s.idiom_id, s.guess_grade, s.final_grade,
+                p.drawer_description AS p_drawer_desc,
+                i.pinyin AS i_pinyin, i.explanation AS i_explanation
          FROM scribbles s
-         JOIN idioms i ON i.id = s.idiom_id
+         LEFT JOIN scribble_prompts p ON p.id = s.prompt_id
+         LEFT JOIN idioms i ON i.id = s.idiom_id
          WHERE s.id = ? AND s.receiver_id = ?
          LIMIT 1`
       )
       .bind(id, userId)
       .first<{
         id: string;
-        idiom: string;
-        pinyin: string;
-        explanation: string | null;
+        answer: string;
+        prompt_id: string | null;
+        idiom_id: number | null;
         guess_grade: string | null;
+        final_grade: string | null;
+        p_drawer_desc: string | null;
+        i_pinyin: string | null;
+        i_explanation: string | null;
       }>();
 
     if (!row) return NextResponse.json({ error: "Scribble not found" }, { status: 404 });
-    if (row.guess_grade) {
+    if (row.final_grade || row.guess_grade) {
       return NextResponse.json({ error: "Already resolved" }, { status: 400 });
     }
 
     const now = Date.now();
+    // Giving up locks the game at F. We still keep the legacy guess_grade
+    // 'revealed' so older UI bits that branch on it keep working.
     await db
       .prepare(
         `UPDATE scribbles
-         SET guess_text = NULL, guess_grade = 'revealed', guessed_at = ?
+         SET guess_text = NULL, guess_grade = 'revealed', guessed_at = ?, final_grade = 'F'
          WHERE id = ? AND receiver_id = ?`
       )
       .bind(now, id, userId)
@@ -45,9 +54,12 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       grade: "revealed",
-      idiom: row.idiom,
-      pinyin: row.pinyin,
-      explanation: row.explanation ?? "",
+      finalGrade: "F",
+      word: row.answer,
+      drawerDescription: row.p_drawer_desc ?? "",
+      // Legacy idiom fields populated for legacy scribbles only.
+      pinyin: row.i_pinyin ?? "",
+      explanation: row.i_explanation ?? "",
       guessedAt: now,
     });
   });

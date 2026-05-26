@@ -295,21 +295,9 @@ export default function ListsPage() {
         <ScribbleInboxModal
           scribbles={scribbleInbox}
           onClose={() => setShowScribbleInbox(false)}
-          onGuessed={(id, result) =>
+          onUpdate={(id, partial) =>
             setScribbleInbox((prev) =>
-              prev.map((s) =>
-                s.id === id
-                  ? {
-                      ...s,
-                      guess: result.guess,
-                      guessGrade: result.grade,
-                      guessedAt: Date.now(),
-                      idiom: result.idiom,
-                      pinyin: result.pinyin,
-                      explanation: result.explanation,
-                    }
-                  : s
-              )
+              prev.map((s) => (s.id === id ? { ...s, ...partial } : s))
             )
           }
         />

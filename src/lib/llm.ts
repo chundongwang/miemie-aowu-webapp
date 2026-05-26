@@ -1,6 +1,15 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
-export async function callOpenRouter(userPrompt: string, systemPrompt: string): Promise<string> {
+export type LLMOptions = {
+  temperature?: number;
+  maxTokens?: number;
+};
+
+export async function callOpenRouter(
+  userPrompt: string,
+  systemPrompt: string,
+  opts?: LLMOptions
+): Promise<string> {
   const { env } = await getCloudflareContext({ async: true });
   const e = env as unknown as Record<string, string>;
 
@@ -27,8 +36,8 @@ export async function callOpenRouter(userPrompt: string, systemPrompt: string): 
       ],
       // NOTE: response_format omitted — not universally supported across providers;
       // we rely on the system prompt instruction and strip fences in the caller.
-      max_tokens: 2000,
-      temperature: 0.2,
+      max_tokens: opts?.maxTokens ?? 2000,
+      temperature: opts?.temperature ?? 0.2,
     }),
   });
 
