@@ -1,16 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import ScribbleReplay from "./ScribbleReplay";
 
 export type Grade = "exact" | "similar" | "wrong" | "revealed";
 
 export type InboxScribble = {
   id: string;
-  // idiom + pinyin + explanation are null until the receiver has guessed
-  idiom: string | null;
+  // "prompt" → LLM-generated category/word; "idiom" → legacy 成语 row.
+  kind: "prompt" | "idiom";
+  // Prompt-flow fields:
+  category: string | null;   // visible up-front to the guesser
+  guesserClue: string | null; // hidden until mid-replay (then revealed)
+  // The answer; null until the user has guessed (or revealed).
+  word: string | null;
+  // Extra context for the drawer; shared with the guesser after they guess.
+  drawerDescription: string | null;
+  // Legacy idiom-flow fields (null for prompt-flow rows):
   pinyin: string | null;
   explanation: string | null;
   imageUrl: string;
+  // Animated replay JSON URL; null for legacy scribbles or upload failures.
+  // Receiver falls back to the static imageUrl when this is null.
+  recordingUrl: string | null;
   createdAt: number;
   viewedAt: number | null;
   guess: string | null;
@@ -20,11 +32,26 @@ export type InboxScribble = {
   senderUsername: string;
 };
 
+export type GuessResult = {
+  grade: Grade;
+  guess: string;
+  word: string;
+  drawerDescription: string;
+  pinyin: string;
+  explanation: string;
+};
+
 type Props = {
   scribbles: InboxScribble[];
   onClose: () => void;
-  onGuessed: (id: string, result: { grade: Grade; idiom: string; pinyin: string; explanation: string; guess: string }) => void;
+  onGuessed: (id: string, result: GuessResult) => void;
 };
+
+// Reveal the guesser clue once playback has crossed this fraction of the
+// recording duration. Picked to land roughly halfway through so the early
+// strokes still drive the guessing, but the player isn't stuck staring at
+// a near-blank canvas without any verbal hint.
+const CLUE_REVEAL_AT = 0.5;
 
 function timeAgo(ms: number): string {
   const diff = Date.now() - ms;
@@ -87,9 +114,14 @@ export default function ScribbleInboxModal({ scribbles, onClose, onGuessed }: Pr
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  // Whether the guesser clue is currently revealed (mid-replay or post-guess).
+  // Reset to false when the user navigates to a different scribble.
+  const [clueRevealed, setClueRevealed] = useState(false);
+
   useEffect(() => {
     setGuessInput("");
     setError("");
+    setClueRevealed(false);
   }, [activeIndex]);
 
   if (ordered.length === 0 || !active) {
@@ -112,6 +144,9 @@ export default function ScribbleInboxModal({ scribbles, onClose, onGuessed }: Pr
 
   const guessed = active.guessGrade !== null;
   const grade = active.guessGrade;
+  const isPrompt = active.kind === "prompt";
+  // After guessing, the clue is no longer a teaser — it's part of the closure.
+  const showClue = isPrompt && (guessed || clueRevealed) && !!active.guesserClue;
 
   async function handleReveal() {
     if (!active) return;
@@ -132,16 +167,18 @@ export default function ScribbleInboxModal({ scribbles, onClose, onGuessed }: Pr
       }
       const data = await res.json() as {
         grade: Grade;
-        idiom: string;
+        word: string;
+        drawerDescription: string;
         pinyin: string;
         explanation: string;
       };
       onGuessed(active.id, {
         grade: data.grade,
-        idiom: data.idiom,
+        guess: "",
+        word: data.word,
+        drawerDescription: data.drawerDescription,
         pinyin: data.pinyin,
         explanation: data.explanation,
-        guess: "",
       });
     } catch {
       setError("Network error");
@@ -169,16 +206,18 @@ export default function ScribbleInboxModal({ scribbles, onClose, onGuessed }: Pr
       }
       const data = await res.json() as {
         grade: Grade;
-        idiom: string;
+        word: string;
+        drawerDescription: string;
         pinyin: string;
         explanation: string;
       };
       onGuessed(active.id, {
         grade: data.grade,
-        idiom: data.idiom,
+        guess: trimmed,
+        word: data.word,
+        drawerDescription: data.drawerDescription,
         pinyin: data.pinyin,
         explanation: data.explanation,
-        guess: trimmed,
       });
     } catch {
       setError("Network error");
@@ -198,36 +237,60 @@ export default function ScribbleInboxModal({ scribbles, onClose, onGuessed }: Pr
           <p className="text-xs text-gray-400">
             from <span className="font-medium text-white">@{active.senderUsername}</span> · {timeAgo(active.createdAt)}
           </p>
-          <p className="text-sm font-semibold mt-0.5">
-            {guessed ? "揭晓答案" : "猜成语 · what's the idiom?"}
-          </p>
+          {/* Category is the headline framing for prompt-flow scribbles. */}
+          {isPrompt && active.category ? (
+            <p className="mt-0.5">
+              <span className="inline-block px-2.5 py-1 rounded-full bg-[#2B4B8C] text-xs font-semibold tracking-wider">
+                {active.category}
+              </span>
+            </p>
+          ) : (
+            <p className="text-sm font-semibold mt-0.5">
+              {guessed ? "揭晓答案" : "猜成语 · what's the idiom?"}
+            </p>
+          )}
         </div>
         <div className="w-10 text-xs text-gray-400 text-right">
           {activeIndex + 1}/{ordered.length}
         </div>
       </div>
 
-      {/* Drawing */}
-      <div className="flex-1 flex items-center justify-center bg-gray-950 overflow-hidden relative">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={active.imageUrl}
-          alt="Scribble drawing"
-          className="max-w-full max-h-full object-contain"
-        />
-      </div>
+      {/* Drawing — animated replay if a recording exists, static image otherwise.
+          The progress callback drives the mid-replay clue reveal. */}
+      <ScribbleReplay
+        recordingUrl={active.recordingUrl}
+        fallbackImageUrl={active.imageUrl}
+        resetKey={active.id}
+        onProgress={(p) => {
+          if (p >= CLUE_REVEAL_AT && !clueRevealed) setClueRevealed(true);
+        }}
+      />
+
+      {/* Mid-replay clue banner — only for prompt-flow, pre-guess, after the
+          recording has crossed the reveal point. After guessing the clue
+          moves down into the answer panel for closure. */}
+      {isPrompt && !guessed && clueRevealed && active.guesserClue && (
+        <div className="px-4 py-2 bg-amber-900/40 border-t border-amber-700/50 shrink-0">
+          <p className="text-[10px] text-amber-300 uppercase tracking-wider">提示</p>
+          <p className="text-sm text-amber-100">{active.guesserClue}</p>
+        </div>
+      )}
 
       {/* Bottom panel: guess input OR reveal */}
       {!guessed ? (
         <div className="px-4 py-3 bg-gray-800 border-t border-gray-700 shrink-0 space-y-2">
-          <p className="text-xs text-gray-400">输入你猜的成语 (中文或拼音都行)</p>
+          <p className="text-xs text-gray-400">
+            {isPrompt
+              ? `猜一猜这是什么 (${active.category ?? "类别"})`
+              : "输入你猜的成语 (中文或拼音都行)"}
+          </p>
           <div className="flex items-center gap-2">
             <input
               type="text"
               value={guessInput}
               onChange={(e) => setGuessInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") void handleSubmitGuess(); }}
-              placeholder="例如：画蛇添足"
+              placeholder={isPrompt ? "在这里写下你的答案" : "例如：画蛇添足"}
               autoFocus
               disabled={submitting}
               className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-sm text-white placeholder-gray-400 focus:outline-none focus:border-[#2B4B8C] disabled:opacity-60"
@@ -278,7 +341,16 @@ export default function ScribbleInboxModal({ scribbles, onClose, onGuessed }: Pr
               </>
             )}
             <p className="text-xs text-gray-400 mt-2">正确答案</p>
-            <p className="text-2xl font-bold tracking-wider">{active.idiom}</p>
+            <p className="text-2xl font-bold tracking-wider">{active.word ?? ""}</p>
+            {/* Prompt-flow extras: drawer description + the post-game clue
+                (now plainly visible since the game is over). */}
+            {isPrompt && active.drawerDescription && (
+              <p className="text-xs text-gray-400 line-clamp-3">{active.drawerDescription}</p>
+            )}
+            {showClue && active.guesserClue && (
+              <p className="text-[11px] text-amber-200/80">提示: {active.guesserClue}</p>
+            )}
+            {/* Legacy idiom extras */}
             {active.pinyin && <p className="text-xs text-gray-300 mt-1">{active.pinyin}</p>}
             {active.explanation && <p className="text-xs text-gray-400 line-clamp-3">{active.explanation}</p>}
           </div>

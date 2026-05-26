@@ -2,11 +2,26 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 
+type Point = { x: number; y: number; t: number };
+
 type Stroke = {
   color: string;
   size: number;
-  points: { x: number; y: number }[];
+  points: Point[];
   isEraser?: boolean;
+};
+
+// Cap idle gap between successive points so a draft resumed hours later
+// (or a long thinking pause) doesn't produce a replay with minutes of dead air.
+const MAX_GAP_MS = 1500;
+
+type Recording = {
+  v: 1;
+  width: number;
+  height: number;
+  bgColor: string;
+  durationMs: number;
+  strokes: Stroke[];
 };
 
 type Contact = { username: string; displayName: string };
@@ -22,20 +37,25 @@ const BRUSH_COLORS = [
 
 type Step = "loading" | "drawing" | "sharing" | "done" | "error";
 
-const DRAFT_KEY = "scribble:draft:v1";
+// Bumping the key from v1 → v2 invalidates the old idiom-based drafts in
+// users' localStorage so they don't try to resume into a different schema.
+const DRAFT_KEY = "scribble:draft:v2";
+
+const TIMER_TOTAL_MS = 75_000;
+type TimerState = "idle" | "running" | "paused" | "expired";
 
 type Draft = {
-  idiomId: number;
-  idiom: string;
-  pinyin: string;
-  explanation: string;
-  example: string;
+  promptId: string;
+  category: string;
+  word: string;
+  drawerDescription: string;
   strokes: Stroke[];
   bgColor: string;
   brushColor: string;
   brushSize: number;
   isErasing: boolean;
-  skipsLeft: number;
+  rerollsLeft: number;
+  timeLeftMs: number;
   savedAt: number;
 };
 
@@ -44,7 +64,7 @@ function loadDraft(): Draft | null {
     const raw = localStorage.getItem(DRAFT_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Draft;
-    if (!parsed || typeof parsed !== "object" || !parsed.idiom) return null;
+    if (!parsed || typeof parsed !== "object" || !parsed.word || !parsed.promptId) return null;
     return parsed;
   } catch {
     return null;
@@ -64,22 +84,39 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
   // Holds the rendered PNG once the user leaves the drawing step. The canvas
   // is unmounted while step !== "drawing", so we must capture before transition.
   const drawingBlobRef = useRef<Blob | null>(null);
+  // JSON recording (strokes + timing) captured at submit time.
+  const recordingBlobRef = useRef<Blob | null>(null);
+  // Anchors the relative `t` timeline. Null until the user's first point;
+  // re-anchored on draft restore so the next point continues just after the
+  // last saved point instead of resetting to t=0.
+  const recordStartRef = useRef<number | null>(null);
+  const lastTRef = useRef<number>(0);
 
   const [step, setStep] = useState<Step>("loading");
-  const [idiomId, setIdiomId] = useState<number | null>(null);
-  const [idiom, setIdiom] = useState("");
-  const [pinyin, setPinyin] = useState("");
-  const [explanation, setExplanation] = useState("");
-  const [example, setExample] = useState("");
+  const [promptId, setPromptId] = useState<string | null>(null);
+  const [category, setCategory] = useState("");
+  const [word, setWord] = useState("");
+  const [drawerDescription, setDrawerDescription] = useState("");
 
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [brushColor, setBrushColor] = useState("#000000");
   const [brushSize, setBrushSize] = useState(3);
   const [isErasing, setIsErasing] = useState(false);
 
+  // Timer — counts down from 75s once the user starts drawing. Pause/resume
+  // freezes the wall-clock; expiry locks the canvas but still allows submit.
+  const [timerState, setTimerState] = useState<TimerState>("idle");
+  const [timeLeftMs, setTimeLeftMs] = useState(TIMER_TOTAL_MS);
+  // Mirror of timerState into a ref so synchronous draw handlers (touchmove,
+  // mousemove) can short-circuit while paused/expired without waiting for a
+  // React re-render.
+  const timerStateRef = useRef<TimerState>("idle");
+  const timerStartedAtRef = useRef<number>(0); // wall clock when this run started
+  const timerRemainingAtStartRef = useRef<number>(TIMER_TOTAL_MS); // timeLeft when this run started
+
   const [submitting, setSubmitting] = useState(false);
-  const [skipsLeft, setSkipsLeft] = useState(3);
-  const [skipping, setSkipping] = useState(false);
+  const [rerollsLeft, setRerollsLeft] = useState(3);
+  const [rerolling, setRerolling] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Contact[]>([]);
@@ -87,19 +124,23 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
   const [selectedReceiver, setSelectedReceiver] = useState<Contact | null>(null);
   const [submitError, setSubmitError] = useState("");
 
-  async function fetchAndUseNewIdiom() {
-    const res = await fetch("/api/scribble/word");
+  async function fetchAndUseNewPrompt() {
+    const res = await fetch("/api/scribble/prompt", { method: "POST" });
     if (!res.ok) throw new Error("fetch failed");
-    const data = (await res.json()) as { idiomId: number; idiom: string; pinyin: string; explanation: string; example: string };
-    setIdiomId(data.idiomId);
-    setIdiom(data.idiom);
-    setPinyin(data.pinyin);
-    setExplanation(data.explanation);
-    setExample(data.example);
+    const data = (await res.json()) as {
+      promptId: string;
+      category: string;
+      word: string;
+      drawerDescription: string;
+    };
+    setPromptId(data.promptId);
+    setCategory(data.category);
+    setWord(data.word);
+    setDrawerDescription(data.drawerDescription);
     return data;
   }
 
-  // Restore draft if present, else fetch a fresh idiom. Guards against
+  // Restore draft if present, else fetch a fresh prompt. Guards against
   // React Strict Mode's double-invoke.
   const hasInitedRef = useRef(false);
   useEffect(() => {
@@ -108,22 +149,38 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
 
     const draft = loadDraft();
     if (draft) {
-      setIdiomId(draft.idiomId);
-      setIdiom(draft.idiom);
-      setPinyin(draft.pinyin);
-      setExplanation(draft.explanation);
-      setExample(draft.example);
+      setPromptId(draft.promptId);
+      setCategory(draft.category);
+      setWord(draft.word);
+      setDrawerDescription(draft.drawerDescription);
       strokesRef.current = draft.strokes ?? [];
+      // Re-anchor the recording timeline so resumed strokes continue from where
+      // we left off rather than restarting at t=0.
+      let maxT = 0;
+      for (const s of strokesRef.current) {
+        for (const p of s.points) if (p.t > maxT) maxT = p.t;
+      }
+      lastTRef.current = maxT;
+      recordStartRef.current = null;
       setBgColor(draft.bgColor);
       setBrushColor(draft.brushColor);
       setBrushSize(draft.brushSize);
       setIsErasing(draft.isErasing);
-      setSkipsLeft(draft.skipsLeft);
+      setRerollsLeft(draft.rerollsLeft);
+      // Restore timer paused at the remaining time. User can resume by
+      // pressing the play button or by simply drawing (auto-resumes).
+      const remaining = Math.max(0, Math.min(TIMER_TOTAL_MS, draft.timeLeftMs ?? TIMER_TOTAL_MS));
+      setTimeLeftMs(remaining);
+      timerRemainingAtStartRef.current = remaining;
+      // If they'd already exhausted their time, surface that immediately.
+      const restoredState: TimerState = remaining <= 0 ? "expired" : "paused";
+      setTimerState(restoredState);
+      timerStateRef.current = restoredState;
       setStep("drawing");
       return;
     }
 
-    fetchAndUseNewIdiom()
+    fetchAndUseNewPrompt()
       .then(() => setStep("drawing"))
       .catch(() => setStep("error"));
   }, []);
@@ -132,20 +189,20 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
   // outside React's batched render) can call it with up-to-date values.
   const saveDraftRef = useRef<() => void>(() => {});
   saveDraftRef.current = () => {
-    if (idiomId == null || !idiom) return;
+    if (!promptId || !word) return;
     try {
       const draft: Draft = {
-        idiomId,
-        idiom,
-        pinyin,
-        explanation,
-        example,
+        promptId,
+        category,
+        word,
+        drawerDescription,
         strokes: strokesRef.current,
         bgColor,
         brushColor,
         brushSize,
         isErasing,
-        skipsLeft,
+        rerollsLeft,
+        timeLeftMs: getRemainingTime(),
         savedAt: Date.now(),
       };
       localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
@@ -156,7 +213,7 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     if (step !== "drawing") return;
     saveDraftRef.current();
-  }, [step, idiomId, bgColor, brushColor, brushSize, isErasing, skipsLeft]);
+  }, [step, promptId, bgColor, brushColor, brushSize, isErasing, rerollsLeft]);
 
   // --- Canvas drawing -----------------------------------------------------------
 
@@ -208,13 +265,93 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   }
 
+  // Returns the next monotonically-increasing `t` for the recording timeline.
+  // First call (or after draft restore) re-anchors the wall clock so the next
+  // point lands just after `lastTRef.current`. Subsequent calls cap idle gaps
+  // at MAX_GAP_MS so long pauses don't bloat the replay.
+  function nextT(): number {
+    const now = Date.now();
+    if (recordStartRef.current == null) {
+      recordStartRef.current = now - lastTRef.current;
+    } else {
+      const elapsed = now - recordStartRef.current;
+      const gap = elapsed - lastTRef.current;
+      if (gap > MAX_GAP_MS) recordStartRef.current += gap - MAX_GAP_MS;
+    }
+    const t = now - recordStartRef.current;
+    lastTRef.current = t;
+    return t;
+  }
+
+  // Returns ms left on the timer right now, accounting for the wall-clock
+  // elapsed since the current "running" run started. While idle / paused /
+  // expired this is just the stored remaining value.
+  function getRemainingTime(): number {
+    if (timerStateRef.current === "running") {
+      const elapsed = Date.now() - timerStartedAtRef.current;
+      return Math.max(0, timerRemainingAtStartRef.current - elapsed);
+    }
+    return Math.max(0, timeLeftMs);
+  }
+
+  function startTimer() {
+    timerStartedAtRef.current = Date.now();
+    // Use the latest known remaining time; on first ever start this is the
+    // full TIMER_TOTAL_MS.
+    timerRemainingAtStartRef.current = timeLeftMs;
+    timerStateRef.current = "running";
+    setTimerState("running");
+  }
+
+  function pauseTimer() {
+    if (timerStateRef.current !== "running") return;
+    const remaining = getRemainingTime();
+    timerRemainingAtStartRef.current = remaining;
+    setTimeLeftMs(remaining);
+    timerStateRef.current = "paused";
+    setTimerState("paused");
+    saveDraftRef.current();
+  }
+
+  function resumeTimer() {
+    if (timerStateRef.current !== "paused") return;
+    startTimer();
+  }
+
+  // Tick loop while running. Uses setInterval (cheap) rather than rAF.
+  useEffect(() => {
+    if (timerState !== "running") return;
+    const i = setInterval(() => {
+      const remaining = getRemainingTime();
+      setTimeLeftMs(remaining);
+      if (remaining <= 0) {
+        timerRemainingAtStartRef.current = 0;
+        timerStateRef.current = "expired";
+        setTimerState("expired");
+        saveDraftRef.current();
+        clearInterval(i);
+      }
+    }, 100);
+    return () => clearInterval(i);
+    // getRemainingTime / saveDraftRef are stable enough that we don't need
+    // them in deps; the interval reads fresh values via refs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timerState]);
+
   function startDraw(x: number, y: number) {
+    // Don't accept new strokes when time's up.
+    if (timerStateRef.current === "expired") return;
+    // First-ever stroke kicks the timer off; auto-resume from paused so the
+    // user doesn't have to hit play before drawing.
+    if (timerStateRef.current === "idle") startTimer();
+    else if (timerStateRef.current === "paused") resumeTimer();
+
     isDrawingRef.current = true;
     lastPosRef.current = { x, y };
     strokesRef.current.push({
       color: brushColor,
       size: brushSize,
-      points: [{ x, y }],
+      points: [{ x, y, t: nextT() }],
       isEraser: isErasing,
     });
   }
@@ -234,7 +371,7 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
     ctx.stroke();
     lastPosRef.current = { x, y };
     const currentStroke = strokesRef.current[strokesRef.current.length - 1];
-    currentStroke.points.push({ x, y });
+    currentStroke.points.push({ x, y, t: nextT() });
   }
 
   function endDraw() {
@@ -292,34 +429,58 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
 
   // --- Actions ------------------------------------------------------------------
 
+  function resetRecording() {
+    recordStartRef.current = null;
+    lastTRef.current = 0;
+  }
+
+  // Fresh prompt → fresh canvas → fresh recording → fresh 75s. Bundled here
+  // so the reroll and delete-draft handlers stay aligned.
+  function resetTimer() {
+    timerRemainingAtStartRef.current = TIMER_TOTAL_MS;
+    setTimeLeftMs(TIMER_TOTAL_MS);
+    timerStateRef.current = "idle";
+    setTimerState("idle");
+  }
+
   function handleClear() {
     strokesRef.current = [];
+    resetRecording();
     redraw();
   }
 
-  async function handleSkipIdiom() {
-    if (skipsLeft <= 0 || skipping) return;
-    setSkipping(true);
+  async function handleRerollPrompt() {
+    if (rerollsLeft <= 0 || rerolling) return;
+    setRerolling(true);
+    // Pause the timer while we wait for the LLM so the seconds don't tick
+    // away during a multi-second network round trip.
+    const wasRunning = timerStateRef.current === "running";
+    if (wasRunning) pauseTimer();
     try {
-      await fetchAndUseNewIdiom();
-      // Different idiom → wipe canvas so the drawing matches the prompt.
+      await fetchAndUseNewPrompt();
+      // Different word → wipe canvas so the drawing matches the new prompt.
       strokesRef.current = [];
+      resetRecording();
+      resetTimer();
       redraw();
-      setSkipsLeft((n) => n - 1);
+      setRerollsLeft((n) => n - 1);
     } catch {
-      // ignore — keep the current idiom
+      // Keep the current prompt; resume the clock if we paused it.
+      if (wasRunning) resumeTimer();
     }
-    setSkipping(false);
+    setRerolling(false);
   }
 
   async function handleDeleteDraft() {
-    if (!confirm("删除草稿并换一个新的成语？")) return;
+    if (!confirm("删除草稿并换一道新题？")) return;
     clearDraft();
     strokesRef.current = [];
-    setSkipsLeft(3);
+    resetRecording();
+    resetTimer();
+    setRerollsLeft(3);
     setStep("loading");
     try {
-      await fetchAndUseNewIdiom();
+      await fetchAndUseNewPrompt();
       setStep("drawing");
     } catch {
       setStep("error");
@@ -332,6 +493,20 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
     }
     const canvas = canvasRef.current;
     if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    // Capture recording JSON against the current canvas dimensions so the
+    // replay knows the original aspect ratio and can scale to fit.
+    const recording: Recording = {
+      v: 1,
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+      bgColor,
+      durationMs: lastTRef.current,
+      strokes: strokesRef.current,
+    };
+    recordingBlobRef.current = new Blob([JSON.stringify(recording)], {
+      type: "application/json",
+    });
     // Capture the PNG NOW — the canvas is unmounted once step !== "drawing".
     canvas.toBlob((blob) => {
       if (!blob) {
@@ -357,12 +532,15 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
     try {
       const fd = new FormData();
       fd.append("file", blob, "scribble.png");
-      if (idiomId == null) {
-        setSubmitError("Missing idiom");
+      if (recordingBlobRef.current) {
+        fd.append("recording", recordingBlobRef.current, "scribble.json");
+      }
+      if (!promptId) {
+        setSubmitError("Missing prompt");
         setSubmitting(false);
         return;
       }
-      fd.append("idiomId", String(idiomId));
+      fd.append("promptId", promptId);
       fd.append("receiverUsername", selectedReceiver.username);
 
       const res = await fetch("/api/scribble/submit", { method: "POST", body: fd });
@@ -414,7 +592,7 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
         </button>
 
         {step === "loading" && (
-          <p className="flex-1 text-sm text-gray-400 animate-pulse text-center py-2">抽取成语中…</p>
+          <p className="flex-1 text-sm text-gray-400 animate-pulse text-center py-2">出题中…</p>
         )}
         {step === "error" && (
           <p className="flex-1 text-sm text-red-400 text-center py-2">
@@ -424,51 +602,41 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
 
         {(step === "drawing" || step === "sharing" || step === "done") && (
           <div className="flex-1 grid grid-cols-2 gap-3 min-w-0">
-            {/* LEFT: idiom */}
+            {/* LEFT: category badge + answer word */}
             <div className="text-center min-w-0">
-              <p className="text-[10px] text-gray-400 uppercase tracking-wider">画这个成语</p>
               <p
-                className={`text-2xl font-bold tracking-wider transition-opacity ${skipping ? "opacity-30" : ""}`}
+                className={`inline-block px-2 py-0.5 rounded-full bg-gray-700 text-[10px] text-gray-200 tracking-wider transition-opacity ${rerolling ? "opacity-30" : ""}`}
               >
-                {idiom}
+                {category || "类别"}
               </p>
-              {pinyin && (
-                <p
-                  className={`text-[11px] text-gray-300 mt-0.5 break-words transition-opacity ${skipping ? "opacity-30" : ""}`}
-                >
-                  {pinyin}
-                </p>
-              )}
+              <p
+                className={`text-2xl font-bold tracking-wider mt-0.5 transition-opacity ${rerolling ? "opacity-30" : ""}`}
+              >
+                {word}
+              </p>
             </div>
 
-            {/* RIGHT: explanation / example / refresh */}
+            {/* RIGHT: drawer description + reroll button */}
             <div className="text-left text-[11px] leading-snug min-w-0 space-y-1">
-              {explanation && (
+              {drawerDescription && (
                 <p
-                  className={`text-gray-300 line-clamp-2 transition-opacity ${skipping ? "opacity-30" : ""}`}
+                  className={`text-gray-300 line-clamp-3 transition-opacity ${rerolling ? "opacity-30" : ""}`}
+                  title={drawerDescription}
                 >
-                  {explanation}
-                </p>
-              )}
-              {example && (
-                <p
-                  className={`text-gray-500 line-clamp-2 transition-opacity ${skipping ? "opacity-30" : ""}`}
-                  title={example}
-                >
-                  <span className="text-gray-400">例：</span>{example}
+                  {drawerDescription}
                 </p>
               )}
               {step === "drawing" && (
                 <button
-                  onClick={() => void handleSkipIdiom()}
-                  disabled={skipsLeft === 0 || skipping}
+                  onClick={() => void handleRerollPrompt()}
+                  disabled={rerollsLeft === 0 || rerolling}
                   className="text-blue-300 hover:text-blue-200 disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  {skipsLeft === 0
+                  {rerollsLeft === 0
                     ? "没有机会了"
-                    : skipping
-                      ? "换一个…"
-                      : `🔄 换一个 (剩 ${skipsLeft})`}
+                    : rerolling
+                      ? "换一题…"
+                      : `🔄 换一题 (剩 ${rerollsLeft})`}
                 </button>
               )}
             </div>
@@ -551,11 +719,70 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
             </div>
           </div>
 
-          {/* Canvas — touch handlers attached via useEffect (non-passive) */}
+          {/* Timer bar — 75s countdown with pause/resume. Color hardens as
+              time runs low so peripheral vision picks it up. */}
+          {(() => {
+            const seconds = Math.ceil(timeLeftMs / 1000);
+            const ratio = Math.max(0, Math.min(1, timeLeftMs / TIMER_TOTAL_MS));
+            const tone =
+              timerState === "expired"
+                ? { ring: "ring-red-500", text: "text-red-400", bar: "bg-red-500" }
+                : seconds <= 10
+                ? { ring: "ring-red-400", text: "text-red-300", bar: "bg-red-400" }
+                : seconds <= 30
+                ? { ring: "ring-yellow-400", text: "text-yellow-300", bar: "bg-yellow-400" }
+                : { ring: "ring-gray-600", text: "text-gray-100", bar: "bg-emerald-400" };
+            return (
+              <div className="flex items-center gap-3 px-3 py-2 bg-gray-900 border-b border-gray-800 shrink-0">
+                <div className={`tabular-nums text-xl font-bold w-12 text-center ${tone.text}`}>
+                  {seconds}
+                  <span className="text-[10px] font-normal text-gray-500 ml-0.5">s</span>
+                </div>
+                <div className={`flex-1 h-2 rounded-full bg-gray-800 ring-1 ${tone.ring} overflow-hidden`}>
+                  <div
+                    className={`h-full ${tone.bar} transition-[width] duration-100 linear`}
+                    style={{ width: `${ratio * 100}%` }}
+                  />
+                </div>
+                {timerState === "expired" ? (
+                  <span className="text-xs font-semibold text-red-400 shrink-0">时间到!</span>
+                ) : timerState === "running" ? (
+                  <button
+                    onClick={pauseTimer}
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-700 hover:bg-gray-600 text-white shrink-0"
+                    aria-label="暂停计时"
+                    title="暂停计时"
+                  >
+                    ❚❚
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      if (timerStateRef.current === "idle") startTimer();
+                      else resumeTimer();
+                    }}
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-500 text-white shrink-0"
+                    aria-label={timerState === "idle" ? "开始计时" : "继续计时"}
+                    title={timerState === "idle" ? "开始计时" : "继续计时"}
+                  >
+                    ▶
+                  </button>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Canvas — touch handlers attached via useEffect (non-passive).
+              Pointer events are blocked once the timer expires so no extra
+              strokes sneak in after time's up. */}
           <canvas
             ref={canvasRef}
             className="w-full touch-none"
-            style={{ flex: 1, backgroundColor: bgColor }}
+            style={{
+              flex: 1,
+              backgroundColor: bgColor,
+              pointerEvents: timerState === "expired" ? "none" : "auto",
+            }}
             onMouseDown={onMouseDown}
             onMouseMove={onMouseMove}
             onMouseUp={onMouseUp}
@@ -684,7 +911,7 @@ export default function ScribbleModal({ onClose }: { onClose: () => void }) {
           <p className="text-4xl">✏️</p>
           <p className="text-lg font-semibold">Scribble sent!</p>
           <p className="text-sm text-gray-400">
-            @{selectedReceiver?.username} will see your drawing of <strong>{idiom}</strong>
+            @{selectedReceiver?.username} will see your drawing of <strong>{word}</strong>
           </p>
           <button
             onClick={onClose}

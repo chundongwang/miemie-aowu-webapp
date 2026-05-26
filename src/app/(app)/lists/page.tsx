@@ -304,9 +304,10 @@ export default function ListsPage() {
                       guess: result.guess,
                       guessGrade: result.grade,
                       guessedAt: Date.now(),
-                      idiom: result.idiom,
-                      pinyin: result.pinyin,
-                      explanation: result.explanation,
+                      word: result.word,
+                      drawerDescription: result.drawerDescription || s.drawerDescription,
+                      pinyin: result.pinyin || s.pinyin,
+                      explanation: result.explanation || s.explanation,
                     }
                   : s
               )
