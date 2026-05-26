@@ -13,19 +13,25 @@ export async function POST(req: NextRequest) {
     const db = await getDB();
     const row = await db
       .prepare(
-        `SELECT s.id, s.word AS idiom, i.pinyin, i.explanation, s.guess_grade
+        `SELECT s.id, s.word AS answer, s.prompt_id, s.idiom_id, s.guess_grade,
+                p.drawer_description AS p_drawer_desc,
+                i.pinyin AS i_pinyin, i.explanation AS i_explanation
          FROM scribbles s
-         JOIN idioms i ON i.id = s.idiom_id
+         LEFT JOIN scribble_prompts p ON p.id = s.prompt_id
+         LEFT JOIN idioms i ON i.id = s.idiom_id
          WHERE s.id = ? AND s.receiver_id = ?
          LIMIT 1`
       )
       .bind(id, userId)
       .first<{
         id: string;
-        idiom: string;
-        pinyin: string;
-        explanation: string | null;
+        answer: string;
+        prompt_id: string | null;
+        idiom_id: number | null;
         guess_grade: string | null;
+        p_drawer_desc: string | null;
+        i_pinyin: string | null;
+        i_explanation: string | null;
       }>();
 
     if (!row) return NextResponse.json({ error: "Scribble not found" }, { status: 404 });
@@ -45,9 +51,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       grade: "revealed",
-      idiom: row.idiom,
-      pinyin: row.pinyin,
-      explanation: row.explanation ?? "",
+      word: row.answer,
+      drawerDescription: row.p_drawer_desc ?? "",
+      // Legacy idiom fields populated for legacy scribbles only.
+      pinyin: row.i_pinyin ?? "",
+      explanation: row.i_explanation ?? "",
       guessedAt: now,
     });
   });
