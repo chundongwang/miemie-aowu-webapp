@@ -68,6 +68,17 @@ function parseGenerated(raw: string): GeneratedPrompt | null {
   }
 }
 
+// How many of the user's most recent prompt words to feed back to the LLM as
+// a "don't repeat" exclusion list. Big enough to prevent the obvious dupes
+// (we observed jerry getting 风雨桥 4× in a row and blossom getting 向日葵
+// twice 6 seconds apart) but small enough not to bloat the prompt or starve
+// the model of all its trained-in examples.
+const RECENT_EXCLUSION_LIMIT = 30;
+
+// How many LLM attempts we make if the model returns a word that's already
+// in the exclusion list. Each retry nudges harder and bumps temperature.
+const DEDUP_RETRIES = 3;
+
 export async function POST() {
   return withAuth(async (userId) => {
     const categoryHint = shuffled(CATEGORIES).slice(0, 8).join("、");
@@ -109,29 +120,75 @@ export async function POST() {
     - 饮料 / 特产：刺梨汁、茅台酒、都匀毛尖、刺梨干、独山盐酸菜
     - 地标 / 景点：黄果树瀑布、梵净山、镇远古镇、西江千户苗寨、荔波小七孔、龙宫、青岩古镇
     - 民族文化（苗族 / 侗族）：苗族银饰、苗绣、风雨桥、鼓楼、蜡染、芦笙、苗族百褶裙
+    （上述例子是参考方向，不是必选项 —— 也鼓励出其他贵州相关但例子里没列出的题目）
 - 不出真人名人，也不要纯文字概念（数学公式、网络抽象词等）。
 - 答案不能在 guesserClue 里出现（一字也不能）。
 - 不要使用 emoji。
 - 不同次生成尽量换不同的类别和不同的答案，避免重复，提高趣味性。`;
 
-    const userPrompt = `请生成一道新题目。建议从以下类别中挑一个（也可以选其他合适的类别）：${categoryHint}`;
+    const db = await getDB();
 
+    // Load the user's recent prompt history so we can tell the LLM not to
+    // repeat. Without this, qwen-plus mode-collapses to a few representative
+    // words from our system-prompt examples (we observed 风雨桥 returned 4
+    // times in a row for one user).
+    const recentRows = await db
+      .prepare(
+        `SELECT DISTINCT word FROM scribble_prompts
+         WHERE created_by = ?
+         ORDER BY created_at DESC
+         LIMIT ${RECENT_EXCLUSION_LIMIT}`
+      )
+      .bind(userId)
+      .all<{ word: string }>();
+    const recentWords = (recentRows.results ?? []).map((r) => r.word);
+    const exclusionSet = new Set(recentWords);
+
+    const exclusionBlock =
+      recentWords.length > 0
+        ? `\n\n⚠️ 重要：以下题目已经出过给该玩家，必须避开（连变体、近义词、繁简体差异都算重复）：${recentWords.join("、")}`
+        : "";
+
+    // Try up to DEDUP_RETRIES times, nudging harder + raising temperature on
+    // each retry. Keep the most recent candidate as a fallback in case every
+    // attempt still collides.
     let generated: GeneratedPrompt | null = null;
-    try {
-      const raw = await callOpenRouter(userPrompt, systemPrompt, {
-        temperature: 0.9,
-        maxTokens: 400,
-      });
-      generated = parseGenerated(raw);
-    } catch {
-      // fall through to error response below
+    let fallback: GeneratedPrompt | null = null;
+    for (let attempt = 0; attempt < DEDUP_RETRIES; attempt++) {
+      const retryNudge =
+        attempt === 0
+          ? ""
+          : `\n\n（上次返回的答案重复了，请换一个完全不一样的、不在排除列表中的题目。这是第 ${attempt + 1} 次尝试。）`;
+      const userPrompt =
+        `请生成一道新题目。建议从以下类别中挑一个（也可以选其他合适的类别）：${categoryHint}` +
+        exclusionBlock +
+        retryNudge;
+
+      try {
+        const raw = await callOpenRouter(userPrompt, systemPrompt, {
+          temperature: 0.9 + attempt * 0.05,
+          maxTokens: 400,
+        });
+        const cand = parseGenerated(raw);
+        if (cand) {
+          fallback = cand;
+          if (!exclusionSet.has(cand.word)) {
+            generated = cand;
+            break;
+          }
+        }
+      } catch {
+        // try next attempt
+      }
     }
+    // Last-resort fallback: accept a duplicate rather than erroring out.
+    // In practice we should rarely reach this — the LLM usually picks a new
+    // word once it sees the exclusion list.
+    if (!generated) generated = fallback;
 
     if (!generated) {
       return NextResponse.json({ error: "Failed to generate prompt" }, { status: 502 });
     }
-
-    const db = await getDB();
     const promptId = crypto.randomUUID();
     await db
       .prepare(
