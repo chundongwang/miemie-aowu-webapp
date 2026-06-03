@@ -71,6 +71,9 @@ const LEGACY_DISPLAY: Record<LegacyGrade, { color: string; ring: string; title: 
   revealed: { color: "text-gray-300",   ring: "ring-gray-500",   title: "看了答案",   subtitle: "下次试着猜猜看" },
 };
 
+// "X ago" while it's today (< 24h), then switch to an explicit date so the
+// guesser can tell at a glance which scribble is which when navigating
+// through a long inbox.
 function timeAgo(ms: number): string {
   const diff = Date.now() - ms;
   const sec = Math.floor(diff / 1000);
@@ -79,9 +82,30 @@ function timeAgo(ms: number): string {
   if (min < 60) return `${min}m ago`;
   const hr = Math.floor(min / 60);
   if (hr < 24) return `${hr}h ago`;
-  const day = Math.floor(hr / 24);
-  if (day < 7) return `${day}d ago`;
-  return new Date(ms).toLocaleDateString();
+  const d = new Date(ms);
+  const now = new Date();
+  const sameYear = d.getFullYear() === now.getFullYear();
+  return sameYear
+    ? `${d.getMonth() + 1}月${d.getDate()}日`
+    : `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+// Short label for the navigation strip — same rules as timeAgo, just terser
+// so 9 chips fit horizontally on a phone screen.
+function shortTimeLabel(ms: number): string {
+  const diff = Date.now() - ms;
+  const sec = Math.floor(diff / 1000);
+  if (sec < 60) return "刚刚";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h`;
+  const d = new Date(ms);
+  const now = new Date();
+  const sameYear = d.getFullYear() === now.getFullYear();
+  return sameYear
+    ? `${d.getMonth() + 1}/${d.getDate()}`
+    : `${String(d.getFullYear()).slice(2)}/${d.getMonth() + 1}/${d.getDate()}`;
 }
 
 export default function ScribbleInboxModal({ scribbles, onClose, onUpdate }: Props) {
@@ -502,21 +526,23 @@ export default function ScribbleInboxModal({ scribbles, onClose, onUpdate }: Pro
         </div>
       )}
 
-      {/* Navigation */}
-      <div className="flex items-center gap-2 px-4 py-2 bg-gray-900 border-t border-gray-800 shrink-0">
+      {/* Navigation — each item shows its date/time so the guesser can tell
+          at a glance which scribble is which. Horizontally scrollable for
+          long inboxes; the active chip auto-scrolls into view. */}
+      <div className="flex items-center gap-1 px-2 py-2 bg-gray-900 border-t border-gray-800 shrink-0">
         <button
           onClick={() => setActiveIndex((i) => Math.max(0, i - 1))}
           disabled={activeIndex === 0}
-          className="px-3 py-1.5 text-xs text-gray-300 border border-gray-700 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-800"
+          className="px-2 py-1.5 text-xs text-gray-300 border border-gray-700 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-800 shrink-0"
+          aria-label="Previous"
         >
-          ← Prev
+          ←
         </button>
-        <div className="flex-1 flex justify-center gap-1.5">
+        <div className="flex-1 flex gap-1 overflow-x-auto py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {ordered.map((s, i) => {
+            // Dot color encodes the grade. Pink = not yet started/finished.
             const dotColor =
-              i === activeIndex
-                ? "bg-white"
-                : s.finalGrade === "S"
+              s.finalGrade === "S"
                 ? "bg-yellow-300"
                 : s.finalGrade === "A"
                 ? "bg-emerald-300"
@@ -535,22 +561,33 @@ export default function ScribbleInboxModal({ scribbles, onClose, onUpdate }: Pro
                 : s.guessGrade === "wrong" || s.guessGrade === "revealed"
                 ? "bg-gray-500"
                 : "bg-pink-400";
+            const isActive = i === activeIndex;
             return (
               <button
                 key={s.id}
+                ref={isActive ? (el) => el?.scrollIntoView({ block: "nearest", inline: "center" }) : undefined}
                 onClick={() => setActiveIndex(i)}
-                className={`w-2 h-2 rounded-full transition-colors ${dotColor}`}
+                className={`shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] tabular-nums transition-colors ${
+                  isActive
+                    ? "bg-gray-700 text-white ring-1 ring-white/60"
+                    : "text-gray-400 hover:bg-gray-800"
+                }`}
                 aria-label={`Go to scribble ${i + 1}`}
-              />
+                title={new Date(s.createdAt).toLocaleString()}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+                <span>{shortTimeLabel(s.createdAt)}</span>
+              </button>
             );
           })}
         </div>
         <button
           onClick={() => setActiveIndex((i) => Math.min(ordered.length - 1, i + 1))}
           disabled={activeIndex === ordered.length - 1}
-          className="px-3 py-1.5 text-xs text-gray-300 border border-gray-700 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-800"
+          className="px-2 py-1.5 text-xs text-gray-300 border border-gray-700 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-800 shrink-0"
+          aria-label="Next"
         >
-          Next →
+          →
         </button>
       </div>
     </div>
