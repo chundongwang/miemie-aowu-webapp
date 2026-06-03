@@ -259,10 +259,7 @@ export default function ListsPage() {
         )}
         <div className="relative">
           <ScribbleFAB
-            onClick={() => {
-              if (unreadScribbles > 0) setShowScribbleInbox(true);
-              else setShowScribble(true);
-            }}
+            onClick={() => setShowScribble(true)}
             className="bg-[#2B4B8C] text-white w-14 h-14 rounded-full text-xl shadow-lg hover:bg-[#1e3a70] active:scale-95 transition-transform flex items-center justify-center"
           />
           {unreadScribbles > 0 && (
