@@ -27,37 +27,13 @@ type Props = {
 };
 
 export default function CheckInFAB({ todayCheckedIn, onClick, className }: Props) {
-  const [showPopup, setShowPopup]   = useState(false);
   const [orbitOffset, setOrbitOffset] = useState(0);
 
   useEffect(() => { setOrbitOffset(Math.random() * 6); }, []);
 
-  useEffect(() => {
-    if (todayCheckedIn) return; // don't nag if already checked in
-    const show = () => {
-      setShowPopup(true);
-      setTimeout(() => setShowPopup(false), 5000);
-    };
-    // First popup after 1s (before the other FABs), then every 20s
-    const first = setTimeout(show, 1000);
-    const interval = setInterval(show, 20000);
-    return () => { clearTimeout(first); clearInterval(interval); };
-  }, [todayCheckedIn]);
-
   return (
     <div className={className ?? "fixed bottom-6 right-6 sm:right-[calc(50%-208px)] z-20 flex flex-col items-end"}>
       <style>{ORBIT_CSS}</style>
-
-      {/* Popup bubble */}
-      <div
-        className={`mb-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 shadow-md text-xs text-gray-700 dark:text-gray-200 whitespace-nowrap transition-all duration-300 ${
-          showPopup ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1 pointer-events-none"
-        }`}
-      >
-        <span className="font-medium">今天打卡了吗</span>
-        <span className="text-gray-400 dark:text-gray-500 ml-1">Check in today</span>
-        <div className="absolute right-4 -bottom-1.5 w-3 h-3 bg-white dark:bg-gray-800 border-r border-b border-gray-200 dark:border-gray-700 rotate-45" />
-      </div>
 
       {/* FAB */}
       <button
