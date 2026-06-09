@@ -14,6 +14,8 @@ import CheckInModal from "@/components/CheckInModal";
 import ScribbleModal from "@/components/ScribbleModal";
 import ScribbleFAB from "@/components/ScribbleFAB";
 import ScribbleInboxModal, { type InboxScribble } from "@/components/ScribbleInboxModal";
+import WorldCupFAB from "@/components/WorldCupFAB";
+import WorldCupModal from "@/components/WorldCupModal";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useSwipeBack } from "@/hooks/useSwipeBack";
 import { useT } from "@/context/LocaleContext";
@@ -38,6 +40,7 @@ export default function ListsPage() {
 
   const [scribbleInbox, setScribbleInbox] = useState<InboxScribble[]>([]);
   const [showScribbleInbox, setShowScribbleInbox] = useState(false);
+  const [showWorldCup, setShowWorldCup] = useState(false);
 
   async function fetchLists() {
     const [ls, user] = await Promise.all([
@@ -114,7 +117,7 @@ export default function ListsPage() {
   }, [lists]);
 
   const { indicatorRef, isRefreshing } = usePullToRefresh(fetchLists);
-  const swipeProgress = useSwipeBack("/", !showNew && !showCheckIn && !showScribble && !showScribbleInbox);
+  const swipeProgress = useSwipeBack("/", !showNew && !showCheckIn && !showScribble && !showScribbleInbox && !showWorldCup);
 
   const unreadScribbles = scribbleInbox.filter((s) => s.guessGrade === null).length;
 
@@ -238,6 +241,7 @@ export default function ListsPage() {
         )}
       </main>
 
+      <WorldCupFAB onClick={() => setShowWorldCup(true)} />
       <FoodWheelFAB />
       <DailyChallengeFAB loggedIn={true} />
       <CheckInFAB
@@ -287,6 +291,7 @@ export default function ListsPage() {
       )}
 
       {showNew && <NewListModal onClose={() => setShowNew(false)} />}
+      {showWorldCup && <WorldCupModal onClose={() => setShowWorldCup(false)} />}
       {showScribble && <ScribbleModal onClose={() => setShowScribble(false)} />}
       {showScribbleInbox && (
         <ScribbleInboxModal
