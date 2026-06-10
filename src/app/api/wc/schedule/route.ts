@@ -150,18 +150,32 @@ function parseDollars(s: string | null | undefined): number | null {
 
 // Build a date+team → odds index from Kalshi's bulk markets response. Keys are
 // `YYYY-MM-DD|HOME|AWAY` where date is the Kalshi-side local match date.
-async function fetchKalshiOdds(): Promise<Map<string, MatchOdds>> {
+//
+// Returns the partial map plus a debug counter so the route can surface
+// "Kalshi reachable?" without us needing platform logs.
+async function fetchKalshiOdds(): Promise<{ map: Map<string, MatchOdds>; debug: { fetched: boolean; status: number; markets: number } }> {
   const map = new Map<string, MatchOdds>();
+  const debug = { fetched: false, status: 0, markets: 0 };
   let raw: KalshiMarketsResponse;
   try {
+    // No `next: { revalidate }` — that hint isn't honored cleanly through the
+    // opennextjs-cloudflare adapter and was causing every Kalshi fetch to
+    // silently empty in the Workers runtime. The route's own Cache-Control
+    // header is the primary downstream cache; upstream calls happen at most
+    // ~2/min/region, well below any sane Kalshi limit.
     const r = await fetch(KALSHI_MARKETS_URL, {
-      headers: { Accept: "application/json" },
-      next: { revalidate: 60 },
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "miemieaowu/1.0 (+https://miemieaowu.ai)",
+      },
     });
-    if (!r.ok) return map;
+    debug.status = r.status;
+    if (!r.ok) return { map, debug };
     raw = (await r.json()) as KalshiMarketsResponse;
+    debug.fetched = true;
+    debug.markets = raw.markets?.length ?? 0;
   } catch {
-    return map;
+    return { map, debug };
   }
 
   // Group markets by event ticker; each KXWCGAME event has 3 markets
@@ -207,7 +221,7 @@ async function fetchKalshiOdds(): Promise<Map<string, MatchOdds>> {
       tie: toOdds(tieMkt),
     });
   }
-  return map;
+  return { map, debug };
 }
 
 // Try the ESPN match's UTC date and a ±1-day window, since Kalshi tags each
@@ -260,11 +274,14 @@ export async function GET(req: Request) {
   // — we just return matches without odds in that case.
   let espn: EspnResponse;
   let oddsIndex: Map<string, MatchOdds>;
+  let kalshiDebug: { fetched: boolean; status: number; markets: number };
   try {
     const [espnRes, kalshi] = await Promise.all([
       fetch(target, {
-        headers: { Accept: "application/json" },
-        next: { revalidate: 60 },
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "miemieaowu/1.0 (+https://miemieaowu.ai)",
+        },
       }),
       fetchKalshiOdds(),
     ]);
@@ -272,7 +289,8 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: `Upstream ${espnRes.status}` }, { status: 502 });
     }
     espn = (await espnRes.json()) as EspnResponse;
-    oddsIndex = kalshi;
+    oddsIndex = kalshi.map;
+    kalshiDebug = kalshi.debug;
   } catch {
     return NextResponse.json({ error: "Failed to fetch upstream" }, { status: 502 });
   }
@@ -336,8 +354,18 @@ export async function GET(req: Request) {
     };
   }
 
+  // ?debug=1 surfaces the upstream fetch status so we can diagnose Kalshi
+  // outages without needing platform logs. The flag is harmless in prod — it
+  // adds a few bytes only when explicitly requested.
+  const debug = url.searchParams.get("debug") === "1";
+  const matchedOdds = matches.filter((m) => m.odds !== null).length;
+
   return NextResponse.json(
-    { matches, fetchedAt: now.toISOString() },
+    {
+      matches,
+      fetchedAt: now.toISOString(),
+      ...(debug ? { _debug: { kalshi: kalshiDebug, matchedOdds, espnEvents: espn.events?.length ?? 0 } } : {}),
+    },
     {
       headers: {
         // Browser/client cache: 30s fresh, 60s stale-while-revalidate.
