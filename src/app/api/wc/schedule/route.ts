@@ -148,21 +148,55 @@ function parseDollars(s: string | null | undefined): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+// Cache key for the Kalshi markets blob. Synthetic URL — we just need a
+// stable identity in the Cloudflare cache; the URL itself isn't fetched.
+const KALSHI_CACHE_KEY = "https://_miemieaowu_internal/wc-kalshi-markets.json";
+const KALSHI_CACHE_MAX_AGE_S = 60;
+
 // Build a date+team → odds index from Kalshi's bulk markets response. Keys are
 // `YYYY-MM-DD|HOME|AWAY` where date is the Kalshi-side local match date.
 //
+// Kalshi rate-limits unauthenticated requests fairly aggressively, so we
+// stash the upstream JSON in Cloudflare's edge cache for 60s. Without this
+// every route invocation hits Kalshi directly and we 429 under any real
+// traffic.
+//
 // Returns the partial map plus a debug counter so the route can surface
 // "Kalshi reachable?" without us needing platform logs.
-async function fetchKalshiOdds(): Promise<{ map: Map<string, MatchOdds>; debug: { fetched: boolean; status: number; markets: number } }> {
+async function fetchKalshiOdds(): Promise<{
+  map: Map<string, MatchOdds>;
+  debug: { fetched: boolean; status: number; markets: number; cached: boolean };
+}> {
   const map = new Map<string, MatchOdds>();
-  const debug = { fetched: false, status: 0, markets: 0 };
+  const debug = { fetched: false, status: 0, markets: 0, cached: false };
+
+  // `caches.default` exists in the Cloudflare Workers runtime; nodejs/local
+  // dev doesn't have it, which is why we feature-detect.
+  const cacheStore = (globalThis as unknown as { caches?: { default?: Cache } })
+    .caches?.default;
+  const cacheKey = new Request(KALSHI_CACHE_KEY, { method: "GET" });
+
+  // Try cache first.
+  if (cacheStore) {
+    try {
+      const cached = await cacheStore.match(cacheKey);
+      if (cached) {
+        const raw = (await cached.json()) as KalshiMarketsResponse;
+        debug.cached = true;
+        debug.fetched = true;
+        debug.status = 200;
+        debug.markets = raw.markets?.length ?? 0;
+        return parseAndIndex(raw, map, debug);
+      }
+    } catch {
+      // fall through to upstream fetch
+    }
+  }
+
+  // Cache miss → upstream fetch.
   let raw: KalshiMarketsResponse;
+  let bodyText: string;
   try {
-    // No `next: { revalidate }` — that hint isn't honored cleanly through the
-    // opennextjs-cloudflare adapter and was causing every Kalshi fetch to
-    // silently empty in the Workers runtime. The route's own Cache-Control
-    // header is the primary downstream cache; upstream calls happen at most
-    // ~2/min/region, well below any sane Kalshi limit.
     const r = await fetch(KALSHI_MARKETS_URL, {
       headers: {
         Accept: "application/json",
@@ -171,12 +205,43 @@ async function fetchKalshiOdds(): Promise<{ map: Map<string, MatchOdds>; debug: 
     });
     debug.status = r.status;
     if (!r.ok) return { map, debug };
-    raw = (await r.json()) as KalshiMarketsResponse;
+    bodyText = await r.text();
+    raw = JSON.parse(bodyText) as KalshiMarketsResponse;
     debug.fetched = true;
     debug.markets = raw.markets?.length ?? 0;
   } catch {
     return { map, debug };
   }
+
+  // Stash for next ~60s. cache.put requires a fresh Response with explicit
+  // Cache-Control — Kalshi's own headers may be no-store and would otherwise
+  // make the cache refuse the entry.
+  if (cacheStore) {
+    try {
+      await cacheStore.put(
+        cacheKey,
+        new Response(bodyText, {
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": `public, max-age=${KALSHI_CACHE_MAX_AGE_S}`,
+          },
+        })
+      );
+    } catch {
+      // ignore cache write failures — they don't affect correctness
+    }
+  }
+
+  return parseAndIndex(raw, map, debug);
+}
+
+function parseAndIndex(
+  raw: KalshiMarketsResponse,
+  map: Map<string, MatchOdds>,
+  debug: { fetched: boolean; status: number; markets: number; cached: boolean }
+): { map: Map<string, MatchOdds>; debug: { fetched: boolean; status: number; markets: number; cached: boolean } } {
+  // Original parsing logic, factored out so the cache-hit + cache-miss paths
+  // share it.
 
   // Group markets by event ticker; each KXWCGAME event has 3 markets
   // (home / away / tie). Ticker format: `KXWCGAME-{YY}{MMM}{DD}{HOMEAWAY}-{SIDE}`.
@@ -274,7 +339,7 @@ export async function GET(req: Request) {
   // — we just return matches without odds in that case.
   let espn: EspnResponse;
   let oddsIndex: Map<string, MatchOdds>;
-  let kalshiDebug: { fetched: boolean; status: number; markets: number };
+  let kalshiDebug: { fetched: boolean; status: number; markets: number; cached: boolean };
   try {
     const [espnRes, kalshi] = await Promise.all([
       fetch(target, {
