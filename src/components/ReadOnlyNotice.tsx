@@ -8,24 +8,30 @@ const DISMISS_KEY = "readOnlyNoticeDismissed_20260719";
 
 const COPY = {
   en: {
-    badge: "A little note 💛",
+    badge: "A letter of thanks 🙏",
     title: "Going read-only on July 19, 2026",
     body: [
-      "Starting July 19, 2026, 咩咩~嗷呜 will enter read-only mode. You'll still be able to look back on everything, but new changes will be paused.",
-      "Thank you, Miss Miemie, for keeping Mr. Aowu company this past year. Every bit of the happiness you brought is deeply appreciated. 🐑💛🐺",
+      "Every story has its ending.",
+      "Right now, the pain is real.\nThe happiness we once had is real too.",
+      "Thank you, Miss Sheep, for keeping Mr. Wolf company this past year.\nThank you for making me believe I truly can bring happiness to someone.",
+      "The story ends here.\nBut the light of this year will stay, always.",
+      "Until we meet again.",
     ],
-    button: "Thank you 💛",
-    fabLabel: "About read-only mode",
+    button: "Thank you 🙏",
+    fabLabel: "A letter of thanks",
   },
   zh: {
-    badge: "一封小小的告白 💛",
+    badge: "一封小小的感谢信 🙏",
     title: "2026 年 7 月 19 日起进入只读模式",
     body: [
-      "从 2026 年 7 月 19 日起，咩咩~嗷呜 将进入只读模式。过往的一切仍可回看，但将暂停新的改动。",
-      "感谢咩咩小姐这一年来陪伴嗷呜先生。你带来的每一份快乐，都被深深珍藏。🐑💛🐺",
+      "每个故事都有结局。",
+      "此刻，痛苦是真实的。\n曾经拥有的快乐，也是真实的。",
+      "谢谢羊小姐陪伴狼先生这一年。\n谢谢你让我相信，我真的可以带给一个人幸福。",
+      "故事在这里结束。\n但这一年的光，会一直留着。",
+      "后会有期。",
     ],
-    button: "谢谢你 💛",
-    fabLabel: "关于只读模式",
+    button: "谢谢你 🙏",
+    fabLabel: "一封小小的感谢信",
   },
 } as const;
 
@@ -82,7 +88,7 @@ export default function ReadOnlyNotice() {
         >
           <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-sm shadow-xl overflow-hidden">
             <div className="px-6 pt-6 pb-5 text-center">
-              <div className="text-5xl mb-3">🐑💛🐺</div>
+              <div className="text-5xl mb-3">🐺🙏🐑</div>
               <p className="text-xs font-semibold uppercase tracking-wide text-[#2B4B8C] dark:text-blue-300">
                 {t.badge}
               </p>
@@ -93,7 +99,7 @@ export default function ReadOnlyNotice() {
                 {t.body.map((para, i) => (
                   <p
                     key={i}
-                    className="text-sm leading-relaxed text-gray-600 dark:text-gray-300"
+                    className="text-sm leading-relaxed text-gray-600 dark:text-gray-300 whitespace-pre-line"
                   >
                     {para}
                   </p>
