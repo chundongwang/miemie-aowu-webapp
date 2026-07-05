@@ -250,17 +250,6 @@ export default function ListsPage() {
         className="fixed bottom-24 right-6 sm:right-[calc(50%-208px)] z-20 flex flex-col items-end"
       />
       <div className="fixed bottom-6 right-6 sm:right-[calc(50%-208px)] z-20 flex flex-row items-center gap-2">
-        {unreadScribbles > 0 && (
-          <button
-            onClick={() => setShowScribbleInbox(true)}
-            className="relative bg-pink-500 text-white rounded-xl px-3 py-2 shadow-lg text-xs font-medium whitespace-nowrap hover:bg-pink-600 active:scale-95 transition-all"
-          >
-            ✏️ {unreadScribbles === 1
-              ? "1 个成语等你猜!"
-              : `${unreadScribbles} 个成语等你猜!`}
-            <span className="absolute top-1/2 -translate-y-1/2 -right-1.5 w-3 h-3 bg-pink-500 rotate-45" />
-          </button>
-        )}
         <div className="relative">
           <ScribbleFAB
             onClick={() => setShowScribble(true)}
