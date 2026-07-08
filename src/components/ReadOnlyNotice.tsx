@@ -1,15 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocale } from "@/context/LocaleContext";
-
-// Stores the last local date (YYYY-MM-DD) the notice was auto-shown, so it pops
-// up at most once per calendar day. Bump the suffix to reset for everyone.
-const LAST_SHOWN_KEY = "readOnlyNoticeLastShown_20260719";
-
-function today(): string {
-  return new Date().toLocaleDateString("sv"); // YYYY-MM-DD in local time
-}
 
 const COPY = {
   en: {
@@ -46,28 +38,8 @@ export default function ReadOnlyNotice() {
   const locale = useLocale();
   const [open, setOpen] = useState(false);
 
-  // Auto-open at most once per calendar day. Deferred out of the effect body so
-  // server + first client render both stay closed (no hydration mismatch) and it
-  // opens on the next frame.
-  useEffect(() => {
-    let shownToday = false;
-    try {
-      shownToday = localStorage.getItem(LAST_SHOWN_KEY) === today();
-    } catch {
-      // localStorage unavailable (e.g. private mode) — show once for this load.
-    }
-    if (shownToday) return;
-    const id = requestAnimationFrame(() => setOpen(true));
-    return () => cancelAnimationFrame(id);
-  }, []);
-
+  // The notice never auto-opens; it's shown only when the mail FAB is tapped.
   function close() {
-    // Remember today so the auto-popup won't return until tomorrow; the FAB can still reopen it.
-    try {
-      localStorage.setItem(LAST_SHOWN_KEY, today());
-    } catch {
-      // ignore — nothing we can do if storage is blocked
-    }
     setOpen(false);
   }
 
