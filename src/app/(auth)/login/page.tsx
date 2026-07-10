@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useT, useLocale } from "@/context/LocaleContext";
 
@@ -10,7 +9,6 @@ type ChallengeState = "idle" | "loading" | "answering" | "evaluating" | "result"
 export default function LoginPage() {
   const t = useT();
   const locale = useLocale();
-  const router = useRouter();
 
   // ── Login form ──────────────────────────────────────────────────────────────
   const [username, setUsername] = useState("");
@@ -31,7 +29,11 @@ export default function LoginPage() {
       try { data = await res.json() as { error?: string }; } catch { /* non-JSON */ }
       if (!res.ok) { setError(t("errorInvalidCredentials")); return; }
       if (data.error) { setError(t("errorLogin")); return; }
-      router.push("/lists");
+      // Hard navigation (not router.push): forces a fresh top-level request that
+      // carries the just-set cookie and bypasses any stale prefetched /lists in
+      // the client router cache — the SPA nav was looping back to /login on some
+      // Android browsers (e.g. OPPO).
+      window.location.assign("/lists");
     } finally {
       setLoading(false);
     }
@@ -55,7 +57,7 @@ export default function LoginPage() {
     if (challengeState !== "result" || !result?.correct) return;
     if (countdown === 0) {
       setChallengeState("idle");
-      router.push("/lists"); // cookie already set server-side
+      window.location.assign("/lists"); // hard nav: carry the just-set cookie, skip stale router cache
       return;
     }
     const timer = setTimeout(() => setCountdown((n) => n - 1), 1000);

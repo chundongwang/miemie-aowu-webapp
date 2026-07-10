@@ -1,13 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useT } from "@/context/LocaleContext";
 
 export default function RegisterPage() {
   const t = useT();
-  const router = useRouter();
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [phone, setPhone] = useState("");
@@ -38,7 +36,9 @@ export default function RegisterPage() {
         else setError(t("errorRegister"));
         return;
       }
-      router.push("/lists");
+      // Hard navigation (see login/page.tsx): carry the just-set cookie and skip
+      // any stale prefetched /lists in the client router cache.
+      window.location.assign("/lists");
     } finally {
       setLoading(false);
     }
