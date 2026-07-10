@@ -4,7 +4,7 @@ import "./globals.css";
 import { getLocale } from "@/lib/i18n";
 import { LocaleProvider } from "@/context/LocaleContext";
 import FaviconRotator from "@/components/FaviconRotator";
-import ReadOnlyNotice from "@/components/ReadOnlyNotice";
+import RoseLetter from "@/components/RoseLetter";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,7 +45,7 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col overflow-x-hidden">
         <LocaleProvider locale={locale}>
           {children}
-          <ReadOnlyNotice />
+          <RoseLetter />
         </LocaleProvider>
         <FaviconRotator />
       </body>

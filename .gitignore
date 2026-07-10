@@ -24,3 +24,4 @@ out/
 *.pem
 npm-debug.log*
 .dev.vars
+.gstack/
