@@ -84,7 +84,11 @@ export async function setAuthCookie(userId: string): Promise<void> {
   jar.set(COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    // "lax" (not "strict"): a strict cookie is withheld on the navigation that
+    // immediately follows login on some Android browsers/WebViews (e.g. OPPO's
+    // Heytap, or entry from an in-app link), so the server auth guard sees no
+    // cookie and loops back to /login. "lax" still blocks cross-site POST CSRF.
+    sameSite: "lax",
     maxAge: TOKEN_TTL,
     path: "/",
   });
