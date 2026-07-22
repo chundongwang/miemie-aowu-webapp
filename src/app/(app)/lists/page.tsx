@@ -16,6 +16,7 @@ import ScribbleFAB from "@/components/ScribbleFAB";
 import ScribbleInboxModal, { type InboxScribble } from "@/components/ScribbleInboxModal";
 import WorldCupFAB from "@/components/WorldCupFAB";
 import WorldCupModal from "@/components/WorldCupModal";
+import RoseLetter from "@/components/RoseLetter";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useSwipeBack } from "@/hooks/useSwipeBack";
 import { useT } from "@/context/LocaleContext";
@@ -241,6 +242,7 @@ export default function ListsPage() {
         )}
       </main>
 
+      <RoseLetter />
       <WorldCupFAB onClick={() => setShowWorldCup(true)} />
       <FoodWheelFAB />
       <DailyChallengeFAB loggedIn={true} />
