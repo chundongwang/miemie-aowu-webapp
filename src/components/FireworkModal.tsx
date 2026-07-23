@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 
 // The sentence, one line per row. Each word gets its own firework, fired in
-// reading order, so the sentence assembles itself burst by burst.
-const LINES = ["Be happy.", "Even just today is okay."] as const;
+// reading order, so the sentence assembles itself burst by burst. Kept to
+// three short lines so each word renders large enough to read on a phone.
+const LINES = ["Be happy.", "Even just today", "is okay."] as const;
 
 const ROCKET_DUR = 600; // ms for a rocket to rise to its word
 const INTERVAL = 1050; // ms between successive rocket launches
@@ -90,8 +91,8 @@ export default function FireworkModal({ onClose, closeLabel }: { onClose: () => 
         for (let x = 0; x < cw; x += step) {
           if (data[(y * cw + x) * 4 + 3] > 130) {
             pts.push({
-              x: left - pad + x + (Math.random() - 0.5) * step * 0.7,
-              y: worldTop + y + (Math.random() - 0.5) * step * 0.7,
+              x: left - pad + x + (Math.random() - 0.5) * step * 0.35,
+              y: worldTop + y + (Math.random() - 0.5) * step * 0.35,
             });
           }
         }
@@ -218,9 +219,9 @@ export default function FireworkModal({ onClose, closeLabel }: { onClose: () => 
     }
 
     function drawGlow(x: number, y: number, r: number, col: RGB, a: number) {
-      ctx!.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${a * 0.28})`;
+      ctx!.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${a * 0.18})`;
       ctx!.beginPath();
-      ctx!.arc(x, y, r * 2.4, 0, 6.2832);
+      ctx!.arc(x, y, r * 1.7, 0, 6.2832);
       ctx!.fill();
       ctx!.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${a})`;
       ctx!.beginPath();
