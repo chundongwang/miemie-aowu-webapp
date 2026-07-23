@@ -2,29 +2,24 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// The two lines the firework resolves into.
+// The sentence, one line per row. Each word gets its own firework, fired in
+// reading order, so the sentence assembles itself burst by burst.
 const LINES = ["Be happy.", "Even just today is okay."] as const;
 
+const ROCKET_DUR = 600; // ms for a rocket to rise to its word
+const INTERVAL = 1050; // ms between successive rocket launches
+
 type RGB = [number, number, number];
-type Part = {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  tx: number;
-  ty: number;
-  col: RGB;
-  seed: number;
-};
-type Spark = {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  col: RGB;
-  life: number;
-  decay: number;
-  size: number;
+type Pt = { x: number; y: number };
+type Part = { x: number; y: number; vx: number; vy: number; tx: number; ty: number; col: RGB; seed: number };
+type Spark = { x: number; y: number; vx: number; vy: number; col: RGB; life: number; decay: number; size: number };
+type Word = {
+  pts: Pt[];
+  cx: number; // burst center
+  cy: number;
+  parts: Part[];
+  state: "waiting" | "rocket" | "burst" | "hold";
+  burstTime: number;
 };
 
 const easeOutCubic = (x: number) => 1 - Math.pow(1 - x, 3);
@@ -61,63 +56,102 @@ export default function FireworkModal({ onClose, closeLabel }: { onClose: () => 
 
     let w = 0;
     let h = 0;
-    let textPts: { x: number; y: number }[] = [];
-    let burst = { x: 0, y: 0 };
-    let parts: Part[] = [];
-    let decor: Spark[] = [];
+    let words: Word[] = [];
     let ambient: Spark[] = [];
-    let phase: "rocket" | "burst" | "hold" = "rocket";
-    let rocket = { x0: 0, y0: 0, x: 0, y: 0, t0: 0, dur: 720 };
-    let burstTime = 0;
+    let launched = 0;
+    let lastLaunch = 0;
+    let rocket: { x: number; y: number; y0: number; t0: number; wi: number } | null = null;
     let lastAmbient = 0;
     let raf = 0;
 
-    // ---- text sampling ----------------------------------------------------
-    function sampleText(): { pts: { x: number; y: number }[]; centerY: number } {
-      const off = document.createElement("canvas");
-      off.width = Math.max(1, Math.round(w));
-      off.height = Math.max(1, Math.round(h));
-      const octx = off.getContext("2d");
-      if (!octx) return { pts: [], centerY: h * 0.46 };
+    const font = (s: number) => `700 ${s}px system-ui, -apple-system, "Segoe UI", sans-serif`;
 
-      const font = (s: number) => `700 ${s}px system-ui, -apple-system, "Segoe UI", sans-serif`;
-      const longest = LINES.reduce((a, b) => (b.length > a.length ? b : a), "");
-      const maxW = w * 0.84;
-      let size = Math.min(72, h * 0.13);
-      for (; size > 14; size -= 1) {
-        octx.font = font(size);
-        if (octx.measureText(longest).width <= maxW) break;
-      }
-      octx.font = font(size);
-      octx.textAlign = "center";
-      octx.textBaseline = "middle";
-      octx.fillStyle = "#fff";
-      const lh = size * 1.3;
-      const totalH = lh * LINES.length;
-      const centerY = h * 0.46;
-      const top = centerY - totalH / 2 + lh / 2;
-      LINES.forEach((line, i) => octx.fillText(line, w / 2, top + i * lh));
-
-      const data = octx.getImageData(0, 0, off.width, off.height).data;
-      const step = size > 44 ? 5 : 4;
-      const pts: { x: number; y: number }[] = [];
-      for (let y = 0; y < off.height; y += step) {
-        for (let x = 0; x < off.width; x += step) {
-          if (data[(y * off.width + x) * 4 + 3] > 130) {
+    // ---- layout: sample every word into target points ---------------------
+    function sampleWord(tok: string, size: number, left: number, centerY: number, lh: number): Pt[] {
+      const measurer = document.createElement("canvas").getContext("2d")!;
+      measurer.font = font(size);
+      const pad = 4;
+      const cw = Math.ceil(measurer.measureText(tok).width) + pad * 2;
+      const ch = Math.ceil(lh);
+      const c = document.createElement("canvas");
+      c.width = cw;
+      c.height = ch;
+      const cx = c.getContext("2d")!;
+      cx.font = font(size);
+      cx.textAlign = "left";
+      cx.textBaseline = "middle";
+      cx.fillStyle = "#fff";
+      cx.fillText(tok, pad, ch / 2);
+      const data = cx.getImageData(0, 0, cw, ch).data;
+      const step = size > 44 ? 6 : 5;
+      const pts: Pt[] = [];
+      const worldTop = centerY - ch / 2;
+      for (let y = 0; y < ch; y += step) {
+        for (let x = 0; x < cw; x += step) {
+          if (data[(y * cw + x) * 4 + 3] > 130) {
             pts.push({
-              x: x + (Math.random() - 0.5) * step * 0.7,
-              y: y + (Math.random() - 0.5) * step * 0.7,
+              x: left - pad + x + (Math.random() - 0.5) * step * 0.7,
+              y: worldTop + y + (Math.random() - 0.5) * step * 0.7,
             });
           }
         }
       }
-      // Cap the particle count so mid-range phones stay at 60fps.
-      const MAX = 1100;
-      if (pts.length > MAX) {
-        const stride = Math.ceil(pts.length / MAX);
-        return { pts: pts.filter((_, i) => i % stride === 0), centerY };
+      return pts;
+    }
+
+    function computeWords(): Word[] {
+      const octx = document.createElement("canvas").getContext("2d")!;
+      let size = Math.min(72, h * 0.13);
+      for (; size > 14; size -= 1) {
+        octx.font = font(size);
+        const widest = Math.max(...LINES.map((l) => octx.measureText(l).width));
+        if (widest <= w * 0.84) break;
       }
-      return { pts, centerY };
+      octx.font = font(size);
+      const spaceW = octx.measureText(" ").width;
+      const lh = size * 1.3;
+      const totalH = lh * LINES.length;
+      const firstCenter = h * 0.46 - totalH / 2 + lh / 2;
+
+      const out: Word[] = [];
+      LINES.forEach((line, li) => {
+        const centerY = firstCenter + li * lh;
+        const toks = line.split(" ");
+        const widths = toks.map((t) => octx.measureText(t).width);
+        const lineW = widths.reduce((a, b) => a + b, 0) + spaceW * (toks.length - 1);
+        let x = (w - lineW) / 2;
+        toks.forEach((tok, ti) => {
+          const pts = sampleWord(tok, size, x, centerY, lh);
+          out.push({ pts, cx: x + widths[ti] / 2, cy: centerY, parts: [], state: "waiting", burstTime: 0 });
+          x += widths[ti] + spaceW;
+        });
+      });
+      return out;
+    }
+
+    function remapWord(wd: Word, pts: Pt[]) {
+      if (wd.parts.length === pts.length) {
+        pts.forEach((p, i) => {
+          wd.parts[i].tx = p.x;
+          wd.parts[i].ty = p.y;
+        });
+      } else {
+        const old = wd.parts;
+        wd.parts = pts.map((p, i) => {
+          const src = old[i] ?? old[old.length - 1];
+          return {
+            x: src?.x ?? wd.cx,
+            y: src?.y ?? wd.cy,
+            vx: 0,
+            vy: 0,
+            tx: p.x,
+            ty: p.y,
+            col: src?.col ?? pickTextCol(),
+            seed: src?.seed ?? Math.random() * 6.28,
+          };
+        });
+      }
+      wd.pts = pts;
     }
 
     function layout() {
@@ -130,38 +164,20 @@ export default function FireworkModal({ onClose, closeLabel }: { onClose: () => 
       canvas!.height = Math.round(h * dpr);
       ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      if (widthChanged || textPts.length === 0) {
-        const s = sampleText();
-        textPts = s.pts;
-        burst = { x: w / 2, y: s.centerY };
-        // Re-point existing particles at the fresh targets (resize while showing).
-        if (phase !== "rocket") {
-          if (parts.length !== textPts.length) {
-            const old = parts;
-            parts = textPts.map((p, i) => {
-              const src = old[i] ?? old[old.length - 1];
-              return {
-                x: src?.x ?? burst.x,
-                y: src?.y ?? burst.y,
-                vx: src?.vx ?? 0,
-                vy: src?.vy ?? 0,
-                tx: p.x,
-                ty: p.y,
-                col: src?.col ?? pickTextCol(),
-                seed: src?.seed ?? Math.random() * 6.28,
-              };
-            });
-          } else {
-            parts.forEach((q, i) => {
-              q.tx = textPts[i].x;
-              q.ty = textPts[i].y;
-            });
-          }
-        }
+      if (words.length === 0) {
+        words = computeWords();
+      } else if (widthChanged) {
+        const fresh = computeWords();
+        words.forEach((wd, i) => {
+          wd.cx = fresh[i].cx;
+          wd.cy = fresh[i].cy;
+          if (wd.state === "waiting") wd.pts = fresh[i].pts;
+          else remapWord(wd, fresh[i].pts);
+        });
       }
     }
 
-    // ---- spark helpers ----------------------------------------------------
+    // ---- sparks & particles ----------------------------------------------
     function spawnSparks(x: number, y: number, n: number, power: number): Spark[] {
       const out: Spark[] = [];
       for (let i = 0; i < n; i++) {
@@ -181,14 +197,15 @@ export default function FireworkModal({ onClose, closeLabel }: { onClose: () => 
       return out;
     }
 
-    function ignite(now: number) {
-      burstTime = now;
-      parts = textPts.map((p) => {
+    function igniteWord(wd: Word, now: number) {
+      wd.state = "burst";
+      wd.burstTime = now;
+      wd.parts = wd.pts.map((p) => {
         const ang = Math.random() * Math.PI * 2;
-        const spd = 3 + Math.random() * 9;
+        const spd = 3 + Math.random() * 8;
         return {
-          x: burst.x,
-          y: burst.y,
+          x: wd.cx,
+          y: wd.cy,
           vx: Math.cos(ang) * spd,
           vy: Math.sin(ang) * spd,
           tx: p.x,
@@ -197,7 +214,7 @@ export default function FireworkModal({ onClose, closeLabel }: { onClose: () => 
           seed: Math.random() * 6.28,
         };
       });
-      decor = spawnSparks(burst.x, burst.y, 120, 1);
+      ambient.push(...spawnSparks(wd.cx, wd.cy, 64, 1));
     }
 
     function drawGlow(x: number, y: number, r: number, col: RGB, a: number) {
@@ -211,16 +228,9 @@ export default function FireworkModal({ onClose, closeLabel }: { onClose: () => 
       ctx!.fill();
     }
 
-    function drawDot(x: number, y: number, r: number, col: RGB, a: number) {
-      ctx!.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${a})`;
-      ctx!.beginPath();
-      ctx!.arc(x, y, r, 0, 6.2832);
-      ctx!.fill();
-    }
-
-    function updateSparks(arr: Spark[]) {
-      for (let i = arr.length - 1; i >= 0; i--) {
-        const s = arr[i];
+    function updateSparks(now: number) {
+      for (let i = ambient.length - 1; i >= 0; i--) {
+        const s = ambient[i];
         s.x += s.vx;
         s.y += s.vy;
         s.vy += 0.06;
@@ -228,10 +238,10 @@ export default function FireworkModal({ onClose, closeLabel }: { onClose: () => 
         s.vy *= 0.985;
         s.life -= s.decay;
         if (s.life <= 0) {
-          arr.splice(i, 1);
+          ambient.splice(i, 1);
           continue;
         }
-        drawDot(s.x, s.y, s.size, s.col, Math.max(0, s.life));
+        drawGlow(s.x, s.y, s.size, s.col, Math.max(0, s.life));
       }
     }
 
@@ -239,43 +249,54 @@ export default function FireworkModal({ onClose, closeLabel }: { onClose: () => 
     layout();
     const startTime = performance.now();
     if (reduced) {
-      parts = textPts.map((p) => ({
-        x: p.x,
-        y: p.y,
-        vx: 0,
-        vy: 0,
-        tx: p.x,
-        ty: p.y,
-        col: pickTextCol(),
-        seed: Math.random() * 6.28,
-      }));
-      burstTime = startTime;
-      phase = "hold";
+      words.forEach((wd) => {
+        wd.state = "hold";
+        wd.parts = wd.pts.map((p) => ({
+          x: p.x,
+          y: p.y,
+          vx: 0,
+          vy: 0,
+          tx: p.x,
+          ty: p.y,
+          col: pickTextCol(),
+          seed: Math.random() * 6.28,
+        }));
+      });
+      launched = words.length;
     } else {
-      rocket = { x0: w / 2, y0: h + 12, x: w / 2, y: h + 12, t0: startTime + 140, dur: 720 };
-      phase = "rocket";
+      words[0].state = "rocket";
+      rocket = { x: words[0].cx, y: h + 12, y0: h + 12, t0: startTime, wi: 0 };
+      launched = 1;
+      lastLaunch = startTime;
     }
 
     function frame(now: number) {
-      // Trails + dark backdrop in one translucent wash.
       ctx!.globalCompositeOperation = "source-over";
       ctx!.fillStyle = "rgba(4,6,16,0.22)";
       ctx!.fillRect(0, 0, w, h);
       ctx!.globalCompositeOperation = "lighter";
 
-      if (phase === "hold" && !reduced && now - lastAmbient > 1500) {
-        lastAmbient = now;
-        ambient.push(
-          ...spawnSparks(w * (0.18 + Math.random() * 0.64), h * (0.14 + Math.random() * 0.3), 46, 0.85)
-        );
+      // Launch the next word's rocket on a steady cadence.
+      if (!reduced && launched < words.length && now - lastLaunch >= INTERVAL) {
+        const wd = words[launched];
+        wd.state = "rocket";
+        rocket = { x: wd.cx, y: h + 12, y0: h + 12, t0: now, wi: launched };
+        launched++;
+        lastLaunch = now;
       }
-      updateSparks(ambient);
 
-      if (phase === "rocket") {
-        const p = Math.min(1, Math.max(0, (now - rocket.t0) / rocket.dur));
-        const e = easeOutCubic(p);
-        rocket.x = rocket.x0 + (burst.x - rocket.x0) * e;
-        rocket.y = rocket.y0 + (burst.y - rocket.y0) * e;
+      // Ambient sparkle in the sky for atmosphere.
+      if (!reduced && now - lastAmbient > 1600) {
+        lastAmbient = now;
+        ambient.push(...spawnSparks(w * (0.18 + Math.random() * 0.64), h * (0.12 + Math.random() * 0.28), 40, 0.8));
+      }
+      updateSparks(now);
+
+      // Active rocket rising to its word.
+      if (rocket) {
+        const wd = words[rocket.wi];
+        const p = Math.min(1, Math.max(0, (now - rocket.t0) / ROCKET_DUR));
+        rocket.y = rocket.y0 + (wd.cy - rocket.y0) * easeOutCubic(p);
         drawGlow(rocket.x, rocket.y, 2.2, [255, 236, 190], 1);
         if (Math.random() < 0.9) {
           ambient.push({
@@ -290,35 +311,36 @@ export default function FireworkModal({ onClose, closeLabel }: { onClose: () => 
           });
         }
         if (p >= 1) {
-          phase = "burst";
-          ignite(now);
+          igniteWord(wd, now);
+          rocket = null;
         }
       }
 
-      if (phase === "burst" || phase === "hold") {
-        const age = now - burstTime;
+      // Every word that has burst: expand outward, then gather into shape.
+      for (const wd of words) {
+        if (wd.state !== "burst" && wd.state !== "hold") continue;
+        const age = now - wd.burstTime;
         let settled = 0;
-        for (const q of parts) {
-          const expand = 220 + (q.seed % 1) * 160;
+        for (const q of wd.parts) {
+          const expand = 180 + (q.seed % 1) * 140;
           if (!reduced && age < expand) {
             q.x += q.vx;
             q.y += q.vy;
             q.vx *= 0.94;
             q.vy *= 0.94;
           } else {
-            q.vx = (q.vx + (q.tx - q.x) * 0.02) * 0.9;
-            q.vy = (q.vy + (q.ty - q.y) * 0.02) * 0.9;
+            q.vx = (q.vx + (q.tx - q.x) * 0.022) * 0.9;
+            q.vy = (q.vy + (q.ty - q.y) * 0.022) * 0.9;
             q.x += q.vx;
             q.y += q.vy;
             if ((q.tx - q.x) ** 2 + (q.ty - q.y) ** 2 < 1.2) settled++;
           }
-          const tw = phase === "hold" ? 0.72 + 0.28 * Math.sin(now * 0.006 + q.seed) : 1;
+          const tw = wd.state === "hold" ? 0.72 + 0.28 * Math.sin(now * 0.006 + q.seed) : 1;
           drawGlow(q.x, q.y, 1.5, q.col, tw);
         }
-        if (phase === "burst" && parts.length && settled > parts.length * 0.9) phase = "hold";
+        if (wd.state === "burst" && wd.parts.length && settled > wd.parts.length * 0.9) wd.state = "hold";
       }
 
-      updateSparks(decor);
       raf = requestAnimationFrame(frame);
     }
     raf = requestAnimationFrame(frame);
