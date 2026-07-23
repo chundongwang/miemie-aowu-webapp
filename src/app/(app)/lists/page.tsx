@@ -11,11 +11,6 @@ import DailyChallengeFAB from "@/components/DailyChallengeFAB";
 import FoodWheelFAB from "@/components/FoodWheelFAB";
 import CheckInFAB from "@/components/CheckInFAB";
 import CheckInModal from "@/components/CheckInModal";
-import ScribbleModal from "@/components/ScribbleModal";
-import ScribbleFAB from "@/components/ScribbleFAB";
-import ScribbleInboxModal, { type InboxScribble } from "@/components/ScribbleInboxModal";
-import WorldCupFAB from "@/components/WorldCupFAB";
-import WorldCupModal from "@/components/WorldCupModal";
 import FireworkLetter from "@/components/FireworkLetter";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useSwipeBack } from "@/hooks/useSwipeBack";
@@ -33,15 +28,10 @@ export default function ListsPage() {
   const [lists, setLists] = useState<List[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
-  const [showScribble, setShowScribble] = useState(false);
   const [me, setMe] = useState<{ id: string } | null>(null);
 
   const [checkIn, setCheckIn]         = useState<CheckInData | null>(null);
   const [showCheckIn, setShowCheckIn] = useState(false);
-
-  const [scribbleInbox, setScribbleInbox] = useState<InboxScribble[]>([]);
-  const [showScribbleInbox, setShowScribbleInbox] = useState(false);
-  const [showWorldCup, setShowWorldCup] = useState(false);
 
   async function fetchLists() {
     const [ls, user] = await Promise.all([
@@ -63,19 +53,10 @@ export default function ListsPage() {
     }
   }
 
-  async function fetchScribbleInbox() {
-    const res = await fetch("/api/scribble/inbox");
-    if (res.ok) {
-      const data = (await res.json()) as InboxScribble[];
-      setScribbleInbox(data);
-    }
-  }
-
   useEffect(() => {
     fetchLists();
     fetchCheckIn();
-    fetchScribbleInbox();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // Update app-icon badge + document title whenever unread count changes
   useEffect(() => {
@@ -118,9 +99,7 @@ export default function ListsPage() {
   }, [lists]);
 
   const { indicatorRef, isRefreshing } = usePullToRefresh(fetchLists);
-  const swipeProgress = useSwipeBack("/", !showNew && !showCheckIn && !showScribble && !showScribbleInbox && !showWorldCup);
-
-  const unreadScribbles = scribbleInbox.filter((s) => s.guessGrade === null).length;
+  const swipeProgress = useSwipeBack("/", !showNew && !showCheckIn);
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -243,7 +222,6 @@ export default function ListsPage() {
       </main>
 
       <FireworkLetter />
-      <WorldCupFAB onClick={() => setShowWorldCup(true)} />
       <FoodWheelFAB />
       <DailyChallengeFAB loggedIn={true} />
       <CheckInFAB
@@ -251,23 +229,6 @@ export default function ListsPage() {
         onClick={() => setShowCheckIn(true)}
         className="fixed bottom-24 right-6 sm:right-[calc(50%-208px)] z-20 flex flex-col items-end"
       />
-      <div className="fixed bottom-6 right-6 sm:right-[calc(50%-208px)] z-20 flex flex-row items-center gap-2">
-        <div className="relative">
-          <ScribbleFAB
-            onClick={() => setShowScribble(true)}
-            className="bg-[#2B4B8C] text-white w-14 h-14 rounded-full text-xl shadow-lg hover:bg-[#1e3a70] active:scale-95 transition-transform flex items-center justify-center"
-          />
-          {unreadScribbles > 0 && (
-            <button
-              onClick={() => setShowScribbleInbox(true)}
-              className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-pink-500 text-white text-[10px] font-bold flex items-center justify-center shadow-md ring-2 ring-white dark:ring-gray-900"
-              aria-label={`${unreadScribbles} unread scribbles`}
-            >
-              {unreadScribbles}
-            </button>
-          )}
-        </div>
-      </div>
 
       {showCheckIn && checkIn !== null && (
         <CheckInModal
@@ -282,19 +243,6 @@ export default function ListsPage() {
       )}
 
       {showNew && <NewListModal onClose={() => setShowNew(false)} />}
-      {showWorldCup && <WorldCupModal onClose={() => setShowWorldCup(false)} />}
-      {showScribble && <ScribbleModal onClose={() => setShowScribble(false)} />}
-      {showScribbleInbox && (
-        <ScribbleInboxModal
-          scribbles={scribbleInbox}
-          onClose={() => setShowScribbleInbox(false)}
-          onUpdate={(id, partial) =>
-            setScribbleInbox((prev) =>
-              prev.map((s) => (s.id === id ? { ...s, ...partial } : s))
-            )
-          }
-        />
-      )}
     </div>
   );
 }
