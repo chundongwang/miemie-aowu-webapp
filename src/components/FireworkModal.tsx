@@ -66,11 +66,17 @@ export default function FireworkModal({ onClose, closeLabel }: { onClose: () => 
     let raf = 0;
 
     const font = (s: number) => `700 ${s}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+    // Tracking (letter-spacing) keeps adjacent glyphs from merging into blobs.
+    const track = (s: number) => s * 0.07;
+    const setTrack = (c: CanvasRenderingContext2D, px: number) => {
+      (c as unknown as { letterSpacing: string }).letterSpacing = `${px}px`;
+    };
 
     // ---- layout: sample every word into target points ---------------------
     function sampleWord(tok: string, size: number, left: number, centerY: number, lh: number): Pt[] {
       const measurer = document.createElement("canvas").getContext("2d")!;
       measurer.font = font(size);
+      setTrack(measurer, track(size));
       const pad = 4;
       const cw = Math.ceil(measurer.measureText(tok).width) + pad * 2;
       const ch = Math.ceil(lh);
@@ -79,20 +85,21 @@ export default function FireworkModal({ onClose, closeLabel }: { onClose: () => 
       c.height = ch;
       const cx = c.getContext("2d")!;
       cx.font = font(size);
+      setTrack(cx, track(size));
       cx.textAlign = "left";
       cx.textBaseline = "middle";
       cx.fillStyle = "#fff";
       cx.fillText(tok, pad, ch / 2);
       const data = cx.getImageData(0, 0, cw, ch).data;
-      const step = size > 44 ? 6 : 5;
+      const step = size > 50 ? 5 : 4;
       const pts: Pt[] = [];
       const worldTop = centerY - ch / 2;
       for (let y = 0; y < ch; y += step) {
         for (let x = 0; x < cw; x += step) {
           if (data[(y * cw + x) * 4 + 3] > 130) {
             pts.push({
-              x: left - pad + x + (Math.random() - 0.5) * step * 0.35,
-              y: worldTop + y + (Math.random() - 0.5) * step * 0.35,
+              x: left - pad + x + (Math.random() - 0.5) * step * 0.12,
+              y: worldTop + y + (Math.random() - 0.5) * step * 0.12,
             });
           }
         }
@@ -105,10 +112,12 @@ export default function FireworkModal({ onClose, closeLabel }: { onClose: () => 
       let size = Math.min(72, h * 0.13);
       for (; size > 14; size -= 1) {
         octx.font = font(size);
+        setTrack(octx, track(size));
         const widest = Math.max(...LINES.map((l) => octx.measureText(l).width));
-        if (widest <= w * 0.84) break;
+        if (widest <= w * 0.86) break;
       }
       octx.font = font(size);
+      setTrack(octx, track(size));
       const spaceW = octx.measureText(" ").width;
       const lh = size * 1.3;
       const totalH = lh * LINES.length;
@@ -337,7 +346,7 @@ export default function FireworkModal({ onClose, closeLabel }: { onClose: () => 
             if ((q.tx - q.x) ** 2 + (q.ty - q.y) ** 2 < 1.2) settled++;
           }
           const tw = wd.state === "hold" ? 0.72 + 0.28 * Math.sin(now * 0.006 + q.seed) : 1;
-          drawGlow(q.x, q.y, 1.5, q.col, tw);
+          drawGlow(q.x, q.y, 1.3, q.col, tw);
         }
         if (wd.state === "burst" && wd.parts.length && settled > wd.parts.length * 0.9) wd.state = "hold";
       }
