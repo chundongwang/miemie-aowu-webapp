@@ -22,6 +22,8 @@ type Word = {
   state: "waiting" | "rocket" | "burst" | "hold";
   burstTime: number;
 };
+// A celebratory shell: rises to an apex, then bursts.
+type Shell = { x: number; y: number; y0: number; apexY: number; t0: number; dur: number; color: RGB };
 
 const easeOutCubic = (x: number) => 1 - Math.pow(1 - x, 3);
 
@@ -41,6 +43,21 @@ const SPARK_PALETTE: RGB[] = [
   [255, 228, 120],
 ];
 
+// Each celebratory shell bursts in one vivid color family.
+const FIREWORK_COLORS: RGB[] = [
+  [255, 120, 140],
+  [255, 185, 90],
+  [120, 200, 255],
+  [180, 255, 150],
+  [230, 150, 255],
+  [255, 240, 150],
+];
+const clamp255 = (n: number) => (n < 0 ? 0 : n > 255 ? 255 : n);
+const jitterCol = (c: RGB): RGB => {
+  const j = () => (Math.random() - 0.5) * 44;
+  return [clamp255(c[0] + j()), clamp255(c[1] + j()), clamp255(c[2] + j())];
+};
+
 export default function FireworkModal({ onClose, closeLabel }: { onClose: () => void; closeLabel: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [failed, setFailed] = useState(false);
@@ -59,10 +76,13 @@ export default function FireworkModal({ onClose, closeLabel }: { onClose: () => 
     let h = 0;
     let words: Word[] = [];
     let ambient: Spark[] = [];
+    let shells: Shell[] = [];
     let launched = 0;
     let lastLaunch = 0;
     let rocket: { x: number; y: number; y0: number; t0: number; wi: number } | null = null;
     let lastAmbient = 0;
+    let lastShell = 0;
+    let shellGap = 900;
     let raf = 0;
 
     const font = (s: number) => `700 ${s}px system-ui, -apple-system, "Segoe UI", sans-serif`;
@@ -227,6 +247,37 @@ export default function FireworkModal({ onClose, closeLabel }: { onClose: () => 
       ambient.push(...spawnSparks(wd.cx, wd.cy, 64, 1));
     }
 
+    function launchShell(now: number) {
+      shells.push({
+        x: w * (0.15 + Math.random() * 0.7),
+        y: h + 8,
+        y0: h + 8,
+        apexY: h * (0.1 + Math.random() * 0.34),
+        t0: now,
+        dur: 640 + Math.random() * 360,
+        color: FIREWORK_COLORS[(Math.random() * FIREWORK_COLORS.length) | 0],
+      });
+    }
+
+    function explodeShell(s: Shell) {
+      const n = 46 + ((Math.random() * 42) | 0);
+      const power = 2.2 + Math.random() * 3;
+      for (let i = 0; i < n; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = power * (0.35 + Math.random());
+        ambient.push({
+          x: s.x,
+          y: s.apexY,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd,
+          col: jitterCol(s.color),
+          life: 1,
+          decay: 0.006 + Math.random() * 0.008, // slow fade so they drift down
+          size: 1 + Math.random() * 1.4,
+        });
+      }
+    }
+
     function drawGlow(x: number, y: number, r: number, col: RGB, a: number) {
       ctx!.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${a * 0.18})`;
       ctx!.beginPath();
@@ -295,10 +346,43 @@ export default function FireworkModal({ onClose, closeLabel }: { onClose: () => 
         lastLaunch = now;
       }
 
-      // Ambient sparkle in the sky for atmosphere.
-      if (!reduced && now - lastAmbient > 1600) {
-        lastAmbient = now;
-        ambient.push(...spawnSparks(w * (0.18 + Math.random() * 0.64), h * (0.12 + Math.random() * 0.28), 40, 0.8));
+      const sentenceDone = launched >= words.length && words.every((wd) => wd.state === "hold");
+
+      if (!reduced && !sentenceDone) {
+        // A little sparkle in the sky while the words are still forming.
+        if (now - lastAmbient > 1600) {
+          lastAmbient = now;
+          ambient.push(...spawnSparks(w * (0.18 + Math.random() * 0.64), h * (0.12 + Math.random() * 0.28), 40, 0.8));
+        }
+      } else if (!reduced && sentenceDone) {
+        // Once the message is complete, celebrate with full fireworks.
+        if (now - lastShell >= shellGap) {
+          launchShell(now);
+          lastShell = now;
+          shellGap = 500 + Math.random() * 900;
+        }
+        for (let i = shells.length - 1; i >= 0; i--) {
+          const s = shells[i];
+          const p = Math.min(1, (now - s.t0) / s.dur);
+          s.y = s.y0 + (s.apexY - s.y0) * easeOutCubic(p);
+          drawGlow(s.x, s.y, 2, s.color, 1);
+          if (Math.random() < 0.85) {
+            ambient.push({
+              x: s.x + (Math.random() - 0.5) * 2,
+              y: s.y + Math.random() * 5,
+              vx: (Math.random() - 0.5) * 0.5,
+              vy: 0.4 + Math.random() * 0.6,
+              col: s.color,
+              life: 0.7,
+              decay: 0.06,
+              size: 1,
+            });
+          }
+          if (p >= 1) {
+            explodeShell(s);
+            shells.splice(i, 1);
+          }
+        }
       }
       updateSparks(now);
 
