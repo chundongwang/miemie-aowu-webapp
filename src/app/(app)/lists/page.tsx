@@ -221,14 +221,15 @@ export default function ListsPage() {
         )}
       </main>
 
-      <FireworkLetter />
-      <FoodWheelFAB />
-      <DailyChallengeFAB loggedIn={true} />
-      <CheckInFAB
-        todayCheckedIn={checkIn?.todayCheckedIn ?? false}
-        onClick={() => setShowCheckIn(true)}
-        className="fixed bottom-24 right-6 sm:right-[calc(50%-208px)] z-20 flex flex-col items-end"
-      />
+      <div className="fixed bottom-6 right-6 sm:right-[calc(50%-208px)] z-20 flex flex-col items-center gap-3">
+        <FireworkLetter />
+        <FoodWheelFAB />
+        <DailyChallengeFAB loggedIn={true} />
+        <CheckInFAB
+          todayCheckedIn={checkIn?.todayCheckedIn ?? false}
+          onClick={() => setShowCheckIn(true)}
+        />
+      </div>
 
       {showCheckIn && checkIn !== null && (
         <CheckInModal
