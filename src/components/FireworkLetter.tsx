@@ -19,13 +19,13 @@ export default function FireworkLetter() {
 
   return (
     <>
-      {/* Mail FAB — a love letter that bursts into a firework when opened. */}
+      {/* FAB — opens a firework show that spells out a little wish. */}
       <button
         onClick={() => setOpen(true)}
         aria-label={t.fabLabel}
         className="fixed bottom-[24rem] right-6 sm:right-[calc(50%-208px)] z-20 w-14 h-14 rounded-full shadow-lg active:scale-95 transition-transform flex items-center justify-center bg-[#2B4B8C] hover:bg-[#1e3a70]"
       >
-        <span className="text-2xl">💌</span>
+        <span className="text-2xl">🎆</span>
       </button>
 
       {open && <FireworkModal onClose={() => setOpen(false)} closeLabel={t.close} />}
