@@ -24,8 +24,10 @@ export default function NoodleHeartFAB() {
   useEffect(() => {
     // Client-only gate: decide after mount so SSR always renders nothing
     // (avoids a server/client timezone mismatch around the reveal moment).
+    // `?kitty=1` force-shows the FAB for previewing before the reveal date.
+    const override = new URLSearchParams(window.location.search).has("kitty");
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setRevealed(Date.now() >= REVEAL_MS);
+    setRevealed(override || Date.now() >= REVEAL_MS);
   }, []);
 
   if (!revealed) return null;
