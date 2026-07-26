@@ -12,6 +12,7 @@ import FoodWheelFAB from "@/components/FoodWheelFAB";
 import CheckInFAB from "@/components/CheckInFAB";
 import CheckInModal from "@/components/CheckInModal";
 import FireworkLetter from "@/components/FireworkLetter";
+import NoodleHeartFAB from "@/components/NoodleHeartFAB";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useSwipeBack } from "@/hooks/useSwipeBack";
 import { useT } from "@/context/LocaleContext";
@@ -222,6 +223,7 @@ export default function ListsPage() {
       </main>
 
       <div className="fixed bottom-6 right-6 sm:right-[calc(50%-208px)] z-20 flex flex-col items-center gap-3">
+        <NoodleHeartFAB />
         <FireworkLetter />
         <FoodWheelFAB />
         <DailyChallengeFAB loggedIn={true} />
