@@ -25,3 +25,7 @@ out/
 npm-debug.log*
 .dev.vars
 .gstack/
+
+# Local-only model comparison scratch (do not commit large binaries)
+public/_modelcompare/
+src/app/model-compare/
