@@ -21,17 +21,23 @@ export default function TextItemEditor({ listId, item, onClose }: Props) {
   const [emoji, setEmoji]     = useState(item?.secondary ?? "");
   const [saving, setSaving] = useState(false);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const isDirty = item
     ? title !== (item.name ?? "") || body !== (item.reason ?? "") || emoji !== (item.secondary ?? "")
     : title.trim() !== "" || body.trim() !== "";
 
-  // Auto-resize textarea
+  // Auto-resize textarea. Collapsing to "auto" to measure shrinks the content,
+  // which makes the browser clamp the scroll container to the top — so preserve
+  // and restore its scroll position around the measurement.
   useEffect(() => {
     const el = bodyRef.current;
     if (!el) return;
+    const scroller = scrollRef.current;
+    const prevTop = scroller?.scrollTop ?? 0;
     el.style.height = "auto";
     el.style.height = el.scrollHeight + "px";
+    if (scroller) scroller.scrollTop = prevTop;
   }, [body]);
 
   useEffect(() => {
@@ -99,7 +105,7 @@ export default function TextItemEditor({ listId, item, onClose }: Props) {
       </div>
 
       {/* editor */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 max-w-2xl w-full mx-auto">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-6 max-w-2xl w-full mx-auto">
         {/* emoji picker */}
         <div className="mb-5">
           <EmojiPicker
