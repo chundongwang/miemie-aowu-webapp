@@ -39,7 +39,7 @@ export default function NoodleHeartFAB() {
         aria-label={t.fabLabel}
         className="w-14 h-14 rounded-full shadow-lg active:scale-95 transition-transform flex items-center justify-center bg-[#2B4B8C] hover:bg-[#1e3a70]"
       >
-        <span className="text-2xl">😻</span>
+        <span className="text-2xl">🎁</span>
       </button>
 
       {open && <NoodleHeartModal onClose={() => setOpen(false)} closeLabel={t.close} hint={t.hint} />}
