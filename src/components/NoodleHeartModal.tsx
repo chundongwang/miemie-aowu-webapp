@@ -3,31 +3,39 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
+import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader.js";
 
-const MODEL_URL = "/models/kitty.fbx";
+// Wolf gentleman at the bottom; sheep pops into the finished heart.
+const BOTTOM_URL = "/models/wolf.obj"; // colored by its .mtl materials — no texture
+const HEART_URL = "/models/sheep.glb";
+const HEART_COLOR = 0xffffff; // paint the sheep solid white
 
-// Kitty size & placement.
-const TARGET_PX = 150; // on-screen height of the model, in CSS pixels
-const CENTER_FRACTION = 0.88; // 0.5 = center, higher = lower (near bottom)
+// Bottom model size & placement.
+const TARGET_PX = 150;
+const CENTER_FRACTION = 0.88;
+// Wolf OBJ is authored Z-up; stand it upright. Tweak [1] (Y) to change facing.
+const BOTTOM_ROT: [number, number, number] = [-Math.PI / 2, 0, 0];
 
-// How much scroll/drag it takes to fully pull the noodle (fraction of screen).
+// Heart-center model size & placement.
+const HEART_MODEL_PX = 150;
+const HEART_CENTER_FRACTION = 0.26;
+
 const DRAG_SPAN = 0.9;
 const WHEEL_SPAN = 1.5;
-const SPIN_TURNS = 3; // full kitty rotations over a full pull
-const FILL_RINGS = 13; // nested heart rings that fill the interior
+const SPIN_TURNS = 3;
+const FILL_RINGS = 20;
 
 type Pt = { x: number; y: number };
 type Path = { pts: Pt[]; cum: number[]; total: number };
 
-// One long path: a wavy rise from the bottom, then the heart outline, then
-// nested inward rings that pack the heart full of noodle.
 function buildPath(W: number, H: number): Path {
   const cx = W / 2;
-  const bottomY = CENTER_FRACTION * H; // start behind the kitty so the tail is hidden
+  const bottomY = CENTER_FRACTION * H;
   const heartCenterY = H * 0.24;
-  const scale = Math.min((H * 0.28) / 34, (W * 0.5) / 32);
-  const tipY = heartCenterY + 17 * scale; // heart's bottom point (math t=π)
+  const scale = Math.min((H * 0.46) / 34, (W * 0.8) / 32);
+  const tipY = heartCenterY + 17 * scale;
 
   const heartPt = (t: number): Pt => {
     const xm = 16 * Math.pow(Math.sin(t), 3);
@@ -48,14 +56,12 @@ function buildPath(W: number, H: number): Path {
   const ccy = sy / outline.length;
 
   const pts: Pt[] = [];
-
   const RISE = 130;
   const amp = W * 0.05;
   for (let i = 0; i <= RISE; i++) {
     const u = i / RISE;
     pts.push({ x: cx + Math.sin(u * Math.PI * 3) * amp, y: bottomY + (tipY - bottomY) * u });
   }
-
   for (let ring = 0; ring <= FILL_RINGS; ring++) {
     const f = 1 - ring / (FILL_RINGS + 1);
     for (let i = 1; i <= HEART; i++) {
@@ -95,7 +101,6 @@ function stroke(ctx: CanvasRenderingContext2D, pts: Pt[]) {
   ctx.stroke();
 }
 
-// A twinkling 4-point sparkle (cross-shaped star) with a soft glow.
 function drawStar(ctx: CanvasRenderingContext2D, x: number, y: number, s: number, a: number) {
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
@@ -109,15 +114,16 @@ function drawStar(ctx: CanvasRenderingContext2D, x: number, y: number, s: number
   for (let k = 0; k < 8; k++) {
     const ang = (k * Math.PI) / 4;
     const r = k % 2 === 0 ? s : inner;
-    const px = x + Math.cos(ang) * r;
-    const py = y + Math.sin(ang) * r;
-    if (k === 0) ctx.moveTo(px, py);
-    else ctx.lineTo(px, py);
+    ctx[k === 0 ? "moveTo" : "lineTo"](x + Math.cos(ang) * r, y + Math.sin(ang) * r);
   }
   ctx.closePath();
   ctx.fill();
   ctx.restore();
 }
+
+const c1 = 1.70158;
+const c3 = c1 + 1;
+const easeOutBack = (x: number) => 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
 
 export default function NoodleHeartModal({
   onClose,
@@ -183,27 +189,108 @@ export default function NoodleHeartModal({
     noodle.addEventListener("pointercancel", onUp);
     noodle.addEventListener("wheel", onWheel, { passive: false });
 
-    // ---- 3D kitty (best-effort; noodle still works without WebGL) ---------
+    // ---- 3D (best-effort; noodle still works without WebGL) ---------------
     let renderer: THREE.WebGLRenderer | null = null;
-    let scene: THREE.Scene | null = null;
-    let camera: THREE.PerspectiveCamera | null = null;
     let pmrem: THREE.PMREMGenerator | null = null;
-    const modelGroup = new THREE.Group();
-    let modelHeight = 0;
-    let modelRadius = 1;
-    let modelReady = false;
 
-    function frameCamera() {
-      if (!camera) return;
-      const fov = (camera.fov * Math.PI) / 180;
-      const dist = (modelHeight * H) / (2 * TARGET_PX * Math.tan(fov / 2));
-      const worldPerPixel = modelHeight / TARGET_PX;
-      const lookY = (CENTER_FRACTION - 0.5) * H * worldPerPixel;
-      camera.position.set(0, lookY, dist);
-      camera.lookAt(0, lookY, 0);
-      camera.near = Math.max(0.01, dist - modelRadius * 1.5);
-      camera.far = dist + modelRadius * 1.5;
-      camera.updateProjectionMatrix();
+    const groupBottom = new THREE.Group();
+    const groupHeart = new THREE.Group();
+    const sceneBottom = new THREE.Scene();
+    const sceneHeart = new THREE.Scene();
+    const camBottom = new THREE.PerspectiveCamera(40, 1, 0.01, 1000);
+    const camHeart = new THREE.PerspectiveCamera(40, 1, 0.01, 1000);
+
+    const bottom = { height: 0, radius: 1, ready: false };
+    const heart = { height: 0, radius: 1, ready: false };
+    let heartReveal = 0;
+
+    function addLights(scene: THREE.Scene, env: THREE.Texture) {
+      scene.environment = env;
+      const key = new THREE.DirectionalLight(0xffffff, 2);
+      key.position.set(3, 6, 5);
+      scene.add(key);
+      scene.add(new THREE.HemisphereLight(0xffffff, 0x445566, 0.5));
+      scene.add(new THREE.AmbientLight(0xffffff, 0.25));
+    }
+
+    function frameCam(cam: THREE.PerspectiveCamera, modelH: number, modelR: number, px: number, frac: number) {
+      const fov = (cam.fov * Math.PI) / 180;
+      const dist = (modelH * H) / (2 * px * Math.tan(fov / 2));
+      const worldPerPixel = modelH / px;
+      const lookY = (frac - 0.5) * H * worldPerPixel;
+      cam.position.set(0, lookY, dist);
+      cam.lookAt(0, lookY, 0);
+      cam.near = Math.max(0.01, dist - modelR * 1.5);
+      cam.far = dist + modelR * 1.5;
+      cam.updateProjectionMatrix();
+    }
+
+    function loadInto(
+      url: string,
+      group: THREE.Group,
+      info: { height: number; radius: number; ready: boolean },
+      stripBackdrop: boolean,
+      preRotate: [number, number, number] | null,
+      solidColor: number | null,
+      onReady: () => void
+    ) {
+      const onLoad = (obj: THREE.Object3D) => {
+        if (solidColor !== null) {
+          obj.traverse((o) => {
+            const m = o as THREE.Mesh;
+            if (!m.isMesh) return;
+            const mats = Array.isArray(m.material) ? m.material : [m.material];
+            for (const mat of mats) {
+              const std = mat as THREE.MeshStandardMaterial;
+              std.map = null;
+              std.color?.setHex(solidColor);
+              std.needsUpdate = true;
+            }
+          });
+        }
+        if (preRotate) obj.rotation.set(preRotate[0], preRotate[1], preRotate[2]);
+        obj.updateMatrixWorld(true);
+
+        // Some models ship a huge studio backdrop plane; drop it (it also
+        // inflates the bounding box and shrinks the real subject on screen).
+        if (stripBackdrop) {
+          const meshes: THREE.Mesh[] = [];
+          obj.traverse((o) => {
+            const m = o as THREE.Mesh;
+            if (m.isMesh) meshes.push(m);
+          });
+          if (meshes.length > 1) {
+            const dim = (m: THREE.Mesh) => {
+              const s = new THREE.Box3().setFromObject(m).getSize(new THREE.Vector3());
+              return Math.max(s.x, s.y, s.z);
+            };
+            const sizes = meshes.map((m) => dim(m)).sort((a, b) => a - b);
+            const smallest = sizes[0] || 1;
+            for (const m of meshes) if (dim(m) > smallest * 5) m.removeFromParent();
+          }
+        }
+
+        const box = new THREE.Box3().setFromObject(obj);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        obj.position.sub(center);
+        group.add(obj);
+        info.height = size.y || 1;
+        info.radius = 0.5 * size.length();
+        info.ready = true;
+        onReady();
+      };
+
+      if (url.toLowerCase().endsWith(".obj")) {
+        const dir = url.slice(0, url.lastIndexOf("/") + 1);
+        const mtlName = url.slice(url.lastIndexOf("/") + 1).replace(/\.obj$/i, ".mtl");
+        new MTLLoader().setPath(dir).load(mtlName, (materials) => {
+          materials.preload();
+          new OBJLoader().setMaterials(materials).load(url, onLoad);
+        });
+      } else {
+        new GLTFLoader().load(url, (gltf) => onLoad(gltf.scene));
+      }
     }
 
     try {
@@ -213,44 +300,23 @@ export default function NoodleHeartModal({
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.1;
+      renderer.autoClear = false;
       renderer.domElement.style.cssText = "width:100%;height:100%;display:block";
       mount.appendChild(renderer.domElement);
 
-      scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(40, W / H, 0.01, 1000);
       pmrem = new THREE.PMREMGenerator(renderer);
-      scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-      const key = new THREE.DirectionalLight(0xffffff, 2);
-      key.position.set(3, 6, 5);
-      scene.add(key);
-      scene.add(new THREE.HemisphereLight(0xffffff, 0x445566, 0.5));
-      scene.add(new THREE.AmbientLight(0xffffff, 0.25));
-      scene.add(modelGroup);
+      const env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+      addLights(sceneBottom, env);
+      addLights(sceneHeart, env);
+      sceneBottom.add(groupBottom);
+      sceneHeart.add(groupHeart);
 
-      new FBXLoader().load(MODEL_URL, (obj) => {
-        obj.traverse((o) => {
-          const m = o as THREE.Mesh;
-          if (!m.isMesh) return;
-          const mats = Array.isArray(m.material) ? m.material : [m.material];
-          for (const mat of mats) {
-            if (!mat) continue;
-            const any = mat as unknown as { opacity?: number; transparent?: boolean };
-            if (any.opacity === 0) {
-              any.opacity = 1;
-              any.transparent = false;
-            }
-          }
-        });
-        const box = new THREE.Box3().setFromObject(obj);
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
-        obj.position.sub(center);
-        modelGroup.add(obj);
-        modelHeight = size.y || 1;
-        modelRadius = 0.5 * size.length();
-        modelReady = true;
-        frameCamera();
-      });
+      loadInto(BOTTOM_URL, groupBottom, bottom, false, BOTTOM_ROT, null, () =>
+        frameCam(camBottom, bottom.height, bottom.radius, TARGET_PX, CENTER_FRACTION)
+      );
+      loadInto(HEART_URL, groupHeart, heart, true, null, HEART_COLOR, () =>
+        frameCam(camHeart, heart.height, heart.radius, HEART_MODEL_PX, HEART_CENTER_FRACTION)
+      );
     } catch {
       renderer = null;
     }
@@ -264,11 +330,12 @@ export default function NoodleHeartModal({
       noodle!.width = Math.round(W * dpr);
       noodle!.height = Math.round(H * dpr);
       nctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
-      if (renderer && camera) {
+      if (renderer) {
         renderer.setSize(W, H, false);
-        camera.aspect = W / H;
-        camera.updateProjectionMatrix();
-        if (modelReady) frameCamera();
+        camBottom.aspect = W / H;
+        camHeart.aspect = W / H;
+        if (bottom.ready) frameCam(camBottom, bottom.height, bottom.radius, TARGET_PX, CENTER_FRACTION);
+        if (heart.ready) frameCam(camHeart, heart.height, heart.radius, HEART_MODEL_PX, HEART_CENTER_FRACTION);
       }
     }
     resize();
@@ -277,8 +344,22 @@ export default function NoodleHeartModal({
 
     let raf = 0;
     function frame(now: number) {
-      modelGroup.rotation.y = progress * SPIN_TURNS * Math.PI * 2;
-      if (renderer && scene && camera) renderer.render(scene, camera);
+      groupBottom.rotation.y = progress * SPIN_TURNS * Math.PI * 2;
+
+      // Heart-center model pops in once the heart is filled.
+      const revealTarget = progress > 0.99 ? 1 : 0;
+      heartReveal += (revealTarget - heartReveal) * 0.08;
+      groupHeart.rotation.y += 0.008;
+      groupHeart.scale.setScalar(Math.max(0, easeOutBack(Math.min(1, heartReveal))));
+
+      if (renderer) {
+        renderer.clear();
+        if (bottom.ready) renderer.render(sceneBottom, camBottom);
+        if (heart.ready && heartReveal > 0.01) {
+          renderer.clearDepth();
+          renderer.render(sceneHeart, camHeart);
+        }
+      }
 
       nctx!.clearRect(0, 0, W, H);
 
@@ -297,20 +378,28 @@ export default function NoodleHeartModal({
         nctx!.lineJoin = "round";
         nctx!.lineCap = "round";
         const done = progress > 0.985;
+
+        // Soft rose neon halo (subtle; a touch stronger once the heart is full).
         nctx!.save();
-        if (done) {
-          nctx!.shadowColor = "rgba(255,120,150,0.9)";
-          nctx!.shadowBlur = 22;
-        }
-        nctx!.strokeStyle = "#c99a3f";
-        nctx!.lineWidth = 15;
+        nctx!.shadowColor = done ? "rgba(255,60,120,0.85)" : "rgba(228,40,96,0.6)";
+        nctx!.shadowBlur = done ? 14 : 9;
+        nctx!.strokeStyle = "#8b1f3d";
+        nctx!.lineWidth = 8.5;
         stroke(nctx!, vis);
         nctx!.restore();
-        nctx!.strokeStyle = "#f6e6ad";
-        nctx!.lineWidth = 11;
+
+        // Glassy dark-red tube: dark rim → body → brighter translucent core → sheen.
+        nctx!.strokeStyle = "#3d0c1e";
+        nctx!.lineWidth = 10;
         stroke(nctx!, vis);
-        nctx!.strokeStyle = "rgba(255,255,255,0.4)";
-        nctx!.lineWidth = 3.5;
+        nctx!.strokeStyle = "#8b1f3d";
+        nctx!.lineWidth = 8;
+        stroke(nctx!, vis);
+        nctx!.strokeStyle = "#c2385f";
+        nctx!.lineWidth = 4.2;
+        stroke(nctx!, vis);
+        nctx!.strokeStyle = "rgba(255,220,232,0.55)";
+        nctx!.lineWidth = 1.6;
         stroke(nctx!, vis);
       }
 
@@ -345,7 +434,7 @@ export default function NoodleHeartModal({
       role="dialog"
       aria-modal="true"
     >
-      {/* Noodle underneath; kitty canvas on top (transparent) but click-through. */}
+      {/* Noodle underneath; models canvas on top (transparent) but click-through. */}
       <canvas ref={noodleRef} className="absolute inset-0 h-full w-full" style={{ touchAction: "none" }} />
       <div ref={mountRef} className="pointer-events-none absolute inset-0" />
 
