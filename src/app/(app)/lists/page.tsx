@@ -14,6 +14,7 @@ import CheckInModal from "@/components/CheckInModal";
 import FireworkLetter from "@/components/FireworkLetter";
 import NoodleHeartFAB from "@/components/NoodleHeartFAB";
 import HoloClothFAB from "@/components/HoloClothFAB";
+import VideoFAB from "@/components/VideoFAB";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useSwipeBack } from "@/hooks/useSwipeBack";
 import { useT } from "@/context/LocaleContext";
@@ -224,6 +225,7 @@ export default function ListsPage() {
       </main>
 
       <div className="fixed bottom-6 right-6 sm:right-[calc(50%-208px)] z-20 flex flex-col items-center gap-3">
+        <VideoFAB />
         <HoloClothFAB />
         <NoodleHeartFAB />
         <FireworkLetter />
