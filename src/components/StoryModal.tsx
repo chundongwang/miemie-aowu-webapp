@@ -349,6 +349,7 @@ export default function StoryModal({ onClose }: { onClose: () => void }) {
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto overscroll-contain"
+        style={{ touchAction: "pan-y", WebkitOverflowScrolling: "touch" }}
         onScroll={onReaderScroll}
       >
         <article ref={readerRef} className="sr-article" style={{ WebkitTapHighlightColor: "transparent" }}>

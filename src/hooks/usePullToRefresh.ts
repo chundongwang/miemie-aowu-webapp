@@ -26,6 +26,13 @@ export function usePullToRefresh(onRefresh: () => Promise<void>) {
 
   const onTouchStart = useCallback((e: TouchEvent) => {
     if (refreshingRef.current) return;
+    // Don't hijack gestures inside a full-screen modal (e.g. the story reader).
+    // Those overlays scroll internally, so window.scrollY stays 0 behind them —
+    // our preventDefault below would otherwise cancel their native scrolling.
+    if ((e.target as Element | null)?.closest?.('[role="dialog"]')) {
+      activeRef.current = false;
+      return;
+    }
     if (window.scrollY > 0) return;
     startYRef.current = e.touches[0].clientY;
     rawDeltaRef.current = 0;

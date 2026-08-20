@@ -22,6 +22,9 @@ export function useSwipeBack(to: string, enabled = true): number {
 
     function onStart(e: TouchEvent) {
       const t = e.touches[0];
+      // Ignore gestures that begin inside a full-screen modal (e.g. the story
+      // reader), so an edge pan there can't accidentally navigate back.
+      if ((e.target as Element | null)?.closest?.('[role="dialog"]')) { startX.current = null; return; }
       if (t.clientX > EDGE_START) { startX.current = null; return; }
       startX.current = t.clientX;
       startY.current = t.clientY;
