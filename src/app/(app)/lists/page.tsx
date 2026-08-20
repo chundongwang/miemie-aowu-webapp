@@ -7,14 +7,9 @@ import { useRouter } from "next/navigation";
 import type { List } from "@/types";
 import NewListModal from "@/components/NewListModal";
 import PullIndicator from "@/components/PullIndicator";
-import DailyChallengeFAB from "@/components/DailyChallengeFAB";
-import FoodWheelFAB from "@/components/FoodWheelFAB";
-import CheckInFAB from "@/components/CheckInFAB";
 import CheckInModal from "@/components/CheckInModal";
-import FireworkLetter from "@/components/FireworkLetter";
-import NoodleHeartFAB from "@/components/NoodleHeartFAB";
-import HoloClothFAB from "@/components/HoloClothFAB";
-import VideoFAB from "@/components/VideoFAB";
+import StoryFAB from "@/components/StoryFAB";
+import ArchiveMenu from "@/components/ArchiveMenu";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useSwipeBack } from "@/hooks/useSwipeBack";
 import { useT } from "@/context/LocaleContext";
@@ -156,6 +151,10 @@ export default function ListsPage() {
           <button onClick={logout} className="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400">
             {t("signOut")}
           </button>
+          <ArchiveMenu
+            checkInTodayChecked={checkIn?.todayCheckedIn ?? false}
+            onCheckIn={() => setShowCheckIn(true)}
+          />
         </div>
       </header>
 
@@ -225,16 +224,7 @@ export default function ListsPage() {
       </main>
 
       <div className="fixed bottom-6 right-6 sm:right-[calc(50%-208px)] z-20 flex flex-col items-center gap-3">
-        <VideoFAB />
-        <HoloClothFAB />
-        <NoodleHeartFAB />
-        <FireworkLetter />
-        <FoodWheelFAB />
-        <DailyChallengeFAB loggedIn={true} />
-        <CheckInFAB
-          todayCheckedIn={checkIn?.todayCheckedIn ?? false}
-          onClick={() => setShowCheckIn(true)}
-        />
+        <StoryFAB />
       </div>
 
       {showCheckIn && checkIn !== null && (

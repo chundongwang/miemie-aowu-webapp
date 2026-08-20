@@ -50,6 +50,28 @@ export type Comment = {
   updatedAt: number | null;
 };
 
+export type StoryHighlightComment = {
+  id: string;
+  highlightId: string;
+  userId: string | null;
+  authorName: string;
+  body: string;
+  createdAt: number;
+};
+
+export type StoryHighlight = {
+  id: string;
+  storyId: string;
+  paraIndex: number;
+  startOffset: number;
+  endOffset: number;
+  quote: string;
+  userId: string | null;
+  authorName: string;
+  createdAt: number;
+  comments: StoryHighlightComment[];
+};
+
 export type ItemPhoto = {
   id: string;
   r2Key: string;
