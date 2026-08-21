@@ -72,6 +72,14 @@ export type StoryHighlight = {
   comments: StoryHighlightComment[];
 };
 
+export type StoryRead = {
+  userId: string;
+  displayName: string;
+  progress: number; // furthest fraction read, 0..1
+  firstReadAt: number;
+  lastReadAt: number;
+};
+
 export type ItemPhoto = {
   id: string;
   r2Key: string;

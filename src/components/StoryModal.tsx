@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLocale } from "@/context/LocaleContext";
 import { STORY } from "@/lib/story";
-import type { StoryHighlight, StoryHighlightComment } from "@/types";
+import type { StoryHighlight, StoryHighlightComment, StoryRead } from "@/types";
 
 // Plain text of a block by index ("" for scene breaks). Highlights anchor to
 // a block index + char offsets into this text.
@@ -72,6 +72,11 @@ const COPY = {
     noNotes: "No notes yet — start the thread.",
     highlightBy: "Highlighted by",
     loading: "Loading…",
+    readReceipts: "Who's read this",
+    readTo: (p: number) => `read to ${p}%`,
+    finished: "finished",
+    noReads: "No one has opened this yet.",
+    you: "you",
   },
   zh: {
     close: "关闭",
@@ -86,6 +91,11 @@ const COPY = {
     noNotes: "还没有留言 —— 来说第一句吧。",
     highlightBy: "高亮者",
     loading: "加载中…",
+    readReceipts: "谁读过",
+    readTo: (p: number) => `读到 ${p}%`,
+    finished: "已读完",
+    noReads: "还没有人打开过。",
+    you: "你",
   },
 } as const;
 
@@ -123,6 +133,8 @@ export default function StoryModal({ onClose }: { onClose: () => void }) {
   const t = COPY[locale] ?? COPY.en;
 
   const [highlights, setHighlights] = useState<StoryHighlight[]>([]);
+  const [reads, setReads] = useState<StoryRead[]>([]);
+  const [showReads, setShowReads] = useState(false);
   const [me, setMe] = useState<{ id: string; displayName: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -141,6 +153,29 @@ export default function StoryModal({ onClose }: { onClose: () => void }) {
   const readerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef(0);
+  const furthestRef = useRef(0); // furthest scroll fraction reached this session
+  const restoredFromServerRef = useRef(false);
+
+  // Current scroll position as a 0..1 fraction of the scrollable range.
+  function currentFraction(): number {
+    const el = scrollRef.current;
+    if (!el) return 0;
+    const range = el.scrollHeight - el.clientHeight;
+    return range > 0 ? Math.max(0, Math.min(1, el.scrollTop / range)) : 0;
+  }
+
+  // Record the current user's receipt (opened + furthest progress). keepalive so
+  // it still lands when fired from unmount/close.
+  const postRead = useCallback((keepalive = false) => {
+    const progress = Math.max(furthestRef.current, currentFraction());
+    furthestRef.current = progress;
+    fetch(`/api/story/${STORY.id}/reads`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ progress }),
+      keepalive,
+    }).catch(() => {});
+  }, []);
 
   // ── Remember reading progress (per-device, per-story) ───────────────────────
   useLayoutEffect(() => {
@@ -152,6 +187,7 @@ export default function StoryModal({ onClose }: { onClose: () => void }) {
 
   function onReaderScroll() {
     setSel(null); // stale toolbar position once the page moves
+    furthestRef.current = Math.max(furthestRef.current, currentFraction());
     if (rafRef.current) return;
     rafRef.current = requestAnimationFrame(() => {
       rafRef.current = 0;
@@ -160,21 +196,53 @@ export default function StoryModal({ onClose }: { onClose: () => void }) {
     });
   }
 
-  // ── Load highlights + current user ──────────────────────────────────────────
+  // ── Load highlights + reads + current user ──────────────────────────────────
   useEffect(() => {
     let alive = true;
     void (async () => {
-      const [hls, user] = await Promise.all([
+      const [hls, rds, user] = await Promise.all([
         fetch(`/api/story/${STORY.id}/highlights`).then((r) => (r.ok ? r.json() : [])) as Promise<StoryHighlight[]>,
+        fetch(`/api/story/${STORY.id}/reads`).then((r) => (r.ok ? r.json() : [])) as Promise<StoryRead[]>,
         fetch("/api/auth/me").then((r) => (r.ok ? r.json() : null)) as Promise<{ id: string; displayName: string } | null>,
       ]);
       if (!alive) return;
       setHighlights(hls);
+      setReads(rds);
       setMe(user);
       setLoading(false);
+
+      // Cross-device restore: if this device has no saved position, jump to how
+      // far this user got elsewhere.
+      const el = scrollRef.current;
+      const localSaved = Number(localStorage.getItem(PROGRESS_KEY));
+      if (el && !(localSaved > 0) && !restoredFromServerRef.current && user) {
+        const mine = rds.find((r) => r.userId === user.id);
+        if (mine && mine.progress > 0) {
+          restoredFromServerRef.current = true;
+          requestAnimationFrame(() => {
+            const range = el.scrollHeight - el.clientHeight;
+            el.scrollTop = mine.progress * range;
+          });
+        }
+      }
+      furthestRef.current = Math.max(furthestRef.current, currentFraction(), user ? (rds.find((r) => r.userId === user.id)?.progress ?? 0) : 0);
+      // Mark this open (and optimistically reflect it in the list).
+      postRead(false);
+      if (user) {
+        setReads((prev) => {
+          const now = Date.now();
+          const mineProgress = Math.max(furthestRef.current, prev.find((r) => r.userId === user.id)?.progress ?? 0);
+          const without = prev.filter((r) => r.userId !== user.id);
+          const firstReadAt = prev.find((r) => r.userId === user.id)?.firstReadAt ?? now;
+          return [{ userId: user.id, displayName: user.displayName, progress: mineProgress, firstReadAt, lastReadAt: now }, ...without];
+        });
+      }
     })();
-    return () => { alive = false; };
-  }, []);
+    return () => {
+      alive = false;
+      postRead(true); // final progress on close/unmount
+    };
+  }, [postRead]);
 
   // ── Track text selection → floating toolbar ─────────────────────────────────
   const refreshSelection = useCallback(() => {
@@ -336,13 +404,70 @@ export default function StoryModal({ onClose }: { onClose: () => void }) {
       {/* Header */}
       <header className="sr-header shrink-0 flex items-center justify-between px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur">
         <span className="sr-header-title text-sm font-medium truncate">{STORY.title}</span>
-        <button
-          onClick={onClose}
-          aria-label={t.close}
-          className="ml-3 shrink-0 flex h-9 w-9 items-center justify-center rounded-full bg-black/5 dark:bg-white/10 text-gray-600 dark:text-gray-300 hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
-        >
-          ✕
-        </button>
+        <div className="ml-3 shrink-0 flex items-center gap-2">
+          {/* Read receipts */}
+          <div className="relative">
+            <button
+              onClick={() => setShowReads((v) => !v)}
+              aria-label={t.readReceipts}
+              className="relative flex h-9 items-center gap-1 rounded-full bg-black/5 dark:bg-white/10 px-3 text-gray-600 dark:text-gray-300 hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
+            >
+              <span className="text-sm">👁</span>
+              {reads.length > 0 && <span className="text-xs font-medium tabular-nums">{reads.length}</span>}
+            </button>
+            {showReads && (
+              <>
+                <div className="fixed inset-0 z-[68]" onClick={() => setShowReads(false)} aria-hidden="true" />
+                <div className="absolute right-0 top-11 z-[69] w-64 rounded-2xl bg-white dark:bg-gray-800 shadow-xl border border-gray-100 dark:border-gray-700 p-3">
+                  <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 mb-2 px-1">{t.readReceipts}</p>
+                  {reads.length === 0 ? (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 px-1 py-1">{t.noReads}</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {reads.map((r) => {
+                        const pct = Math.round(r.progress * 100);
+                        const isMe = me?.id === r.userId;
+                        return (
+                          <li key={r.userId} className="flex items-center gap-2">
+                            <div
+                              className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-semibold"
+                              style={{ backgroundColor: avatarColor(r.displayName) }}
+                            >
+                              {r.displayName.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
+                                  {r.displayName}{isMe && <span className="text-gray-400 dark:text-gray-500 font-normal"> ({t.you})</span>}
+                                </span>
+                                <span className="text-[10px] text-gray-400 dark:text-gray-500 shrink-0">{timeAgo(r.lastReadAt)}</span>
+                              </div>
+                              <div className="mt-1 flex items-center gap-1.5">
+                                <div className="flex-1 h-1 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                                  <div className="h-full rounded-full bg-[#2B4B8C] dark:bg-blue-400" style={{ width: `${pct}%` }} />
+                                </div>
+                                <span className="text-[10px] text-gray-400 dark:text-gray-500 tabular-nums shrink-0">
+                                  {pct >= 100 ? t.finished : t.readTo(pct)}
+                                </span>
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            aria-label={t.close}
+            className="shrink-0 flex h-9 w-9 items-center justify-center rounded-full bg-black/5 dark:bg-white/10 text-gray-600 dark:text-gray-300 hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
+          >
+            ✕
+          </button>
+        </div>
       </header>
 
       {/* Reader */}
