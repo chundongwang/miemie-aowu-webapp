@@ -2,18 +2,20 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const SRC = "/video.mp4";
 const PREFETCH_SECONDS = 8; // buffer this much head-start before offering play
 
 export default function VideoModal({
   onClose,
   closeLabel,
   readyLabel,
+  src = "/video.mp4",
 }: {
   onClose: () => void;
   closeLabel: string;
   readyLabel: string;
+  src?: string;
 }) {
+  const SRC = src;
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [prefetching, setPrefetching] = useState(true); // initial buffering gate
   const [pct, setPct] = useState(0);
