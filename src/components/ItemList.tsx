@@ -22,6 +22,7 @@ import type { Item, ItemPhoto, Comment } from "@/types";
 import { useT } from "@/context/LocaleContext";
 import CommentThread from "@/components/CommentThread";
 import PhotoSearchModal from "@/components/PhotoSearchModal";
+import TextItemReader from "@/components/TextItemReader";
 import { compressToJpeg, UPLOAD_SIZE_LIMIT } from "@/lib/imageUtils";
 import { saveDraft, loadDraft, clearDraft, verifyAndClear } from "@/lib/photoDrafts";
 
@@ -545,13 +546,14 @@ type TextListProps = {
   currentUserId: string | null;
   deleting: string | null;
   fmtDate: (ts: number) => string;
-  onEdit: (item: Item) => void;
+  onOpenReader: (item: Item) => void;
   onDelete: (id: string) => void;
   onReact: (itemId: string, type: "miemie" | "aowu") => void;
   onCommentAdded: (c: Comment) => void;
+  onPhotoClick: (itemIndex: number, photoIndex: number) => void;
 };
 
-function TextList({ items, canEdit, listId, comments, userDisplayName, currentUserId, deleting, fmtDate, onEdit, onDelete, onReact, onCommentAdded }: TextListProps) {
+function TextList({ items, canEdit, listId, comments, userDisplayName, currentUserId, deleting, fmtDate, onOpenReader, onDelete, onReact, onCommentAdded, onPhotoClick }: TextListProps) {
   const t = useT();
   const [openComments, setOpenComments] = useState<Set<string>>(new Set());
 
@@ -565,7 +567,7 @@ function TextList({ items, canEdit, listId, comments, userDisplayName, currentUs
 
   return (
     <ul className="divide-y divide-gray-100 dark:divide-gray-800">
-      {items.map((item) => {
+      {items.map((item, itemIndex) => {
         const hasTitle = item.name && item.name !== item.reason?.split("\n")[0].slice(0, 80);
         const body = item.reason?.trim();
         const itemComments = comments.filter((c) => c.itemId === item.id);
@@ -579,9 +581,8 @@ function TextList({ items, canEdit, listId, comments, userDisplayName, currentUs
               )}
               <div className="flex-1 min-w-0">
                 <button
-                  onClick={() => canEdit && onEdit(item)}
-                  className={`w-full text-left ${canEdit ? "hover:opacity-70" : ""}`}
-                  disabled={!canEdit}
+                  onClick={() => onOpenReader(item)}
+                  className="w-full text-left hover:opacity-70"
                 >
                   {hasTitle && (
                     <p className="font-semibold text-gray-900 dark:text-gray-100 mb-1 leading-snug">{item.name}</p>
@@ -597,6 +598,22 @@ function TextList({ items, canEdit, listId, comments, userDisplayName, currentUs
                     {fmtDate(item.updatedAt > item.createdAt ? item.updatedAt : item.createdAt)}
                   </p>
                 </button>
+
+                {/* photos — shown after the writing */}
+                {item.photos.length > 0 && (
+                  <div className="mt-3 flex gap-2 flex-wrap">
+                    {item.photos.map((photo, photoIndex) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        key={photo.id}
+                        src={photo.url}
+                        alt=""
+                        onClick={() => onPhotoClick(itemIndex, photoIndex)}
+                        className="w-28 h-28 object-cover rounded-lg border border-gray-100 dark:border-gray-800 cursor-zoom-in"
+                      />
+                    ))}
+                  </div>
+                )}
 
                 {/* reaction bar + item comments — logged-in only */}
                 {userDisplayName !== null && (
@@ -672,6 +689,7 @@ export default function ItemList({
   const [pending, setPending] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(5);
+  const [readerId, setReaderId] = useState<string | null>(null);
 
   useEffect(() => { setItems(initialItems); setVisibleCount(5); }, [initialItems]);
 
@@ -798,6 +816,7 @@ export default function ItemList({
       return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
     }
     const canEdit = isOwner || isRecipient;
+    const readerItem = readerId ? items.find((i) => i.id === readerId) ?? null : null;
     return (
       <>
         <TextList
@@ -809,12 +828,27 @@ export default function ItemList({
           currentUserId={currentUserId}
           deleting={deleting}
           fmtDate={fmtDate}
-          onEdit={onEditItem}
+          onOpenReader={(item) => setReaderId(item.id)}
           onDelete={deleteItem}
           onReact={reactToItem}
           onCommentAdded={onCommentAdded}
+          onPhotoClick={onPhotoClick}
         />
         {showMoreBtn}
+        {readerItem && (
+          <TextItemReader
+            item={readerItem}
+            canEdit={canEdit}
+            listId={listId}
+            comments={comments}
+            userDisplayName={userDisplayName}
+            currentUserId={currentUserId}
+            onClose={() => setReaderId(null)}
+            onEdit={(item) => { setReaderId(null); onEditItem(item); }}
+            onReact={reactToItem}
+            onCommentAdded={onCommentAdded}
+          />
+        )}
       </>
     );
   }

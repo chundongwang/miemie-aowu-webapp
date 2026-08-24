@@ -13,9 +13,13 @@ type Props = {
   photos: StagedPhoto[];
   onChange: (photos: StagedPhoto[]) => void;
   max?: number;
+  /** Number shown in the label (e.g. total cap). Defaults to `max`. */
+  labelMax?: number;
+  /** Thumbnails rendered inside the same row, before the staged ones (e.g. already-saved photos). */
+  leading?: React.ReactNode;
 };
 
-export default function PhotoUploadArea({ photos, onChange, max = 3 }: Props) {
+export default function PhotoUploadArea({ photos, onChange, max = 3, labelMax, leading }: Props) {
   const t = useT();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canAdd = photos.length < max;
@@ -117,10 +121,12 @@ export default function PhotoUploadArea({ photos, onChange, max = 3 }: Props) {
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-2">
-        {t("photosLabel")} <span className="text-gray-400 font-normal">({t("photosHint", { max })})</span>
+        {t("photosLabel")} <span className="text-gray-400 font-normal">({t("photosHint", { max: labelMax ?? max })})</span>
       </label>
 
       <div className="flex items-center gap-2 flex-wrap">
+        {/* already-saved thumbnails (rendered by the caller) */}
+        {leading}
         {/* thumbnails */}
         {photos.map((p, i) => (
           <div key={p.previewUrl} className="relative w-20 h-20 shrink-0">

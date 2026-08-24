@@ -93,11 +93,13 @@ export const translations = {
     photosLabel: "Photos",
     photosHint: "optional, up to {max}",
     photoButton: "photo",
+    photoUploadFailed: "Some photos failed to upload. Please try again.",
     pasteHintMac: "Or paste an image with ⌘V",
     pasteHintOther: "Or paste an image with Ctrl+V",
 
     // edit item
     editItem: "Edit item",
+    edit: "Edit",
 
     // public/private
     publicBadge: "Public",
@@ -290,10 +292,12 @@ export const translations = {
     photosLabel: "照片",
     photosHint: "可选，最多 {max} 张",
     photoButton: "照片",
+    photoUploadFailed: "部分照片上传失败，请重试。",
     pasteHintMac: "或用 ⌘V 粘贴图片",
     pasteHintOther: "或用 Ctrl+V 粘贴图片",
 
     editItem: "编辑项目",
+    edit: "编辑",
 
     publicBadge: "公开",
     privateBadge: "私密",
