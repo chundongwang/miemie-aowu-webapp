@@ -42,6 +42,9 @@ export default function ListDetailPage() {
   const [lightbox, setLightbox] = useState<{ items: Item[]; itemIndex: number; photoIndex: number } | null>(null);
   const [comments,    setComments]    = useState<Comment[]>([]);
   const [reactionTotals, setReactionTotals] = useState({ miemie: 0, aowu: 0 });
+  // Watermark from the *previous* visit — captured once so the "new" markers
+  // stay stable while the user is on the page (later reloads bump the watermark).
+  const [lastViewedAt, setLastViewedAt] = useState<number | null | undefined>(undefined);
 
   function load() {
     Promise.all([
@@ -55,6 +58,7 @@ export default function ListDetailPage() {
       setList(l);
       setMe(user);
       if (l) {
+        setLastViewedAt((prev) => prev === undefined ? l.lastViewedAt : prev);
         setReactionTotals({
           miemie: l.items.reduce((s, i) => s + i.miemieCount, 0),
           aowu:   l.items.reduce((s, i) => s + i.aowuCount,   0),
@@ -82,6 +86,12 @@ export default function ListDetailPage() {
 
   function handleModalClose(setter: (v: boolean) => void) {
     return () => { setter(false); load(); };
+  }
+
+  // Advance the watermark to now so content the current user just added/edited
+  // isn't flagged as "new" to themselves.
+  function handleContentClose(setter: (v: boolean) => void) {
+    return () => { setter(false); setLastViewedAt(Date.now()); load(); };
   }
 
   function handleCommentAdded(comment: Comment) {
@@ -234,6 +244,7 @@ export default function ListDetailPage() {
           listId={id}
           viewMode={viewMode}
           isTextList={isTextList}
+          lastViewedAt={lastViewedAt ?? null}
           comments={comments}
           userDisplayName={me?.displayName ?? null}
           currentUserId={me?.id ?? null}
@@ -303,8 +314,8 @@ export default function ListDetailPage() {
 
       {showAddItem && (
         isTextList
-          ? <TextItemEditor listId={id} onClose={handleModalClose(setShowAddItem)} />
-          : <AddItemModal listId={id} secondaryLabel={list.secondaryLabel} onClose={handleModalClose(setShowAddItem)} />
+          ? <TextItemEditor listId={id} onClose={handleContentClose(setShowAddItem)} />
+          : <AddItemModal listId={id} secondaryLabel={list.secondaryLabel} onClose={handleContentClose(setShowAddItem)} />
       )}
       {showShare && (
         <ShareModal listId={id} onClose={handleModalClose(setShowShare)} />
@@ -318,25 +329,25 @@ export default function ListDetailPage() {
       )}
       {editingItem && (
         isTextList
-          ? <TextItemEditor listId={id} item={editingItem} onClose={() => { setEditingItem(null); load(); }} />
+          ? <TextItemEditor listId={id} item={editingItem} onClose={() => { setEditingItem(null); setLastViewedAt(Date.now()); load(); }} />
           : <EditItemModal
               item={editingItem}
               secondaryLabel={list.secondaryLabel}
-              onClose={() => { setEditingItem(null); load(); }}
+              onClose={() => { setEditingItem(null); setLastViewedAt(Date.now()); load(); }}
             />
       )}
       {showImport && (
         <BulkImportModal
           listId={id}
           secondaryLabel={list.secondaryLabel}
-          onClose={handleModalClose(setShowImport)}
+          onClose={handleContentClose(setShowImport)}
         />
       )}
       {showNearby && (
         <NearbyFoodModal
           listId={id}
           secondaryLabel={list.secondaryLabel}
-          onClose={handleModalClose(setShowNearby)}
+          onClose={handleContentClose(setShowNearby)}
         />
       )}
       {lightbox && (

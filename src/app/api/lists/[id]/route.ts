@@ -86,8 +86,17 @@ export async function GET(_req: NextRequest, { params }: Params) {
         : [],
     }));
 
-    // Record view for authenticated users
+    // Read the prior watermark BEFORE recording this view, so item-level
+    // "unread" reflects what changed since the user's *previous* visit.
+    let lastViewedAt: number | null = null;
     if (userId) {
+      const prior = await db
+        .prepare("SELECT viewed_at FROM list_views WHERE user_id = ? AND list_id = ?")
+        .bind(userId, id)
+        .first<{ viewed_at: number }>();
+      lastViewedAt = prior?.viewed_at ?? null;
+
+      // Record this view (advances the watermark to now).
       await db.prepare(
         `INSERT INTO list_views (user_id, list_id, viewed_at) VALUES (?, ?, ?)
          ON CONFLICT (user_id, list_id) DO UPDATE SET viewed_at = excluded.viewed_at`
@@ -110,6 +119,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
       createdAt: list.created_at,
       updatedAt: list.updated_at,
       hasUnread: false,
+      lastViewedAt,
       itemCount: items.length,
       items,
     });

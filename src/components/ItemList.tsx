@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition, useRef } from "react";
+import { useState, useEffect, useTransition, useRef, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import {
   DndContext,
@@ -36,17 +36,54 @@ const STATUS_COLOR: Record<string, string> = {
 
 const MAX_PHOTOS = 3;
 
+// An item is "new" if it changed (item added / edited / commented on / photo'd)
+// since the viewer's previous visit. Null watermark = first-ever view → nothing new.
+function isUnread(item: Item, lastViewedAt: number | null): boolean {
+  return lastViewedAt != null && item.updatedAt > lastViewedAt;
+}
+
+// Whether this item has a comment posted since the viewer's previous visit.
+// Used to route the "new" marker to the 💬 button (where the change actually is)
+// rather than the title.
+function hasFreshComment(item: Item, comments: Comment[], lastViewedAt: number | null): boolean {
+  return lastViewedAt != null && comments.some((c) => c.itemId === item.id && c.createdAt > lastViewedAt);
+}
+
+// Blue dot placed at the end of an updated item's title.
+function UnreadDot() {
+  return (
+    <span
+      aria-label="new"
+      className="shrink-0 w-2 h-2 rounded-full bg-[#2B4B8C] dark:bg-blue-400"
+    />
+  );
+}
+
+// Divider separating new items (above) from already-seen items (below).
+function LastViewedDivider({ label }: { label: string }) {
+  return (
+    <li aria-hidden className="py-2 flex items-center gap-2 list-none">
+      <span className="flex-1 h-px bg-blue-200 dark:bg-blue-900/60" />
+      <span className="text-[10px] uppercase tracking-wide text-[#2B4B8C] dark:text-blue-400 whitespace-nowrap">
+        {label}
+      </span>
+      <span className="flex-1 h-px bg-blue-200 dark:bg-blue-900/60" />
+    </li>
+  );
+}
+
 // ── Shared reaction bar ───────────────────────────────────────────────────────
 
 type ReactionBarProps = {
   item: Item;
   itemComments: Comment[];
+  hasNewComment: boolean;
   onReact: (itemId: string, type: "miemie" | "aowu") => void;
   showComments: boolean;
   onToggleComments: () => void;
 };
 
-function ReactionBar({ item, itemComments, onReact, showComments, onToggleComments }: ReactionBarProps) {
+function ReactionBar({ item, itemComments, hasNewComment, onReact, showComments, onToggleComments }: ReactionBarProps) {
   return (
     <div className="flex items-center gap-3 mt-2">
       <button
@@ -64,10 +101,11 @@ function ReactionBar({ item, itemComments, onReact, showComments, onToggleCommen
       <button
         onClick={onToggleComments}
         className={`flex items-center gap-1 text-xs ml-auto transition-colors ${
-          showComments ? "text-[#2B4B8C]" : "text-gray-400 dark:text-gray-500 hover:text-gray-600"
+          hasNewComment ? "text-[#2B4B8C] dark:text-blue-400 font-medium" : showComments ? "text-[#2B4B8C]" : "text-gray-400 dark:text-gray-500 hover:text-gray-600"
         }`}
       >
         <span>💬</span><span>{itemComments.length}</span>
+        {hasNewComment && <span className="w-1.5 h-1.5 rounded-full bg-[#2B4B8C] dark:bg-blue-400" />}
       </button>
     </div>
   );
@@ -77,6 +115,8 @@ function ReactionBar({ item, itemComments, onReact, showComments, onToggleCommen
 
 type RowProps = {
   item: Item;
+  unread: boolean;
+  hasNewComment: boolean;
   isOwner: boolean;
   isRecipient: boolean;
   secondaryLabel: string | null;
@@ -98,7 +138,7 @@ type RowProps = {
 };
 
 function SortableRow({
-  item, itemIndex, isOwner, isRecipient, secondaryLabel,
+  item, unread, hasNewComment, itemIndex, isOwner, isRecipient, secondaryLabel,
   pending, deleting, listId, comments, userDisplayName, currentUserId,
   onCycle, onEdit, onDelete, onPhotoAdded, onPhotoRemoved, onPhotoClick, onReact, onCommentAdded,
 }: RowProps) {
@@ -260,20 +300,23 @@ function SortableRow({
       </button>
 
       <div className="flex-1 min-w-0">
-        {canEdit ? (
-          <button
-            onClick={() => onEdit(item)}
-            className={`font-medium text-sm text-left hover:opacity-70 transition-opacity ${
-              item.status === "done" ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-900 dark:text-gray-100"
-            }`}
-          >
-            {item.name}
-          </button>
-        ) : (
-          <p className={`font-medium text-sm ${item.status === "done" ? "line-through text-gray-400" : "text-gray-900"}`}>
-            {item.name}
-          </p>
-        )}
+        <div className="flex items-center gap-1.5 min-w-0">
+          {canEdit ? (
+            <button
+              onClick={() => onEdit(item)}
+              className={`font-medium text-sm text-left hover:opacity-70 transition-opacity min-w-0 truncate ${
+                item.status === "done" ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-900 dark:text-gray-100"
+              }`}
+            >
+              {item.name}
+            </button>
+          ) : (
+            <p className={`font-medium text-sm min-w-0 truncate ${item.status === "done" ? "line-through text-gray-400" : "text-gray-900"}`}>
+              {item.name}
+            </p>
+          )}
+          {unread && <UnreadDot />}
+        </div>
         {item.secondary && (
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             {secondaryLabel ? `${secondaryLabel}: ` : ""}{item.secondary}
@@ -360,6 +403,7 @@ function SortableRow({
             <ReactionBar
               item={item}
               itemComments={itemComments}
+              hasNewComment={hasNewComment}
               onReact={onReact}
               showComments={showComments}
               onToggleComments={() => setShowComments((v) => !v)}
@@ -416,6 +460,8 @@ function SortableRow({
 
 type CardProps = {
   item: Item;
+  unread: boolean;
+  hasNewComment: boolean;
   photo: ItemPhoto | null; // the specific photo for this card
   isOwner: boolean;
   isRecipient: boolean;
@@ -436,7 +482,7 @@ type CardProps = {
 };
 
 function WaterfallCard({
-  item, itemIndex, photo, isOwner, isRecipient, secondaryLabel, listId, comments, userDisplayName, currentUserId,
+  item, unread, hasNewComment, itemIndex, photo, isOwner, isRecipient, secondaryLabel, listId, comments, userDisplayName, currentUserId,
   pending, deleting, onCycle, onEdit, onDelete, onPhotoClick, onReact, onCommentAdded,
 }: CardProps) {
   const t = useT();
@@ -460,20 +506,23 @@ function WaterfallCard({
       <div className="p-3">
         {/* name + controls */}
         <div className="flex items-start justify-between gap-2">
-          {canEdit ? (
-            <button
-              onClick={() => onEdit(item)}
-              className={`font-medium text-sm text-left hover:opacity-70 transition-opacity flex-1 ${
-                item.status === "done" ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-900 dark:text-gray-100"
-              }`}
-            >
-              {item.name}
-            </button>
-          ) : (
-            <p className={`font-medium text-sm flex-1 ${item.status === "done" ? "line-through text-gray-400" : "text-gray-900"}`}>
-              {item.name}
-            </p>
-          )}
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            {canEdit ? (
+              <button
+                onClick={() => onEdit(item)}
+                className={`font-medium text-sm text-left hover:opacity-70 transition-opacity min-w-0 truncate ${
+                  item.status === "done" ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-900 dark:text-gray-100"
+                }`}
+              >
+                {item.name}
+              </button>
+            ) : (
+              <p className={`font-medium text-sm min-w-0 truncate ${item.status === "done" ? "line-through text-gray-400" : "text-gray-900"}`}>
+                {item.name}
+              </p>
+            )}
+            {unread && <UnreadDot />}
+          </div>
           <div className="flex items-center gap-1.5 shrink-0">
             {(isOwner || isRecipient) && (
               <button
@@ -511,6 +560,7 @@ function WaterfallCard({
             <ReactionBar
               item={item}
               itemComments={itemComments}
+              hasNewComment={hasNewComment}
               onReact={onReact}
               showComments={showComments}
               onToggleComments={() => setShowComments((v) => !v)}
@@ -539,6 +589,7 @@ function WaterfallCard({
 
 type TextListProps = {
   items: Item[];
+  lastViewedAt: number | null;
   canEdit: boolean;
   listId: string;
   comments: Comment[];
@@ -553,7 +604,7 @@ type TextListProps = {
   onPhotoClick: (itemIndex: number, photoIndex: number) => void;
 };
 
-function TextList({ items, canEdit, listId, comments, userDisplayName, currentUserId, deleting, fmtDate, onOpenReader, onDelete, onReact, onCommentAdded, onPhotoClick }: TextListProps) {
+function TextList({ items, lastViewedAt, canEdit, listId, comments, userDisplayName, currentUserId, deleting, fmtDate, onOpenReader, onDelete, onReact, onCommentAdded, onPhotoClick }: TextListProps) {
   const t = useT();
   const [openComments, setOpenComments] = useState<Set<string>>(new Set());
 
@@ -572,9 +623,14 @@ function TextList({ items, canEdit, listId, comments, userDisplayName, currentUs
         const body = item.reason?.trim();
         const itemComments = comments.filter((c) => c.itemId === item.id);
         const showComments = openComments.has(item.id);
+        const unread = isUnread(item, lastViewedAt);
+        const newComment = hasFreshComment(item, comments, lastViewedAt);
+        const titleDot = unread && !newComment; // comment updates are shown on the 💬 button instead
+        const showDivider = unread && itemIndex + 1 < items.length && !isUnread(items[itemIndex + 1], lastViewedAt);
 
         return (
-          <li key={item.id} className="py-4">
+          <Fragment key={item.id}>
+          <li className="py-4">
             <div className="flex gap-3 items-start">
               {item.secondary && (
                 <span className="text-2xl shrink-0 mt-0.5">{item.secondary}</span>
@@ -585,7 +641,10 @@ function TextList({ items, canEdit, listId, comments, userDisplayName, currentUs
                   className="w-full text-left hover:opacity-70"
                 >
                   {hasTitle && (
-                    <p className="font-semibold text-gray-900 dark:text-gray-100 mb-1 leading-snug">{item.name}</p>
+                    <p className="font-semibold text-gray-900 dark:text-gray-100 mb-1 leading-snug">
+                      {item.name}
+                      {titleDot && <span className="inline-block align-middle ml-1.5 w-2 h-2 rounded-full bg-[#2B4B8C] dark:bg-blue-400" />}
+                    </p>
                   )}
                   {body ? (
                     <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed whitespace-pre-wrap line-clamp-6">
@@ -596,6 +655,7 @@ function TextList({ items, canEdit, listId, comments, userDisplayName, currentUs
                   )}
                   <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
                     {fmtDate(item.updatedAt > item.createdAt ? item.updatedAt : item.createdAt)}
+                    {!hasTitle && titleDot && <span className="inline-block align-middle ml-1.5 w-2 h-2 rounded-full bg-[#2B4B8C] dark:bg-blue-400" />}
                   </p>
                 </button>
 
@@ -621,6 +681,7 @@ function TextList({ items, canEdit, listId, comments, userDisplayName, currentUs
                     <ReactionBar
                       item={item}
                       itemComments={itemComments}
+                      hasNewComment={newComment}
                       onReact={onReact}
                       showComments={showComments}
                       onToggleComments={() => toggleComments(item.id)}
@@ -652,6 +713,8 @@ function TextList({ items, canEdit, listId, comments, userDisplayName, currentUs
               )}
             </div>
           </li>
+          {showDivider && <LastViewedDivider label={t("lastViewedHere")} />}
+          </Fragment>
         );
       })}
     </ul>
@@ -668,6 +731,7 @@ type Props = {
   listId: string;
   viewMode: "list" | "waterfall";
   isTextList?: boolean;
+  lastViewedAt: number | null;
   comments: Comment[];
   userDisplayName: string | null;
   currentUserId: string | null;
@@ -679,7 +743,7 @@ type Props = {
 
 export default function ItemList({
   items: initialItems, isRecipient, isOwner, secondaryLabel, listId,
-  viewMode, isTextList, comments, userDisplayName, currentUserId,
+  viewMode, isTextList, lastViewedAt, comments, userDisplayName, currentUserId,
   onEditItem, onPhotoClick, onCommentAdded, onReactionsChanged,
 }: Props) {
   const t = useT();
@@ -821,6 +885,7 @@ export default function ItemList({
       <>
         <TextList
           items={items.slice(0, visibleCount)}
+          lastViewedAt={lastViewedAt}
           canEdit={canEdit}
           listId={listId}
           comments={comments}
@@ -867,6 +932,8 @@ export default function ItemList({
             <WaterfallCard
               key={photo ? photo.id : item.id}
               item={item}
+              unread={isUnread(item, lastViewedAt) && !hasFreshComment(item, comments, lastViewedAt)}
+              hasNewComment={hasFreshComment(item, comments, lastViewedAt)}
               itemIndex={itemIdx}
               photo={photo}
               {...sharedProps}
@@ -885,17 +952,26 @@ export default function ItemList({
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
           <ul className="divide-y divide-gray-100 dark:divide-gray-800">
-            {items.slice(0, visibleCount).map((item, i) => (
-              <SortableRow
-                key={item.id}
-                item={item}
-                itemIndex={i}
-                {...sharedProps}
-                onPhotoClick={onPhotoClick}
-                onPhotoAdded={handlePhotoAdded}
-                onPhotoRemoved={handlePhotoRemoved}
-              />
-            ))}
+            {items.slice(0, visibleCount).map((item, i, visible) => {
+              const unread = isUnread(item, lastViewedAt);
+              const newComment = hasFreshComment(item, comments, lastViewedAt);
+              const showDivider = unread && i + 1 < visible.length && !isUnread(visible[i + 1], lastViewedAt);
+              return (
+                <Fragment key={item.id}>
+                  <SortableRow
+                    item={item}
+                    unread={unread && !newComment}
+                    hasNewComment={newComment}
+                    itemIndex={i}
+                    {...sharedProps}
+                    onPhotoClick={onPhotoClick}
+                    onPhotoAdded={handlePhotoAdded}
+                    onPhotoRemoved={handlePhotoRemoved}
+                  />
+                  {showDivider && <LastViewedDivider label={t("lastViewedHere")} />}
+                </Fragment>
+              );
+            })}
           </ul>
         </SortableContext>
       </DndContext>

@@ -192,6 +192,7 @@ export const translations = {
     posting: "Posting…",
     noComments: "No comments yet.",
     itemCommentHint: "on {item}",
+    lastViewedHere: "Last viewed here",
 
     // modals
     unsavedChanges: "You have unsaved changes. Discard them?",
@@ -381,6 +382,7 @@ export const translations = {
     posting: "发送中…",
     noComments: "还没有评论。",
     itemCommentHint: "关于 {item}",
+    lastViewedHere: "上次看到这里",
 
     unsavedChanges: "有未保存的修改，确认丢弃？",
 

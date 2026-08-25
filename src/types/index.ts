@@ -87,7 +87,11 @@ export type ItemPhoto = {
   position: number;
 };
 
-export type ListDetail = List & { items: Item[] };
+export type ListDetail = List & {
+  items: Item[];
+  /** The viewer's watermark from their *previous* visit; null on first-ever view. */
+  lastViewedAt: number | null;
+};
 
 export const CATEGORIES: Record<
   string,
