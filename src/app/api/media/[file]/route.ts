@@ -17,8 +17,15 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   const { env } = await getCloudflareContext({ async: true });
   if (!env.ASSETS) return new Response("Assets binding unavailable", { status: 500 });
-  // Forward the original request (Range / If-Range / conditional headers) to the
-  // static-asset server, pointed at the real asset path.
+
+  // Explicitly forward the range/conditional headers to the static-asset server.
+  // (Passing the NextRequest straight through did not carry Range, so the binding
+  // replied 200 with the whole file instead of 206 Partial Content.)
   const assetUrl = new URL(`/${file}`, req.url);
-  return env.ASSETS.fetch(new Request(assetUrl, req));
+  const headers = new Headers();
+  for (const h of ["range", "if-range", "if-modified-since", "if-none-match"]) {
+    const v = req.headers.get(h);
+    if (v) headers.set(h, v);
+  }
+  return env.ASSETS.fetch(new Request(assetUrl, { method: "GET", headers }));
 }
