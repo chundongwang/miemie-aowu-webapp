@@ -40,17 +40,40 @@ export default function VideoModal({
       return Math.min(PREFETCH_SECONDS, d);
     };
 
+    const finish = () => {
+      if (done) return;
+      done = true;
+      setPrefetching(false);
+      setReady(true); // don't auto-play — let the user start it
+    };
+
     const tick = () => {
       const g = goal();
       const be = bufferedEnd();
       setPct(Math.min(100, g > 0 ? (be / g) * 100 : 0));
-      if (!done && be >= g && g > 0) {
-        done = true;
-        setPrefetching(false);
-        setReady(true); // don't auto-play — let the user start it
-      }
+      if (be >= g && g > 0) finish();
     };
 
+    // Mobile browsers (iOS Safari especially) refuse to buffer ahead while a
+    // video is paused: they load a few seconds then stop, so the buffered goal
+    // above can never be reached and `progress` events cease. Watch for that
+    // stall — once buffering stops advancing and there's playable data, offer
+    // play anyway rather than spinning forever. Real buffering resumes on play,
+    // and the mid-play `stalled` indicator covers any re-buffering from there.
+    let lastBe = -1;
+    let flat = 0;
+    const guard = window.setInterval(() => {
+      if (done) return;
+      const be = bufferedEnd();
+      if (be <= lastBe + 0.05) flat += 1;
+      else flat = 0;
+      lastBe = be;
+      // ~2.4s with no buffering progress, and enough to start (HAVE_FUTURE_DATA
+      // or some buffered head-start) → stop waiting for a head-start we won't get.
+      if (flat >= 3 && (v.readyState >= 3 || be > 0.5)) finish();
+    }, 800);
+
+    const onCanPlayThrough = () => finish();
     const onWaiting = () => done && setStalled(true);
     const onPlaying = () => setStalled(false);
 
@@ -65,16 +88,19 @@ export default function VideoModal({
 
     v.addEventListener("progress", tick);
     v.addEventListener("loadedmetadata", tick);
-    v.addEventListener("canplaythrough", tick);
+    v.addEventListener("canplay", tick);
+    v.addEventListener("canplaythrough", onCanPlayThrough);
     v.addEventListener("waiting", onWaiting);
     v.addEventListener("playing", onPlaying);
     v.addEventListener("timeupdate", onTime);
     v.load();
 
     return () => {
+      window.clearInterval(guard);
       v.removeEventListener("progress", tick);
       v.removeEventListener("loadedmetadata", tick);
-      v.removeEventListener("canplaythrough", tick);
+      v.removeEventListener("canplay", tick);
+      v.removeEventListener("canplaythrough", onCanPlayThrough);
       v.removeEventListener("waiting", onWaiting);
       v.removeEventListener("playing", onPlaying);
       v.removeEventListener("timeupdate", onTime);
