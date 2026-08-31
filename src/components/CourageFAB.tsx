@@ -6,7 +6,7 @@ import { useLocale } from "@/context/LocaleContext";
 
 const VideoModal = dynamic(() => import("./VideoModal"), { ssr: false });
 
-const SRC = "/yongqi.mp4";
+const SRC = "/api/media/yongqi.mp4"; // Range-aware route so mobile can seek
 // The last 5s fade to black while these lines rise in the centre — the ending
 // for（比我）勇敢的狼先生, in place of a credit roll. Blank lines = stanza breaks.
 const END_TEXT = `我记得你说过

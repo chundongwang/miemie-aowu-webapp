@@ -8,7 +8,7 @@ export default function VideoModal({
   onClose,
   closeLabel,
   readyLabel,
-  src = "/video.mp4",
+  src = "/api/media/video.mp4",
   endText,
   endFadeSeconds = 5,
 }: {

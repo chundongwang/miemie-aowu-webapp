@@ -6,7 +6,7 @@ import { useLocale } from "@/context/LocaleContext";
 
 const VideoModal = dynamic(() => import("./VideoModal"), { ssr: false });
 
-const SRC = "/qingge.mp4";
+const SRC = "/api/media/qingge.mp4"; // Range-aware route so mobile can seek
 
 const COPY = {
   en: { fabLabel: "Play the song", close: "Close", ready: "情歌 · 梁静茹" },
