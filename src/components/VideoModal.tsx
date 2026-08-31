@@ -9,11 +9,17 @@ export default function VideoModal({
   closeLabel,
   readyLabel,
   src = "/video.mp4",
+  endText,
+  endFadeSeconds = 5,
 }: {
   onClose: () => void;
   closeLabel: string;
   readyLabel: string;
   src?: string;
+  // When set, the final `endFadeSeconds` fade the picture to black while this
+  // line rises in the centre — replacing whatever the video ends on (e.g. credits).
+  endText?: string;
+  endFadeSeconds?: number;
 }) {
   const SRC = src;
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -21,6 +27,7 @@ export default function VideoModal({
   const [pct, setPct] = useState(0);
   const [ready, setReady] = useState(false); // buffered, waiting for the user to start
   const [stalled, setStalled] = useState(false); // re-buffering mid-play
+  const [endP, setEndP] = useState(0); // 0→1 across the closing fade
 
   useEffect(() => {
     const v = videoRef.current;
@@ -47,11 +54,21 @@ export default function VideoModal({
     const onWaiting = () => done && setStalled(true);
     const onPlaying = () => setStalled(false);
 
+    // Drive the closing fade off playback position, so seeking updates it too.
+    const onTime = () => {
+      if (!endText) return;
+      const d = v.duration;
+      if (!isFinite(d) || d <= 0) return;
+      const remaining = d - v.currentTime;
+      setEndP(Math.min(1, Math.max(0, (endFadeSeconds - remaining) / endFadeSeconds)));
+    };
+
     v.addEventListener("progress", tick);
     v.addEventListener("loadedmetadata", tick);
     v.addEventListener("canplaythrough", tick);
     v.addEventListener("waiting", onWaiting);
     v.addEventListener("playing", onPlaying);
+    v.addEventListener("timeupdate", onTime);
     v.load();
 
     return () => {
@@ -60,9 +77,10 @@ export default function VideoModal({
       v.removeEventListener("canplaythrough", tick);
       v.removeEventListener("waiting", onWaiting);
       v.removeEventListener("playing", onPlaying);
+      v.removeEventListener("timeupdate", onTime);
       v.pause();
     };
-  }, []);
+  }, [endText, endFadeSeconds]);
 
   const start = () => {
     setReady(false);
@@ -120,6 +138,28 @@ export default function VideoModal({
       {stalled && !prefetching && !ready && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div className="h-9 w-9 animate-spin rounded-full border-2 border-white/25 border-t-white/90" />
+        </div>
+      )}
+
+      {/* Cinematic ending: fade the picture to black while the line rises. */}
+      {endText && endP > 0 && (
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute inset-0 bg-black" style={{ opacity: endP, transition: "opacity 250ms linear" }} />
+          <div className="absolute inset-0 flex items-center justify-center px-10">
+            <p
+              className="text-center font-light leading-relaxed tracking-wide text-white"
+              style={{
+                whiteSpace: "pre-line",
+                opacity: Math.min(1, Math.max(0, (endP - 0.2) / 0.6)),
+                transform: `scale(${0.92 + 0.08 * Math.min(1, Math.max(0, (endP - 0.2) / 0.6))})`,
+                transition: "opacity 250ms linear, transform 250ms linear",
+                fontSize: "clamp(1.1rem, 5.2vw, 1.9rem)",
+                textShadow: "0 2px 24px rgba(0,0,0,0.7)",
+              }}
+            >
+              {endText}
+            </p>
+          </div>
         </div>
       )}
 
