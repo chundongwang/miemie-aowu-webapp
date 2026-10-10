@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withErrorHandling } from "@/lib/api";
-import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 interface AmapPoi {
   id: string;
@@ -23,9 +22,7 @@ interface AmapResponse {
 
 export async function GET(req: NextRequest) {
   return withErrorHandling("search-food", async () => {
-    const { env } = await getCloudflareContext({ async: true });
-    const e = env as unknown as Record<string, string>;
-    const apiKey = e.AMAP_API_KEY || process.env.AMAP_API_KEY;
+    const apiKey = process.env.AMAP_API_KEY;
     if (!apiKey) return NextResponse.json({ error: "AMAP_API_KEY not configured" }, { status: 503 });
 
     const { searchParams } = req.nextUrl;

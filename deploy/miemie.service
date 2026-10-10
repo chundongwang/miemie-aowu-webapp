@@ -1,0 +1,16 @@
+[Unit]
+Description=miemie-aowu Next.js server
+After=network.target
+
+[Service]
+User=miemie
+WorkingDirectory=/opt/miemie/app
+EnvironmentFile=/etc/miemie.env
+Environment=NODE_ENV=production PORT=3000 HOSTNAME=127.0.0.1
+Environment=DB_PATH=/var/lib/miemie/miemie.db PHOTOS_DIR=/var/lib/miemie/photos
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

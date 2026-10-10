@@ -197,9 +197,9 @@ The LLM (Prof. Higgins, bulk import parser) receives the user's locale and respo
 
 | Concern | Technology |
 |---|---|
-| Runtime | Cloudflare Workers (via `@opennextjs/cloudflare`) |
-| Database | Cloudflare D1 (SQLite, edge-accessible from China via JD Cloud) |
-| Object storage | Cloudflare R2 |
+| Runtime | Node.js (Next.js standalone) on an Alibaba Cloud Hong Kong VM, behind Caddy |
+| Database | SQLite (better-sqlite3) on the VM — `src/lib/db.ts` keeps a D1-compatible API |
+| Object storage | Local disk on the VM, nightly backup to Cloudflare R2 |
 | Custom domain | `miemieaowu.ai` + `www.miemieaowu.ai` |
 | LLM | OpenRouter — default model `qwen/qwen-plus`, configurable via `OPENROUTER_MODEL` secret |
 | Image search | Serper (Google Images API) — requires `SERPER_API_KEY` |
@@ -214,6 +214,9 @@ The LLM (Prof. Higgins, bulk import parser) receives the user's locale and respo
 | `SERPER_API_KEY` | Google Images search for photo picker |
 | `ADMIN_SECRET` | Admin password reset endpoint |
 | `OPENROUTER_MODEL` | *(optional)* Override default LLM model |
+| `AMAP_API_KEY` | Amap geocoding / nearby food search |
+
+Secrets live in `/etc/miemie.env` on the server (local dev: `.env.local`).
 
 ### DB Migrations
 ```
@@ -223,5 +226,5 @@ migrations/
   0003_reactions_comments.sql — reactions, comments tables
 ```
 
-Apply to production: `npx wrangler d1 migrations apply miemie-aowu-db --remote`
-Apply locally: `npx wrangler d1 migrations apply miemie-aowu-db --local`
+Apply locally: `npm run db:migrate` (creates/updates `data/miemie.db`)
+Production: applied automatically by `npm run deploy` — see `docs/DEPLOY-HK.md`

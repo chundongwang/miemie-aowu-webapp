@@ -1,14 +1,10 @@
 import { NextRequest } from "next/server";
-import { getCloudflareContext } from "@opennextjs/cloudflare";
+import fs from "node:fs";
+import path from "node:path";
+import { Readable } from "node:stream";
 
-// Serve the video-FAB clips with real HTTP Range support so mobile browsers can
-// seek/scrub. Two layers of the platform can't do this on their own:
-//   • Requesting /yongqi.mp4 directly hits OpenNext's public-file handler, which
-//     ignores Range and returns the whole file (200).
-//   • env.ASSETS.fetch() likewise replies 200 for Range requests in this setup.
-// R2, however, supports byte-range reads. So we seed each clip into R2 once
-// (streamed from the ASSETS binding — no external upload/credentials needed) and
-// then answer Range requests with a proper 206 Partial Content built by hand.
+// Serve the video-FAB clips from public/ with real HTTP Range support so mobile
+// browsers can seek/scrub (206 Partial Content built by hand).
 const ALLOWED = new Set(["yongqi.mp4", "qingge.mp4", "video.mp4"]);
 const CACHE = "public, max-age=31536000, immutable";
 
@@ -37,36 +33,10 @@ export async function GET(req: NextRequest, { params }: Params) {
   const { file } = await params;
   if (!ALLOWED.has(file)) return new Response("Not found", { status: 404 });
 
-  const { env, ctx } = await getCloudflareContext({ async: true });
-  const assets = env.ASSETS;
-  if (!assets) return new Response("Assets binding unavailable", { status: 500 });
-  const bucket = (env as unknown as Cloudflare.Env).miemie_aowu_photos;
-  const assetUrl = new URL(`/${file}`, req.url);
-  const assetReq = () => new Request(assetUrl, { method: "GET" });
-  const key = `media/${file}`;
+  const filePath = path.join(process.cwd(), "public", file);
+  if (!fs.existsSync(filePath)) return new Response("Not found", { status: 404 });
 
-  // No R2? Degrade to the plain asset (playback works, seeking won't).
-  if (!bucket) return assets.fetch(assetReq());
-
-  const head = await bucket.head(key);
-  if (!head) {
-    // Seed R2 from the asset. Do it in the background so this first request
-    // isn't blocked on copying ~15–22MB; serve the plain asset meanwhile.
-    ctx.waitUntil(
-      (async () => {
-        const asset = await assets.fetch(assetReq());
-        if (asset.ok && asset.body) {
-          await bucket.put(key, asset.body, {
-            httpMetadata: { contentType: "video/mp4", cacheControl: CACHE },
-          });
-        }
-      })()
-    );
-    return assets.fetch(assetReq());
-  }
-
-  const size = head.size;
-  const contentType = head.httpMetadata?.contentType ?? "video/mp4";
+  const size = fs.statSync(filePath).size;
   const rangeHeader = req.headers.get("range");
   const range = parseRange(rangeHeader, size);
 
@@ -79,12 +49,11 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   if (range) {
     const { start, end } = range;
-    const obj = await bucket.get(key, { range: { offset: start, length: end - start + 1 } });
-    if (!obj) return assets.fetch(assetReq());
-    return new Response(obj.body as ReadableStream, {
+    const stream = fs.createReadStream(filePath, { start, end });
+    return new Response(Readable.toWeb(stream) as ReadableStream, {
       status: 206,
       headers: {
-        "Content-Type": contentType,
+        "Content-Type": "video/mp4",
         "Content-Range": `bytes ${start}-${end}/${size}`,
         "Content-Length": String(end - start + 1),
         "Accept-Ranges": "bytes",
@@ -93,12 +62,11 @@ export async function GET(req: NextRequest, { params }: Params) {
     });
   }
 
-  const obj = await bucket.get(key);
-  if (!obj) return assets.fetch(assetReq());
-  return new Response(obj.body as ReadableStream, {
+  const stream = fs.createReadStream(filePath);
+  return new Response(Readable.toWeb(stream) as ReadableStream, {
     status: 200,
     headers: {
-      "Content-Type": contentType,
+      "Content-Type": "video/mp4",
       "Content-Length": String(size),
       "Accept-Ranges": "bytes",
       "Cache-Control": CACHE,

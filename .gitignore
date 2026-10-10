@@ -29,3 +29,6 @@ npm-debug.log*
 # Local-only model comparison scratch (do not commit large binaries)
 public/_modelcompare/
 src/app/model-compare/
+
+# Local SQLite database + photo store (src/lib/db.ts)
+/data/

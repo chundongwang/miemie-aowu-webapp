@@ -2,15 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import { withErrorHandling } from "@/lib/api";
-import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 
 export async function POST(req: NextRequest) {
   return withErrorHandling("admin.reset-password", async () => {
     // Verify admin secret
-    const { env } = await getCloudflareContext({ async: true });
-    const e = env as unknown as Record<string, string>;
-    const adminSecret = e.ADMIN_SECRET || process.env.ADMIN_SECRET;
+    const adminSecret = process.env.ADMIN_SECRET;
 
     if (!adminSecret) {
       return NextResponse.json({ error: "ADMIN_SECRET not configured" }, { status: 503 });

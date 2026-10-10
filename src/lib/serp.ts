@@ -1,5 +1,3 @@
-import { getCloudflareContext } from "@opennextjs/cloudflare";
-
 export type SerpImageResult = {
   imageUrl: string;
   thumbnailUrl: string;
@@ -12,9 +10,7 @@ export type SerpImageResult = {
  * Returns [] if SERPER_API_KEY is not configured or the call fails.
  */
 export async function searchImages(query: string, limit = 8): Promise<SerpImageResult[]> {
-  const { env } = await getCloudflareContext({ async: true });
-  const e = env as unknown as Record<string, string>;
-  const apiKey = e.SERPER_API_KEY || process.env.SERPER_API_KEY;
+  const apiKey = process.env.SERPER_API_KEY;
   if (!apiKey) return [];
 
   try {

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withErrorHandling } from "@/lib/api";
-import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 interface AmapGeocodeResponse {
   status: string;
@@ -12,9 +11,7 @@ interface AmapGeocodeResponse {
 
 export async function GET(req: NextRequest) {
   return withErrorHandling("geocode", async () => {
-    const { env } = await getCloudflareContext({ async: true });
-    const e = env as unknown as Record<string, string>;
-    const apiKey = e.AMAP_API_KEY || process.env.AMAP_API_KEY;
+    const apiKey = process.env.AMAP_API_KEY;
     if (!apiKey) return NextResponse.json({ error: "AMAP_API_KEY not configured" }, { status: 503 });
 
     const address = req.nextUrl.searchParams.get("address")?.trim();

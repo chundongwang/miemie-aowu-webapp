@@ -1,5 +1,5 @@
-// Structured JSON logger — output is visible in `wrangler tail` and
-// Cloudflare Dashboard → Workers → your worker → Logs tab.
+// Structured JSON logger — output is visible via `journalctl -u miemie -f`
+// on the server.
 
 export function logError(context: string, error: unknown, extra?: Record<string, unknown>) {
   console.error(

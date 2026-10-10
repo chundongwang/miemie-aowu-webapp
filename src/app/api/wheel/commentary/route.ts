@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { withErrorHandling } from "@/lib/api";
 import { callOpenRouter } from "@/lib/llm";
 import { getLunarContext } from "@/lib/lunar";
-import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getAuthUserId } from "@/lib/auth";
 import { getDB } from "@/lib/db";
 
@@ -55,9 +54,7 @@ export async function POST(req: NextRequest) {
     let weatherLine = "";
     if (location?.lat && location?.lng) {
       try {
-        const { env } = await getCloudflareContext({ async: true });
-        const e = env as unknown as Record<string, string>;
-        const amapKey = e.AMAP_API_KEY || process.env.AMAP_API_KEY;
+        const amapKey = process.env.AMAP_API_KEY;
         if (amapKey) {
           const regeoRes = await fetch(
             `https://restapi.amap.com/v3/geocode/regeo?location=${location.lng},${location.lat}&key=${amapKey}&extensions=base`

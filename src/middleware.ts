@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Logs every API request to the edge runtime console.
-// Visible via: `npx wrangler tail` or Cloudflare Dashboard → Workers → Logs
+// Visible via: `journalctl -u miemie -f` on the server
 export function middleware(req: NextRequest) {
   const { method, nextUrl } = req;
   console.log(

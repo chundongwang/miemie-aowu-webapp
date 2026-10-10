@@ -24,12 +24,8 @@ if (!listId || !itemArg || !body) {
 
 const secret = fs.readFileSync(".env.local", "utf8").match(/JWT_SECRET=(.*)/)[1].trim();
 
-// Find the local D1 sqlite (skip the *metadata* db).
-const d1Dir = ".wrangler/state/v3/d1/miniflare-D1DatabaseObject";
-const dbFile = fs
-  .readdirSync(d1Dir)
-  .find((f) => f.endsWith(".sqlite") && !f.includes("metadata"));
-const db = `${d1Dir}/${dbFile}`;
+// The local SQLite database the dev server uses (see src/lib/db.ts).
+const db = process.env.DB_PATH ?? "data/miemie.db";
 
 const sql = (q) => execSync(`sqlite3 "${db}" "${q.replace(/"/g, '""')}"`).toString().trim();
 

@@ -7,21 +7,21 @@
 | Web framework | Next.js 14 (App Router) | SSR + API routes |
 | Mobile | Capacitor 6 | Wraps the Next.js web app |
 | Styling | Tailwind CSS | |
-| Database | Cloudflare D1 (SQLite) | See hosting rationale below |
-| File storage | Cloudflare R2 | Photos |
+| Database | SQLite (better-sqlite3) on the server | Was Cloudflare D1; same SQL |
+| File storage | Local disk on the server | Photos; nightly backup to Cloudflare R2 |
 | Auth | custom JWT (jose) | Email + password, stored in D1 |
-| Hosting | Cloudflare Pages | Next.js via `@cloudflare/next-on-pages` |
+| Hosting | Alibaba Cloud Hong Kong VM | Next.js standalone behind Caddy — see `docs/DEPLOY-HK.md` |
 | Push notifications | Capacitor Push Notifications plugin + Cloudflare Queues | Mobile only |
 
 ---
 
-## Why Cloudflare for China + Global Access
+## Why Hong Kong hosting for China access
 
-Most mainstream database-as-a-service options (Supabase, PlanetScale, Neon, Firebase) are blocked or unreliable in mainland China. Vercel is also blocked.
+Most mainstream hosting/database services (Vercel, Supabase, PlanetScale, Neon, Firebase) are blocked or unreliable in mainland China.
 
-Cloudflare operates in China through a licensed partnership with JD Cloud (JD Cloud Edge Network). Cloudflare Pages, D1, R2, and Workers are all reachable from mainland China without a VPN — this is the key architectural constraint.
+The app originally ran on Cloudflare Workers + D1 + R2 on the assumption that Cloudflare serves China through its JD Cloud partnership. That **China Network is an Enterprise add-on that also requires an ICP filing**; on normal plans mainland visitors are routed to PoPs outside China (often US West), so every request paid a 150–300 ms+ cross-border round trip, and D1 lives in a single region. Users in China reported slow loads.
 
-**Alternative if Cloudflare D1 proves insufficient** (e.g., complex queries, larger data): swap D1 for a PostgreSQL instance on Alibaba Cloud Hong Kong region, which is accessible from both mainland China and internationally. The API layer stays the same; only the DB driver changes.
+The app now runs on a single Alibaba Cloud Hong Kong VM: no ICP filing needed, ~30–60 ms from the mainland. `src/lib/db.ts` exposes the same D1/R2-shaped API backed by SQLite and local disk, so routes are unchanged. Setup and operations: `docs/DEPLOY-HK.md`.
 
 ---
 
