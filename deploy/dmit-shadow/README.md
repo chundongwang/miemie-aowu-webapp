@@ -15,9 +15,10 @@ nginx 1.24). See `docs/ios-capacitor-zero-update-routing.md` for the design.
   DNS:Edit token for the zone), cert name `miemieaowu.ai`, SANs `miemieaowu.ai`,
   `www.miemieaowu.ai`, `hk-test.miemieaowu.ai`. Auto-renews via `certbot.timer`
   with a `systemctl reload nginx` deploy hook.
-- Upstream: Cloudflare anycast IPs pinned in `cf_edge`, Host/SNI from
-  `miemie-upstream.conf` (currently `miemieaowu.ai`; switch to
-  `cf-origin.miemieaowu.ai` before the apex DNS points at DMIT).
+- Upstream: Cloudflare anycast IPs pinned in `cf_edge`, Host/SNI
+  `cf-origin.miemieaowu.ai` (`miemie-upstream.conf`) — a Worker custom domain
+  on `miemie-aowu-webapp` (production) that stays proxied when the apex DNS
+  later points at DMIT. Attached 2026-10-10 via the Workers domains API.
 - Logs: `/var/log/nginx/shadow.access.log` (upstream time, cache status, cf-ray).
 - Rollback: `rm /etc/nginx/sites-enabled/miemie-shadow && nginx -t && systemctl reload nginx`;
   full pre-shadow backup at `/root/backup-20261010-203947-pre-shadow`.
