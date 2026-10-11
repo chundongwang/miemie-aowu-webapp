@@ -5,7 +5,7 @@ compatibility_flags = ["nodejs_compat"]
 
 # miemieaowu.ai and www are served by the DMIT Hong Kong proxy (DNS-only A
 # records since 2026-10-10), which forwards to this Worker via cf-origin.
-# Do not re-add them here unless rolling back (see deploy/dmit-shadow on hk-hosting).
+# Do not re-add them here unless rolling back (see deploy/dmit-shadow/README.md).
 routes = [
   { pattern = "cf-origin.miemieaowu.ai", custom_domain = true },
 ]

@@ -10,18 +10,30 @@
 | Database | Cloudflare D1 (SQLite) | See hosting rationale below |
 | File storage | Cloudflare R2 | Photos |
 | Auth | custom JWT (jose) | Email + password, stored in D1 |
-| Hosting | Cloudflare Pages | Next.js via `@cloudflare/next-on-pages` |
+| Hosting | Cloudflare Workers via `@opennextjs/cloudflare`, fronted by a DMIT Hong Kong nginx proxy | See below and `docs/ios-capacitor-zero-update-routing.md` |
 | Push notifications | Capacitor Push Notifications plugin + Cloudflare Queues | Mobile only |
 
 ---
 
-## Why Cloudflare for China + Global Access
+## Traffic path and China access
 
-Most mainstream database-as-a-service options (Supabase, PlanetScale, Neon, Firebase) are blocked or unreliable in mainland China. Vercel is also blocked.
+Most mainstream hosting/database services (Vercel, Supabase, PlanetScale, Neon, Firebase) are blocked or unreliable in mainland China, so the app runs on Cloudflare Workers + D1 + R2.
 
-Cloudflare operates in China through a licensed partnership with JD Cloud (JD Cloud Edge Network). Cloudflare Pages, D1, R2, and Workers are all reachable from mainland China without a VPN — this is the key architectural constraint.
+Cloudflare's in-China network (JD Cloud partnership) is an **Enterprise add-on that also requires an ICP filing**. On normal plans, mainland visitors reach Cloudflare edges outside China, and the client → Cloudflare-edge hop was slow and lossy for China Unicom users (ITDOG: ~28% failures, 5.49 s median).
 
-**Alternative if Cloudflare D1 proves insufficient** (e.g., complex queries, larger data): swap D1 for a PostgreSQL instance on Alibaba Cloud Hong Kong region, which is accessible from both mainland China and internationally. The API layer stays the same; only the DB driver changes.
+Since 2026-10-10 the public hostnames are served through a Hong Kong VPS (DMIT, Eyeball routing):
+
+```
+client ──HTTPS──▶ miemieaowu.ai / www  (DNS-only A → 191.222.220.97, DMIT HK)
+                   nginx: Let's Encrypt cert, caches /_next/static, /api/photos, /api/media
+                   │  HTTPS, Host/SNI cf-origin.miemieaowu.ai (~1 ms to Cloudflare HKG)
+                   ▼
+                 Cloudflare Worker miemie-aowu-webapp ─▶ D1, R2
+```
+
+- The Worker code, D1 and R2 are unchanged; `cf-origin.miemieaowu.ai` is the Worker's only custom domain (`wrangler.toml`).
+- The iOS app (Capacitor, `server.url = https://miemieaowu.ai`) followed the DNS change with no App Store update.
+- nginx config: `deploy/dmit-shadow/`. Design, risks and rollback: `docs/ios-capacitor-zero-update-routing.md`.
 
 ---
 

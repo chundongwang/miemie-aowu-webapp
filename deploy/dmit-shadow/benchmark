@@ -1,0 +1,44 @@
+# Isolated download benchmark (miemieaowu shadow). Serves only /__benchmark/*.bin
+# and /healthz over plain HTTP — no app, no compression, no redirects.
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+
+    server_tokens off;
+    absolute_redirect off;
+    gzip off;
+    autoindex off;
+
+    access_log /var/log/nginx/benchmark.access.log bench;
+    access_log /var/log/nginx/benchmark.detail.log bench_v2;
+    error_log  /var/log/nginx/benchmark.error.log warn;
+
+    location = /healthz {
+        default_type text/plain;
+        add_header Cache-Control "no-store" always;
+        return 200 "ok\n";
+    }
+
+    location ~ ^/__benchmark/(10k|100k|1m|10m|50m)\.bin$ {
+        root /var/www/benchmark;
+        types { }
+        default_type application/octet-stream;
+        sendfile on;
+        tcp_nopush on;
+        etag off;
+        if_modified_since off;
+        add_header Cache-Control "no-store, no-transform" always;
+        add_header Access-Control-Allow-Origin "*" always;
+    }
+
+    location = /__benchmark/SHA256SUMS {
+        root /var/www/benchmark;
+        default_type text/plain;
+    }
+
+    # Everything else (including /__benchmark and /__benchmark/ itself): 404, no redirect
+    location / {
+        return 404;
+    }
+}

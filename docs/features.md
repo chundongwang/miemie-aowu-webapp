@@ -198,9 +198,9 @@ The LLM (Prof. Higgins, bulk import parser) receives the user's locale and respo
 | Concern | Technology |
 |---|---|
 | Runtime | Cloudflare Workers (via `@opennextjs/cloudflare`) |
-| Database | Cloudflare D1 (SQLite, edge-accessible from China via JD Cloud) |
+| Database | Cloudflare D1 (SQLite) |
 | Object storage | Cloudflare R2 |
-| Custom domain | `miemieaowu.ai` + `www.miemieaowu.ai` |
+| Custom domain | `miemieaowu.ai` + `www.miemieaowu.ai` → DMIT Hong Kong nginx proxy (DNS-only) → Worker via `cf-origin.miemieaowu.ai` — see `deploy/dmit-shadow/` |
 | LLM | OpenRouter — default model `qwen/qwen-plus`, configurable via `OPENROUTER_MODEL` secret |
 | Image search | Serper (Google Images API) — requires `SERPER_API_KEY` |
 | Auth | PBKDF2 password hashing · HMAC-SHA256 JWT · HTTP-only cookie · 1-year TTL |

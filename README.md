@@ -108,7 +108,7 @@ Each command prompts you to paste the value.
 
 ### Custom domain
 
-Add `miemieaowu.ai` (and `www.`) as custom domains in the Cloudflare dashboard under **Workers & Pages → your worker → Settings → Domains & Routes**, or via `wrangler.toml` (already configured).
+The Worker's only custom domain is `cf-origin.miemieaowu.ai` (`wrangler.toml`). The public hostnames `miemieaowu.ai` and `www` are DNS-only A records pointing at the DMIT Hong Kong nginx proxy, which forwards to `cf-origin` — see `deploy/dmit-shadow/README.md`. Do not re-add the apex/www as Worker custom domains unless rolling back.
 
 Set SSL/TLS mode to **Full (strict)** in the Cloudflare dashboard for the zone.
 
@@ -120,7 +120,7 @@ Set SSL/TLS mode to **Full (strict)** in the Cloudflare dashboard for the zone.
 npm run deploy
 ```
 
-This runs `opennextjs-cloudflare build` then `wrangler deploy`.
+This runs `opennextjs-cloudflare build` then `wrangler deploy`. Users reach the new version through the DMIT proxy immediately; cached `/_next/static` files are content-hashed, so no proxy purge is needed.
 
 ---
 
@@ -186,7 +186,8 @@ Then start the web dev server (`npm run dev`) and run the app from Xcode.
 | `npm run ios:run` | Run on a simulator or connected device |
 | `npx wrangler d1 migrations apply miemie-aowu-db --local` | Apply DB migrations locally |
 | `npx wrangler d1 migrations apply miemie-aowu-db --remote` | Apply DB migrations to production |
-| `npx wrangler tail` | Stream live production logs |
+| `npx wrangler tail` | Stream live Worker logs |
+| `ssh root@191.222.220.97 tail -f /var/log/nginx/shadow.access.log` | Stream DMIT proxy logs |
 | `npx wrangler secret put <KEY>` | Set a production secret |
 
 ---
@@ -209,6 +210,7 @@ docs/
   features.md         # Full feature reference
 AGENTS.md             # Guidelines for AI coding agents
 wrangler.toml         # Cloudflare Worker config
+deploy/dmit-shadow/   # nginx config of the DMIT Hong Kong proxy in front of the Worker
 ```
 
 ---
