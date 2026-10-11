@@ -3,10 +3,10 @@ main = ".open-next/worker.js"
 compatibility_date = "2024-12-18"
 compatibility_flags = ["nodejs_compat"]
 
+# miemieaowu.ai and www are served by the DMIT Hong Kong proxy (DNS-only A
+# records since 2026-10-10), which forwards to this Worker via cf-origin.
+# Do not re-add them here unless rolling back (see deploy/dmit-shadow on hk-hosting).
 routes = [
-  { pattern = "miemieaowu.ai", custom_domain = true },
-  { pattern = "www.miemieaowu.ai", custom_domain = true },
-  # Upstream for the DMIT Hong Kong shadow proxy (deploy/dmit-shadow on hk-hosting)
   { pattern = "cf-origin.miemieaowu.ai", custom_domain = true },
 ]
 
