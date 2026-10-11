@@ -6,6 +6,8 @@ compatibility_flags = ["nodejs_compat"]
 routes = [
   { pattern = "miemieaowu.ai", custom_domain = true },
   { pattern = "www.miemieaowu.ai", custom_domain = true },
+  # Upstream for the DMIT Hong Kong shadow proxy (deploy/dmit-shadow on hk-hosting)
+  { pattern = "cf-origin.miemieaowu.ai", custom_domain = true },
 ]
 
 assets = { directory = ".open-next/assets", binding = "ASSETS" }
