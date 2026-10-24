@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 # Push the nginx config copies in this directory to the DMIT box, validate,
 # purge the asset cache (it may hold zstd/br-encoded variants) and reload.
-# Usage: bash deploy/dmit-shadow/apply.sh [user@host]
+# Usage: DMIT_SSH_KEY=~/path/to/id_rsa.pem bash deploy/dmit-shadow/apply.sh [user@host]
+# (the box only accepts the key pair DMIT issued; see README)
 set -euo pipefail
 HOST="${1:-root@191.222.220.97}"
+SSH_OPTS=(-o StrictHostKeyChecking=accept-new)
+[ -n "${DMIT_SSH_KEY:-}" ] && SSH_OPTS+=(-i "$DMIT_SSH_KEY" -o IdentitiesOnly=yes)
 DIR="$(cd "$(dirname "$0")" && pwd)"
 STAMP=$(date +%Y%m%d-%H%M%S)
 
-scp "$DIR/miemie-shadow" "$HOST:/tmp/miemie-shadow.$STAMP"
-scp "$DIR/miemie-proxy.conf" "$HOST:/tmp/miemie-proxy.conf.$STAMP"
-ssh "$HOST" bash -s "$STAMP" <<'REMOTE'
+scp "${SSH_OPTS[@]}" "$DIR/miemie-shadow" "$HOST:/tmp/miemie-shadow.$STAMP"
+scp "${SSH_OPTS[@]}" "$DIR/miemie-proxy.conf" "$HOST:/tmp/miemie-proxy.conf.$STAMP"
+ssh "${SSH_OPTS[@]}" "$HOST" bash -s "$STAMP" <<'REMOTE'
 set -euo pipefail
 S="$1"
 mkdir -p /root/backup-$S-pre-encoding-fix
