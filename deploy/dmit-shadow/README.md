@@ -13,10 +13,11 @@ nginx 1.24). See `docs/ios-capacitor-zero-update-routing.md` for the design.
 | `apply.sh` | pushes `miemie-shadow` + `miemie-proxy.conf` to the box, `nginx -t`, purges the cache, reloads. Pass the key via `DMIT_SSH_KEY=` |
 | `verify.sh` | checks the proxy returns a decodable encoding for every `Accept-Encoding` |
 
-- SSH: root, public-key only. The only authorized key is the pair DMIT issued at
-  provisioning (`dmit-hk-shadow-miemieaowu-id_rsa.zip`, kept locally in `~/Downloads/`
-  and unpacked as `id_rsa.pem`). The laptop's default key and the older
-  `_miemieaowu-hk-key.pem` in OneDrive are **not** authorized. Password login is off.
+- SSH: root, public-key only, password login off. Authorized: the maintainer laptop's
+  default key (added 2026-10-24 from `github.com/chundongwang.keys`) and the pair DMIT
+  issued at provisioning (`dmit-hk-shadow-miemieaowu-id_rsa/id_rsa.pem`, kept in
+  `~/Downloads/` and backed up in OneDrive `backup/`). The older `_miemieaowu-hk-key.pem`
+  in OneDrive is a different key and is **not** authorized.
 - TLS: Let's Encrypt via certbot DNS-01 (`/etc/letsencrypt/cloudflare.ini`,
   DNS:Edit token for the zone), cert name `miemieaowu.ai`, SANs `miemieaowu.ai`,
   `www.miemieaowu.ai`, `hk-test.miemieaowu.ai`. Auto-renews via `certbot.timer`
