@@ -68,11 +68,14 @@ export default function SpeedTestPage() {
     const out: Record<string, string> = {};
     setRows((rs) => rs.map((r) => ({ ...r, status: "pending", value: undefined, detail: undefined })));
 
-    // 1. Did the stylesheet apply? Tailwind gives the marker a known color.
+    // 1. Did the stylesheet apply? The marker carries Tailwind's `hidden`
+    // (display:none); an unstyled page computes it as `inline`. Checking
+    // display rather than a color keeps this independent of color spaces
+    // (Tailwind v4 emits oklch, which Chrome reports verbatim).
     update("css-applied", { status: "running" });
-    const color = markerRef.current ? getComputedStyle(markerRef.current).color : "";
-    const applied = color === "rgb(22, 163, 74)"; // text-green-600
-    update("css-applied", { status: applied ? "done" : "fail", value: applied ? "是 / yes" : "否 / NO", detail: color || undefined });
+    const display = markerRef.current ? getComputedStyle(markerRef.current).display : "";
+    const applied = display === "none";
+    update("css-applied", { status: applied ? "done" : "fail", value: applied ? "是 / yes" : "否 / NO", detail: applied ? undefined : `display=${display || "?"}` });
     out.css = applied ? "ok" : "MISSING";
 
     // 2. HK edge RTT
@@ -175,7 +178,7 @@ export default function SpeedTestPage() {
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           无需登录，结果会自动上报。No login needed; results are sent automatically.
         </p>
-        <span ref={markerRef} className="text-green-600 sr-only">marker</span>
+        <span ref={markerRef} className="hidden" aria-hidden="true">marker</span>
 
         <ul className="mt-6 divide-y divide-gray-200 dark:divide-gray-700 rounded-xl bg-white dark:bg-gray-800 shadow-sm">
           {rows.map((r) => (
