@@ -10,6 +10,8 @@ nginx 1.24). See `docs/ios-capacitor-zero-update-routing.md` for the design.
 | `miemie-shadow-http.conf` | `/etc/nginx/conf.d/` — log format, proxy cache, `cf_edge` upstream |
 | `benchmark-logformat*.conf` | `/etc/nginx/conf.d/` |
 | `miemie-upstream.conf`, `miemie-proxy.conf` | `/etc/nginx/snippets/` |
+| `apply.sh` | pushes `miemie-shadow` + `miemie-proxy.conf` to the box, `nginx -t`, purges the cache, reloads |
+| `verify.sh` | checks the proxy returns a decodable encoding for every `Accept-Encoding` |
 
 - TLS: Let's Encrypt via certbot DNS-01 (`/etc/letsencrypt/cloudflare.ini`,
   DNS:Edit token for the zone), cert name `miemieaowu.ai`, SANs `miemieaowu.ai`,
@@ -29,3 +31,9 @@ nginx 1.24). See `docs/ios-capacitor-zero-update-routing.md` for the design.
   two routes in `wrangler.toml` so the next deploy doesn't remove them.
 - Rollback of nginx changes only: full pre-shadow backup at
   `/root/backup-20261010-203947-pre-shadow`.
+- **2026-10-24 incident (unstyled pages for iPhone/WeChat users):** the asset cache keyed
+  on `$uri` only, and Cloudflare sends no `Vary: Accept-Encoding`, so the first client's
+  negotiated encoding (zstd) was replayed to everyone. WebKit/WeChat can't decode zstd →
+  CSS and JS silently failed. Fix: fetch identity from Cloudflare for cached locations,
+  gzip per client in nginx, hide `Alt-Svc`/`NEL`/`Report-To`. Any config change to the
+  cached locations must be followed by a cache purge (`apply.sh` does this).

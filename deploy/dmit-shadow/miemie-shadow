@@ -30,23 +30,40 @@ server {
     }
 
     # Immutable build assets: cache on DMIT
+    #
+    # The cache key is $uri only and Cloudflare sends no `Vary: Accept-Encoding`,
+    # so whatever encoding the *first* client negotiated (zstd for Chrome/curl)
+    # was replayed to every later client. Safari/WKWebView, WeChat and older
+    # Android WebViews cannot decode zstd, so CSS/JS silently failed for them
+    # (2026-10-24 incident). Fetch identity bodies from Cloudflare, cache those,
+    # and let nginx gzip per client.
     location /_next/static/ {
         include snippets/miemie-proxy.conf;
+        proxy_set_header Accept-Encoding "";
         proxy_pass https://cf_edge;
         proxy_cache miemie;
         proxy_cache_valid 200 30d;
         proxy_cache_key $uri;
         proxy_ignore_headers Set-Cookie Cache-Control Expires;
         proxy_hide_header Set-Cookie;
-        # Hashed filenames: safe for clients to cache for a year
+        gzip on;
+        gzip_proxied any;
+        gzip_vary on;
+        gzip_comp_level 6;
+        gzip_min_length 256;
+        gzip_types text/css application/javascript text/javascript application/json
+                   image/svg+xml application/wasm text/plain;
+        # Hashed filenames: safe for clients to cache for a year (2xx/3xx only;
+        # never stamp an upstream error as immutable)
         proxy_hide_header Cache-Control;
-        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        add_header Cache-Control "public, max-age=31536000, immutable";
         add_header X-Shadow-Cache $upstream_cache_status always;
     }
 
     # Photos are immutable (public, max-age=1y from the Worker)
     location /api/photos/ {
         include snippets/miemie-proxy.conf;
+        proxy_set_header Accept-Encoding "";
         proxy_pass https://cf_edge;
         proxy_cache miemie;
         proxy_cache_valid 200 30d;
@@ -58,6 +75,7 @@ server {
     # Videos: Range-aware caching in 1 MiB slices
     location /api/media/ {
         include snippets/miemie-proxy.conf;
+        proxy_set_header Accept-Encoding "";
         slice 1m;
         proxy_set_header Range $slice_range;
         proxy_pass https://cf_edge;
