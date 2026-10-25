@@ -51,6 +51,8 @@ export default function SpeedTestPage() {
     { key: "worker", label: "到应用服务器 / To app server", status: "pending" },
     { key: "css", label: "样式文件下载 / Stylesheet download", status: "pending" },
     { key: "blob", label: "1 MB 下载速度 / 1 MB download", status: "pending" },
+    { key: "cookie", label: "Cookie 可用 / Cookies accepted", status: "pending" },
+    { key: "login", label: "登录接口 / Login API reachable", status: "pending" },
   ]);
   const [phase, setPhase] = useState<"idle" | "running" | "done">("idle");
   const [summary, setSummary] = useState("");
@@ -133,6 +135,39 @@ export default function SpeedTestPage() {
       out.blob = "fail";
     }
 
+    // 6. Cookie round trip: same attributes as the login cookie. If this fails,
+    //    login "does nothing": the POST succeeds but /lists bounces back to /login.
+    update("cookie", { status: "running" });
+    try {
+      await fetch(`/api/speedtest/cookie?_=${Date.now()}`, { cache: "no-store", credentials: "include" });
+      const r = await fetch(`/api/speedtest/cookie?check=1&_=${Date.now()}`, { cache: "no-store", credentials: "include" });
+      const { present } = (await r.json()) as { present: boolean };
+      update("cookie", { status: present ? "done" : "fail", value: present ? "是 / yes" : "否 / NO" });
+      out.cookie = present ? "ok" : "BLOCKED";
+    } catch (e) {
+      update("cookie", { status: "fail", value: String(e) });
+      out.cookie = "fail";
+    }
+
+    // 7. Login API path: an empty POST must come back as a fast 400.
+    update("login", { status: "running" });
+    try {
+      const t0 = performance.now();
+      const r = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: "", password: "" }),
+        cache: "no-store",
+      });
+      const ms = Math.round(performance.now() - t0);
+      const ok = r.status === 400;
+      update("login", { status: ok ? "done" : "fail", value: `${ms} ms`, detail: `HTTP ${r.status}` });
+      out.login = `${ms}ms HTTP${r.status}`;
+    } catch (e) {
+      update("login", { status: "fail", value: String(e) });
+      out.login = "fail";
+    }
+
     const conn = (navigator as Navigator & { connection?: { effectiveType?: string } }).connection?.effectiveType;
     const line = [
       `miemieaowu speedtest ${new Date().toISOString()}`,
@@ -141,6 +176,8 @@ export default function SpeedTestPage() {
       `worker=${out.worker}`,
       `cssdl=${out.cssdl}`,
       `1MB=${out.blob}`,
+      `cookie=${out.cookie}`,
+      `login=${out.login}`,
       conn ? `net=${conn}` : null,
       `ua=${navigator.userAgent}`,
     ]
