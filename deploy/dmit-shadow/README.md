@@ -42,3 +42,7 @@ nginx 1.24). See `docs/ios-capacitor-zero-update-routing.md` for the design.
   CSS and JS silently failed. Fix: fetch identity from Cloudflare for cached locations,
   gzip per client in nginx, hide `Alt-Svc`/`NEL`/`Report-To`. Any config change to the
   cached locations must be followed by a cache purge (`apply.sh` does this).
+  Follow-up 2026-10-25: clients (the iOS app's WKWebView above all) had cached the
+  poisoned vendor chunks under their stable content-hash names with a one-year
+  `immutable` header, so React still never ran for them after the proxy fix. Fixed by
+  setting `deploymentId` in `next.config.ts`, which appends `?dpl=` to every asset URL.
