@@ -24,7 +24,7 @@ const HOOK = `
   });
   d.send = function(status){
     if (d.sent) return; d.sent = true;
-    var res = performance.getEntriesByType('resource').filter(function(r){ return /_next\/static/.test(r.name); });
+    var res = performance.getEntriesByType('resource').filter(function(r){ return r.name.indexOf('/_next/static/') !== -1; });
     var line = ['login-diag ' + new Date().toISOString(), 'status=' + status,
       'ms=' + Math.round(performance.now() - d.t0), 'scripts=' + document.scripts.length,
       'static=' + res.length, 'errors=' + (d.errors.length ? d.errors.join(' ; ') : 'none'),
