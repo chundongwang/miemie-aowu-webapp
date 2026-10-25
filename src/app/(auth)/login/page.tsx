@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useT, useLocale } from "@/context/LocaleContext";
+import LoginDiagnostics from "./LoginDiagnostics";
 
 type ChallengeState = "idle" | "loading" | "answering" | "evaluating" | "result";
 
@@ -15,6 +16,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error,    setError]    = useState("");
   const [loading,  setLoading]  = useState(false);
+
+  // Native form fallback bounced us back with ?error=1 (see /api/auth/login)
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("error") === "1") {
+      setError(t("errorInvalidCredentials"));
+      window.history.replaceState(null, "", "/login");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function doLogin() {
     setError("");
@@ -121,11 +131,14 @@ export default function LoginPage() {
         <h1 className="text-2xl font-semibold text-center mb-8">{t("signIn")}</h1>
 
         {/* Login form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* method/action make the form work before (or without) hydration:
+            the browser posts urlencoded fields and the route answers with a
+            303 to /lists. Once hydrated, handleSubmit takes over via fetch. */}
+        <form method="post" action="/api/auth/login" onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("username")}</label>
             <input
-              type="text" required autoFocus value={username}
+              type="text" name="username" autoComplete="username" required autoFocus value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C] dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
             />
@@ -133,7 +146,7 @@ export default function LoginPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("password")}</label>
             <input
-              type="password" required value={password}
+              type="password" name="password" autoComplete="current-password" required value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2B4B8C] dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
             />
@@ -159,6 +172,8 @@ export default function LoginPage() {
             </button>
           </div>
         </form>
+
+        <LoginDiagnostics />
 
         <p className="text-sm text-center text-gray-500 dark:text-gray-400 mt-6">
           {t("noAccount")}{" "}
