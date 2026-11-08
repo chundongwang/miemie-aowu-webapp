@@ -10,11 +10,17 @@ import FireworkLetter from "@/components/FireworkLetter";
 import NoodleHeartFAB from "@/components/NoodleHeartFAB";
 import HoloClothFAB from "@/components/HoloClothFAB";
 import VideoFAB from "@/components/VideoFAB";
+import SongFAB from "@/components/SongFAB";
+import StoryFAB from "@/components/StoryFAB";
+import CourageFAB from "@/components/CourageFAB";
 
 const COPY = {
   en: {
     menu: "More",
     title: "More",
+    song: "Song",
+    story: "Story",
+    courage: "Courage",
     video: "Video",
     holo: "Holo cloth",
     noodle: "Noodle heart",
@@ -26,6 +32,9 @@ const COPY = {
   zh: {
     menu: "更多",
     title: "更多",
+    song: "情歌",
+    story: "故事",
+    courage: "勇气",
     video: "视频",
     holo: "全息布",
     noodle: "面条爱心",
@@ -75,6 +84,9 @@ export default function ArchiveMenu({ checkInTodayChecked, onCheckIn }: Props) {
           >
             <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 mb-3 px-1">{t.title}</p>
             <div className="grid grid-cols-3 gap-x-2 gap-y-4">
+              <Cell label={t.song}><SongFAB /></Cell>
+              <Cell label={t.story}><StoryFAB /></Cell>
+              <Cell label={t.courage}><CourageFAB /></Cell>
               <Cell label={t.video}><VideoFAB /></Cell>
               <Cell label={t.holo}><HoloClothFAB /></Cell>
               <Cell label={t.noodle}><NoodleHeartFAB /></Cell>

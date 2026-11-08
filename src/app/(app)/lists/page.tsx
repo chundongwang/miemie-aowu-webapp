@@ -8,9 +8,6 @@ import type { List } from "@/types";
 import NewListModal from "@/components/NewListModal";
 import PullIndicator from "@/components/PullIndicator";
 import CheckInModal from "@/components/CheckInModal";
-import StoryFAB from "@/components/StoryFAB";
-import SongFAB from "@/components/SongFAB";
-import CourageFAB from "@/components/CourageFAB";
 import CursorMinionsFAB from "@/components/CursorMinionsFAB";
 import ArchiveMenu from "@/components/ArchiveMenu";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
@@ -232,9 +229,6 @@ export default function ListsPage() {
 
       <div className="fixed bottom-6 right-6 sm:right-[calc(50%-208px)] z-20 flex flex-col items-center gap-3">
         <CursorMinionsFAB />
-        <CourageFAB />
-        <SongFAB />
-        <StoryFAB />
       </div>
 
       {showCheckIn && checkIn !== null && (
