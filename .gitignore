@@ -32,3 +32,6 @@ src/app/model-compare/
 
 # Local singing prep workspace (venv, song sources, private audio) — code lives on the singing branch
 tools/singing-offline/
+
+# Song recordings are never committed; see docs/features.md (singing section)
+public/singing/media/*.m4a

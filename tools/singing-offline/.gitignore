@@ -1,0 +1,8 @@
+.audio-venv/
+private-audio/
+apps/
+songs/*/
+songs/*.json
+__pycache__/
+*.pyc
+test-results/

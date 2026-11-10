@@ -1,0 +1,10 @@
+# Optional local SOFA experiment; compatible with the existing audio environment.
+-r requirements-audio.txt
+lightning==2.5.6
+pytorch-lightning==2.6.6
+torchmetrics==1.9.0
+matplotlib==3.10.7
+pandas==2.3.3
+h5py==3.14.0
+textgrid==1.6.1
+pypinyin==0.55.0

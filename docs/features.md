@@ -225,3 +225,15 @@ migrations/
 
 Apply to production: `npx wrangler d1 migrations apply miemie-aowu-db --remote`
 Apply locally: `npx wrangler d1 migrations apply miemie-aowu-db --local`
+
+## Singing practice panel / 练唱空间
+
+The lists page has a 🎤 FAB that opens a lazy-loaded, mobile-first singing panel (iPhone 15 layout). The panel defaults to 如詩一般的形容妳. This feature lives on the `singing` branch and is not deployed to production. Eight prepared songs (including 如詩一般的形容妳, 想到我们 and 银河) include original/instrumental playback, manual speed and pitch, character karaoke with dot rhythm hints, upcoming lyrics/countdowns, beat and pitch feedback, the input/reference graph, retained pause/resume history and a pause/end summary. Closing ends the current take and releases the microphone; switching songs or resetting clears it. Existing song/story FABs remain.
+
+The iOS shell includes a local `SingingAudio` AVAudioSession plugin to request built-in microphone + Bluetooth A2DP playback, report the actual route, and handle route changes/interruptions. Playback and analysis still use Web Audio. Browser/older-shell users fall back without the plugin; OS latency estimates are diagnostic, not a measured timing calibration. Native code requires an app rebuild and physical-device validation; it has not been compiled in the current CLI-only environment.
+
+Offline preparation scripts live in `tools/singing-offline`; `npm run singing:publish` validates and imports prepared songs into namespaced mobile assets, converting WAV accompaniment to AAC. The original Cadence prototype is retained separately. See [mobile architecture and verification](singing-mobile.md) and [inherited algorithm/research documentation](singing-architecture.md).
+
+For the 10–20-song prototype, lyrics and reference JSON ship as Workers Static Assets under `/singing/media/`, but the audio recordings (`*.m4a`) are gitignored and are not in the repo; hosting for them (R2 or otherwise) is still to be decided before this branch can deploy. Adding songs means importing and redeploying. The publisher rejects files above Cloudflare's 25 MiB per-asset limit.
+
+Mobile accompaniment settings use compact rows for playback version and listening mode, slim slider tracks with retained touch areas, and fixed 44×44 circular transpose buttons. This layout refinement is available locally and has not yet been redeployed.

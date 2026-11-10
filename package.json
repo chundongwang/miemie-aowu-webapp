@@ -15,7 +15,11 @@
     "ios:add": "npx cap add ios",
     "ios:sync": "npx cap sync ios",
     "ios:open": "npx cap open ios",
-    "ios:run": "npx cap run ios"
+    "ios:run": "npx cap run ios",
+    "predev": "node scripts/copy-singing-worklet.mjs",
+    "prebuild": "node scripts/copy-singing-worklet.mjs",
+    "test:singing": "vitest run --config vitest.singing.config.ts",
+    "singing:publish": "python3 scripts/publish-singing-library.py"
   },
   "dependencies": {
     "@capacitor/camera": "^8.1.0",
@@ -29,8 +33,11 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@soundtouchjs/audio-worklet": "^2.1.1",
+    "lucide-react": "^0.468.0",
     "lunar-javascript": "^1.7.7",
     "next": "16.2.3",
+    "pitchy": "^4.1.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "three": "^0.180.0"
@@ -47,6 +54,7 @@
     "eslint-config-next": "16.2.3",
     "tailwindcss": "^4",
     "typescript": "^5",
+    "vitest": "^4.0.18",
     "wrangler": "^4.82.2"
   }
 }

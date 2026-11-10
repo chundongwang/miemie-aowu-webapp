@@ -26,6 +26,8 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>练唱时分析你的音高和节奏，声音仅在本机处理。</string>
 	<key>NSCameraUsageDescription</key>
 	<string>We use your camera to add photos to your recommendation lists.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

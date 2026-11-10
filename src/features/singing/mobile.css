@@ -1,0 +1,175 @@
+/* Scoped modal styles: never alter the host app's typography or controls. */
+dialog.singing-panel {position:fixed;inset:0;margin:auto;width:min(100%,1100px);height:min(96dvh,1100px);max-width:100%;max-height:100dvh;padding:0;border:0;border-radius:24px;background:#f6f6ef;color:#323b35;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;box-shadow:0 20px 90px #17251c55}
+dialog.singing-panel::backdrop {background:#16231dcc;backdrop-filter:blur(8px)}
+.singing-panel .singing-panel-header {display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;border-bottom:1px solid #e1e6d9;background:#fffefa}
+.singing-panel .singing-panel-header>div {display:flex;align-items:center;gap:10px}
+.singing-panel .singing-panel-header h2 {font-size:17px;font-weight:650;margin:0}
+.singing-panel .singing-panel-header small {font-size:11px;color:#7a8976}
+.singing-panel .singing-panel-header button {min-width:52px;min-height:44px;border-radius:24px;border:1px solid #dce4d5;background:#f3f5ed;font-size:13px}
+.singing-panel .singing-panel-content {height:calc(100% - 75px);overflow:auto;overscroll-behavior:contain;padding:12px 12px 0;scrollbar-gutter:stable}
+.singing-panel .app-shell {display:block;min-height:0}
+.singing-panel .sidebar,.singing-panel .topbar,.singing-panel footer {display:none}
+.singing-panel .workspace {width:100%;margin:0}
+.singing-panel .compact-studio main {padding:0;max-width:none}
+.singing-panel .compact-studio .main-column {gap:10px}
+.singing-panel .studio-song-heading>div>span {display:none}
+.singing-panel .studio-song-heading h1 {font-family:inherit;font-size:20px;font-weight:650;letter-spacing:0}
+.singing-panel .singing-close-note {padding:16px;text-align:center;font-size:11px;color:#73846b}
+.singing-panel .singing-route-help {padding:10px 0;border-top:1px solid #e2e6d9;font-size:12px;color:#5e735b}
+.singing-panel .singing-route-help summary {cursor:pointer;min-height:30px;line-height:1.6}
+.singing-panel .singing-route-help summary span {font-size:11px;color:#819074;margin-left:8px}
+.singing-panel .singing-route-help p {margin:8px 0;line-height:1.7}
+.singing-panel input[type=range] {min-height:28px;touch-action:pan-y;background:transparent}
+.singing-panel input[type=range]::-webkit-slider-runnable-track {height:4px;border-radius:4px;background:#dfe6d5}
+.singing-panel input[type=range]::-webkit-slider-thumb {margin-top:-3px}
+.singing-panel input[type=range]::-moz-range-track {height:4px;border-radius:4px;background:#dfe6d5}
+.singing-panel button,.singing-panel select,.singing-panel summary {touch-action:manipulation}
+.singing-panel .recorded-transport-controls {position:sticky;bottom:0;z-index:5;background:#fffefaed;backdrop-filter:blur(12px);padding:10px 0;box-shadow:0 -6px 14px #fffefa;margin:0;gap:10px}
+.singing-panel .recorded-transport-controls .recorded-play {min-height:46px;flex:1;max-width:240px;border-radius:14px;font-size:15px}
+.singing-panel .recorded-transport-controls .icon-button {min-width:44px;min-height:44px}
+.singing-panel .recorded-transport-controls .skip-intro {min-height:44px;font-size:12px}
+@media(max-width:600px) {
+ dialog.singing-panel {width:100%;height:100dvh;border-radius:0}
+ .singing-panel .singing-panel-header {padding:calc(8px + env(safe-area-inset-top)) 16px 8px}
+ .singing-panel .singing-panel-content {height:calc(100% - 65px - env(safe-area-inset-top));padding:8px 8px calc(8px + env(safe-area-inset-bottom));scrollbar-gutter:auto}
+ .singing-panel .compact-studio .song-panel {padding:10px 12px}
+ .singing-panel .studio-song-heading {gap:8px;padding-bottom:5px}
+ .singing-panel .studio-song-heading>div>svg {display:none}
+ .singing-panel .studio-song-heading h1 {font-size:18px}
+ .singing-panel .song-library-select {font-size:0}
+ .singing-panel .song-library-select select {font-size:14px;max-width:150px;min-height:40px}
+ .singing-panel .practice-settings summary {min-height:40px;font-size:12px;gap:6px}
+ .singing-panel .practice-settings summary small {display:none}
+ .singing-panel .studio-controls {grid-template-columns:1fr;gap:8px;padding-top:4px}
+ .singing-panel .studio-controls>div {border:0;padding:0 0 8px;border-bottom:1px solid #e3e7da}
+ .singing-panel .studio-controls button {min-height:40px}
+ .singing-panel .playback-speed-heading {margin:0;gap:8px;min-height:28px}
+ .singing-panel .playback-speed-heading .text-button {min-height:28px;padding:0}
+ .singing-panel .studio-controls input[type=range] {display:block;height:28px;min-height:28px;margin:0}
+ .singing-panel .speed-presets {margin:0;gap:4px}
+ .singing-panel .speed-presets button {flex:1;min-height:32px;padding:3px 0}
+ .singing-panel .compact-pitch {display:grid;grid-template-columns:1fr auto;align-items:center;column-gap:8px}
+ .singing-panel .key-stepper {margin:0;gap:8px}
+ .singing-panel .key-stepper>button {width:44px;height:44px;min-width:44px;min-height:44px;flex:0 0 44px;padding:0;aspect-ratio:1;border-radius:50%;display:grid;place-items:center}
+ .singing-panel .key-stepper>div {min-width:66px;text-align:center}
+ .singing-panel .key-stepper>button svg {width:18px;height:18px}
+ .singing-panel .compact-pitch>input,.singing-panel .compact-pitch>.range-labels {grid-column:1 / -1}
+ .singing-panel .compact-pitch>.range-labels {margin:0;min-height:24px}
+ .singing-panel .range-labels .text-button {min-height:24px;padding:0}
+ .singing-panel .compact-mix,.singing-panel .compact-capture {display:grid;grid-template-columns:64px minmax(0,1fr);align-items:center;column-gap:8px;row-gap:4px}
+ .singing-panel .recorded-mix-toggle {margin:0;padding:2px}
+ .singing-panel .recorded-mix-toggle button {min-height:36px;padding:4px 2px}
+ .singing-panel .recorded-volume {grid-column:1 / -1;margin:0;gap:6px}
+ .singing-panel .capture-mode-status {grid-column:1 / -1;margin:0;font-size:11px;line-height:1.5}
+ .singing-panel .practice-settings .singing-route-help>summary,.singing-panel .practice-settings .latency-calibration>summary {min-height:34px;display:list-item;list-style-position:inside;padding:7px 0;line-height:20px}
+ .singing-panel .latency-calibration {margin:0;padding-top:6px}
+ .singing-panel .latency-calibration summary {font-size:11px;min-height:30px}
+ .singing-panel .latency-calibration p {font-size:12px}
+ .singing-panel .singing-route-help {padding:4px 0}
+ .singing-panel .recorded-performance {padding:10px;border-radius:16px}
+ .singing-panel .performance-top {font-size:10px;gap:4px}
+ .singing-panel .performance-top .timecode {font-size:11px}
+ .singing-panel .singing-mode-bar {padding:7px 0;font-size:11px}
+ .singing-panel .singing-mode-bar>span {display:none}
+ .singing-panel .singing-mode-bar label {margin-left:auto;min-height:26px}
+ .singing-panel .practice-feedback-strip {margin:0;grid-template-columns:1fr 1fr 1fr}
+ .singing-panel .practice-feedback-strip>div {padding:7px 6px;min-height:0}
+ .singing-panel .practice-feedback-strip strong {font-size:18px}
+ .singing-panel .practice-feedback-strip small {font-size:9px}
+ .singing-panel .practice-focus {display:flex;flex-direction:column;gap:8px}
+ .singing-panel .lyric-stage {width:100%;padding:8px 0 0}
+ .singing-panel .lyric-rhythm-control {font-size:10px;flex-wrap:wrap;gap:5px;margin-bottom:4px}
+ .singing-panel .lyric-rhythm-control small {font-size:9px}
+ .singing-panel .lyric-stage-caption {height:22px;font-size:10px}
+ .singing-panel .lyric-card-window {height:320px}
+ .singing-panel .lyric-card.entry-cue {height:115px;padding:8px 10px;transform:translateY(340px);border-radius:12px}
+ .singing-panel .lyric-card[data-slot='-1'] {transform:translateY(-125px)}
+ .singing-panel .lyric-card[data-slot='0'] {transform:translateY(0)}
+ .singing-panel .lyric-card[data-slot='1'] {transform:translateY(125px)}
+ .singing-panel .lyric-card[data-slot='2'] {transform:translateY(250px);height:32px;padding:2px 8px;opacity:.85;display:flex;align-items:center;gap:6px}
+ .singing-panel .lyric-card[data-slot='3'] {transform:translateY(286px);height:32px;padding:2px 8px;opacity:.65;display:flex;align-items:center;gap:6px}
+ .singing-panel .lyric-card[data-slot='2'] .lyric-card-chrome,.singing-panel .lyric-card[data-slot='3'] .lyric-card-chrome {display:none}
+ .singing-panel .lyric-card[data-slot='2'] .lyric-card-text,.singing-panel .lyric-card[data-slot='3'] .lyric-card-text {font-size:13px;margin:0;min-height:0;line-height:1.6;font-weight:400}
+ .singing-panel .lyric-card-text {font-family:inherit;font-size:23px;font-weight:600;line-height:1.4;min-height:38px;margin:7px 0 0}
+ .singing-panel .karaoke-character.with-rhythm {min-width:0;margin:0 1px}
+ .singing-panel .lyric-card .entry-cue-heading>strong {font-size:20px}
+ .singing-panel .lyric-card .entry-cue-heading time {font-size:9px}
+ .singing-panel .entry-ticks {display:none}
+ .singing-panel .entry-runway {margin-top:8px}
+ .singing-panel .voice-input-feedback {padding:10px;margin:0}
+ .singing-panel .voice-input-chart {height:145px;min-height:0}
+ .singing-panel .voice-input-heading {font-size:12px}
+ .singing-panel .voice-input-heading>span {gap:4px}
+ .singing-panel .voice-input-live {margin-top:8px}
+ .singing-panel .voice-input-note strong {font-size:22px}
+ .singing-panel .pitch-scale-controls {gap:5px;flex-wrap:wrap;margin-top:8px}
+ .singing-panel .pitch-scale-controls select {max-width:145px;font-size:12px}
+ .singing-panel .pitch-scale-controls button {min-height:32px}
+ .singing-panel .practice-summary {padding:16px}
+ .singing-panel .practice-summary h2 {font-size:22px}
+ .singing-panel .summary-metrics {grid-template-columns:1fr 1fr;gap:16px}
+ .singing-panel .recorded-side {display:block;margin-top:10px}
+ .singing-panel .recorded-transport-controls {bottom:calc(-8px - env(safe-area-inset-bottom));padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+ .singing-panel .track-progress {margin:8px 0 0}
+ .singing-panel .take-playback-row {flex-wrap:wrap}
+ .singing-panel audio {max-width:100%}
+ .singing-panel .calibration-actions {flex-wrap:wrap}
+ .singing-panel .calibration-actions button {min-height:42px}
+}
+
+@media(max-width:600px) {
+ .singing-panel .practice-timing-observation {padding:5px 8px;margin:6px 0;font-size:10px;gap:5px}
+ .singing-panel .practice-timing-observation small {display:none}
+ .singing-panel .practice-feedback-strip {margin:0;display:grid;grid-template-columns:1fr 1fr 1fr}
+ .singing-panel .practice-feedback-strip>div {display:flex;flex-wrap:wrap;gap:3px;align-content:start;padding:8px 6px}
+ .singing-panel .practice-feedback-strip span {font-size:10px}
+ .singing-panel .practice-feedback-strip small {font-size:8px;line-height:1.5}
+ .singing-panel .beat-phase-reference {min-width:0}
+ .singing-panel .practice-feedback-strip .beat-phase-labels span {font-size:7px}
+ .singing-panel .lyric-card-window {height:260px}
+ .singing-panel .lyric-card.entry-cue {height:94px}
+ .singing-panel .lyric-card[data-slot='1'] {transform:translateY(102px)}
+ .singing-panel .lyric-card[data-slot='2'] {transform:translateY(204px);height:25px}
+ .singing-panel .lyric-card[data-slot='3'] {transform:translateY(233px);height:25px}
+ .singing-panel .lyric-card[data-slot='0'] .lyric-card-text {font-size:23px;margin-top:8px}
+ .singing-panel .lyric-card[data-slot='1'] .lyric-card-text {font-size:19px;margin-top:4px}
+ .singing-panel .voice-input-chart {height:135px;min-height:0}
+ .singing-panel .summary-heading {align-items:start;gap:12px;flex-direction:column}
+ .singing-panel .summary-metrics {grid-template-columns:1fr 1fr}
+ .singing-panel .summary-metrics strong {font-size:25px;overflow-wrap:anywhere}
+}
+.singing-panel .singing-transport-dock {position:fixed;bottom:max(2dvh,calc((100dvh - 1100px)/2));left:0;right:0;width:min(100%,1100px);margin:auto;z-index:10;background:#fffefa;border-top:1px solid #e0e5d9;padding:0 20px 8px;border-radius:0 0 24px 24px}
+.singing-panel .singing-transport-dock .recorded-transport-controls {position:static;padding:0;box-shadow:none}
+.singing-panel .singing-panel-content {padding-bottom:110px}
+.singing-panel .singing-transport-dock .track-progress {margin:0}
+@media(max-width:600px) {
+ .singing-panel .singing-transport-dock {bottom:0;width:100%;padding:0 14px calc(8px + env(safe-area-inset-bottom));border-radius:0}
+ .singing-panel .singing-panel-content {padding-bottom:calc(110px + env(safe-area-inset-bottom))}
+ .singing-panel .studio-song-heading {border-bottom:0}
+ .singing-panel .practice-settings {margin:0;border-top:1px solid #e3e7da}
+ .singing-panel .singing-mode-bar {margin:0;padding:0}
+ .singing-panel .performance-top {margin-bottom:3px}
+ .singing-panel .practice-feedback-strip {margin-top:5px}
+ .singing-panel .practice-feedback-strip span {font-size:11px}
+ .singing-panel .practice-feedback-strip small {font-size:9px}
+ .singing-panel .lyric-stage {padding-top:5px}
+ .singing-panel .voice-input-live {gap:8px}
+}
+.singing-panel .singing-chart-settings summary {font-size:11px;color:#718164;min-height:30px;padding:6px 0;cursor:pointer}
+@media(max-width:600px) {
+ .singing-panel .recorded-performance {scroll-margin-top:0}
+ .singing-panel .singing-transport-dock input[type=range] {min-height:16px;height:16px;background:transparent;margin:0}
+ .singing-panel .lyric-card[data-slot='0'] .lyric-card-chrome {height:14px}
+ .singing-panel .voice-input-note {min-width:85px}
+ .singing-panel .voice-input-chart {margin-top:4px}
+ .singing-panel .lyric-card-window[data-long-lines='true'] {height:324px}
+ .singing-panel .lyric-card-window[data-long-lines='true'] .lyric-card[data-slot='0'],
+ .singing-panel .lyric-card-window[data-long-lines='true'] .lyric-card[data-slot='1'] {height:124px}
+ .singing-panel .lyric-card-window[data-long-lines='true'] .lyric-card[data-slot='1'] {transform:translateY(134px)}
+ .singing-panel .lyric-card-window[data-long-lines='true'] .lyric-card[data-slot='2'] {transform:translateY(268px)}
+ .singing-panel .lyric-card-window[data-long-lines='true'] .lyric-card[data-slot='3'] {transform:translateY(297px)}
+ .singing-panel .lyric-card-window[data-long-lines='true'] .lyric-card[data-slot='0'] .lyric-card-text,
+ .singing-panel .lyric-card-window[data-long-lines='true'] .lyric-card[data-slot='1'] .lyric-card-text {font-size:20px;line-height:1.25;margin-top:4px}
+ .singing-panel .lyric-card-window[data-long-lines='true'] .character-rhythm,
+ .singing-panel .lyric-card-window[data-long-lines='true'] .character-rhythm .rhythm-dots {width:16px;height:16px}
+}

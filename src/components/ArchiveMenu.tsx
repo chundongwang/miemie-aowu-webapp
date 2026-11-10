@@ -13,6 +13,7 @@ import VideoFAB from "@/components/VideoFAB";
 import SongFAB from "@/components/SongFAB";
 import StoryFAB from "@/components/StoryFAB";
 import CourageFAB from "@/components/CourageFAB";
+import SingingFAB from "@/components/SingingFAB";
 
 const COPY = {
   en: {
@@ -21,6 +22,7 @@ const COPY = {
     song: "Song",
     story: "Story",
     courage: "Courage",
+    singing: "Singing",
     video: "Video",
     holo: "Holo cloth",
     noodle: "Noodle heart",
@@ -35,6 +37,7 @@ const COPY = {
     song: "情歌",
     story: "故事",
     courage: "勇气",
+    singing: "练唱",
     video: "视频",
     holo: "全息布",
     noodle: "面条爱心",
@@ -87,6 +90,7 @@ export default function ArchiveMenu({ checkInTodayChecked, onCheckIn }: Props) {
               <Cell label={t.song}><SongFAB /></Cell>
               <Cell label={t.story}><StoryFAB /></Cell>
               <Cell label={t.courage}><CourageFAB /></Cell>
+              <Cell label={t.singing}><SingingFAB /></Cell>
               <Cell label={t.video}><VideoFAB /></Cell>
               <Cell label={t.holo}><HoloClothFAB /></Cell>
               <Cell label={t.noodle}><NoodleHeartFAB /></Cell>
