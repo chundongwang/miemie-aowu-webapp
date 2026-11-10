@@ -29,3 +29,6 @@ npm-debug.log*
 # Local-only model comparison scratch (do not commit large binaries)
 public/_modelcompare/
 src/app/model-compare/
+
+# Local singing prep workspace (venv, song sources, private audio) — code lives on the singing branch
+tools/singing-offline/
