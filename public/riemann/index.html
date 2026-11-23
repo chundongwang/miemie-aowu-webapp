@@ -1,0 +1,261 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Alpöge–Claude 黎曼猜想证明的中文数学导读，重点解释中间定理、主不等式M与尚未展开的部分"><title>Alpöge–Claude 黎曼猜想证明｜中文导读 · 中间定理详解</title><style>
+:root{--bg:#f7f8fb;--ink:#14243b;--muted:#607087;--line:#dfe5ed;--navy:#142d4f;--blue:#1d6fb5;--white:#fff;--soft:#edf3fa;--teal:#108080;--orange:#af652f;--red:#b44651;--purple:#6555ac}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC","Helvetica Neue",Arial,sans-serif;font-size:16px;line-height:1.85}a{color:#1668a9;text-decoration:none}a:hover{text-decoration:underline}button,input{font:inherit}.layout{display:flex;min-height:100vh}.sidebar{width:253px;position:sticky;top:0;height:100vh;overflow-y:auto;background:#122a48;color:#dbe9fa;flex:none;padding:27px 16px}.sidetitle{font-size:15px;letter-spacing:.06em;font-weight:800;margin:0 10px 17px;color:white}.sidebar a{color:#c6dcf3;display:block;font-size:13px;line-height:1.4;padding:9px 12px;border-radius:7px;margin:2px 0}.sidebar a:hover{background:#1e4167;color:white;text-decoration:none}.sidebar .sub{font-size:12px;color:#98b4d0;padding:18px 10px 6px;text-transform:uppercase;letter-spacing:.09em}.main{max-width:1230px;min-width:0;width:calc(100% - 253px);margin:0 auto;padding:0 54px 50px}.hero{padding:70px 0 39px;border-bottom:1px solid var(--line)}.eyebrow,.kicker{font-size:11px;font-weight:800;letter-spacing:.13em;color:#437cb3;text-transform:uppercase}.hero h1{font-size:clamp(35px,4.1vw,55px);letter-spacing:-.045em;line-height:1.23;margin:16px 0 22px;color:#142742}.hero em{font-style:normal;color:#276da8}.subtitle{max-width:830px;font-size:19px;line-height:1.65;color:#44556b}.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin:27px 0}.hero-actions a{border:1px solid #cbd6e2;background:white;border-radius:8px;padding:9px 15px;font-weight:650;font-size:14px}.hero-actions a.primary{background:#193b60;color:white;border-color:#193b60}.meta{font-size:12px;color:#6f7d90;max-width:800px}.notice{border-left:4px solid #c28a42;background:#fffaf0;padding:17px 20px;margin:27px 0 24px;font-size:14px;color:#67491f}.chapter{padding:37px 0 26px;border-bottom:1px solid var(--line);scroll-margin-top:18px}.chapter h2{font-size:clamp(25px,2.6vw,34px);line-height:1.35;letter-spacing:-.03em;margin:9px 0 18px}.chapter h3{font-size:19px;margin:29px 0 10px;line-height:1.4;color:#1f3a5c}.chapter p{margin:10px 0 16px}.chapter strong,.chapter b{font-weight:720}.eq{overflow-x:auto;overflow-y:hidden;padding:15px 8px;background:#f0f4f9;border:1px solid #e3e9f0;border-radius:9px;text-align:center;margin:18px 0;font-family:Georgia,"Times New Roman",serif;font-size:16px}.eq mjx-container{margin:8px 0!important}.eq.dark{background:#183657;color:white;border-color:#183657}.where,.fine{font-size:12px;color:var(--muted)}.twocol{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0}.panel{border:1px solid #dae3ef;border-radius:12px;padding:19px;background:white;min-width:0}.panel h3{font-size:17px;margin:0 0 9px}.panel p{margin-bottom:7px}.panel .eq{font-size:14px}.map-wrap{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;overflow-x:auto}.map-wrap svg{display:block;width:100%;min-width:710px;max-width:1000px;margin:auto}.map-wrap a{cursor:pointer}.map-wrap a:hover rect{filter:brightness(.98);stroke-width:2.4}.map-wrap .edge path{stroke:#859ab2;stroke-width:2;fill:none;marker-end:url(#arr)}.nodehead{font-size:17px;font-weight:700;fill:#1a334e}.nodesmall{font-size:12px;fill:#47617b}.grid4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.mini{background:white;border:1px solid var(--line);padding:17px;border-radius:11px}.mini h3{font-size:16px;margin:0}.mini .eq{font-size:13px;padding:4px 3px}.idea{margin:22px 0;background:#eaf6f5;border-left:3px solid #20918b;padding:15px 18px;border-radius:0 8px 8px 0}.defects{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:21px 0}.defects>div{background:#fff;border:1px solid #e3e4e7;border-radius:10px;padding:14px}.defects span{font-weight:800;color:#9e5641;margin-right:7px}.defects p{font-size:13px;color:#637083;line-height:1.6;margin-bottom:0}.filters{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}.filter{cursor:pointer;border:1px solid #ccd8e5;background:white;border-radius:30px;padding:7px 15px;font-size:13px;font-weight:650;color:#42617f}.filter.is-active{background:#183657;color:white;border-color:#183657}.theorem{background:white;border:1px solid #dbe3ed;border-radius:12px;padding:18px 20px;margin:14px 0;scroll-margin-top:20px;box-shadow:0 1px 3px #14274408}.theorem.is-hidden{display:none}.theorem h3{font-size:18px;margin:0 0 4px}.theorem .eq{font-size:14px;margin:14px 0;}.theorem-head{display:flex;gap:12px;align-items:flex-start}.thno{flex:none;display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#ddeaf8;color:#225d97;font-size:12px;font-weight:800}.theorem-head>div{flex:1;min-width:0}.thsource{font-size:12px;color:#708095;display:block;line-height:1.6}.status{flex:none;padding:3px 7px;border-radius:5px;font-size:10px;font-weight:730;line-height:1.5}.status.proved{color:#216c4d;background:#e7f6ed}.status.conditional{color:#80551c;background:#fff0d9}.status.quoted{color:#953f43;background:#ffeaec}.theorem>p{font-size:15px}.theorem details{background:#f6f8fc;border:1px solid #e6ecf3;padding:11px 14px;border-radius:9px;font-size:14px;margin:15px 0 0}.theorem summary,.qa summary{cursor:pointer;color:#265f91;font-weight:700}.alert{border-left:3px solid #bd555b;padding:12px 16px;background:#fff1f2;font-size:14px;color:#743b41}.matrix-figure{border:1px solid var(--line);background:white;border-radius:12px;padding:20px 18px;margin:19px 0}.figure-title{font-size:14px;font-weight:700;margin-bottom:14px}.cells{display:grid;grid-template-columns:120px repeat(4,minmax(90px,1fr));gap:4px;min-width:510px}.cells>div{padding:10px 5px;background:#e9f0f8;text-align:center;border-radius:5px;font-size:13px}.cells>div:nth-child(-n+5){background:#223e60;color:white}.cells .hot{background:#fde6ca!important;color:#7f470a;font-weight:800}.slider-box{background:white;border:1px solid var(--line);border-radius:12px;padding:20px 22px}.slider-box label{display:block;font-weight:750;margin-bottom:8px}.slider-box input{width:100%;accent-color:#2a77b8}.slider-line{display:flex;justify-content:space-between;gap:12px}.bars{margin:13px 0}.bar-label{display:flex;justify-content:space-between;font-size:12px;color:#586980;margin-top:10px}.track{height:12px;background:#edf1f6;overflow:hidden;border-radius:9px}.fill{height:100%;border-radius:9px;transition:width .13s}.b1{background:#518bd1}.b2{background:#ba8fd8}.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin:18px 0;background:white}table{border-collapse:collapse;width:100%;font-size:13px;line-height:1.65;min-width:720px}th,td{padding:12px 13px;text-align:left;vertical-align:top;border-bottom:1px solid #e5ebf2}th{background:#eff4fa;color:#2b4866;font-size:12px}tr:last-child td{border-bottom:0}tbody tr:nth-child(2n){background:#fafbfd}.tdyes{color:#27674b;font-weight:750}.tdmaybe{color:#9b6c23;font-weight:750}.tdno{color:#ae434c;font-weight:750}.bridge{border:1px solid var(--line);border-radius:10px;padding:15px 20px;background:white;margin:14px 0}.bridge h3{margin:3px 0 12px}.bridge-ref{font-size:12px;color:#657a91;border-top:1px solid #e4eaf1;padding-top:7px;margin-top:10px}.reading{display:grid;grid-template-columns:1fr 1fr;gap:14px}.reading>div{background:white;border-left:4px solid #5b91bb;border-radius:9px;padding:17px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);border-right:1px solid var(--line)}.reading p{font-size:14px}.reading span{display:block;font-size:12px;color:#748398}.qa details{margin:10px 0;background:white;border:1px solid var(--line);padding:12px 16px;border-radius:8px}.qa p{font-size:14px}code{background:#e9edf3;padding:1px 4px;border-radius:4px}footer{display:flex;justify-content:space-between;gap:10px;color:#78869a;font-size:12px;padding:22px 0}.sources p{font-size:14px}.topmobile{display:none}@media(max-width:1100px){.sidebar{width:210px}.main{width:calc(100% - 210px);padding:0 30px 40px}}@media(max-width:780px){.sidebar{display:none}.main{width:100%;padding:0 19px 35px}.hero{padding-top:39px}.grid4,.twocol,.reading{grid-template-columns:1fr}.defects{grid-template-columns:1fr}.hero h1{font-size:33px}.hero .subtitle{font-size:16px}.map-wrap{padding:4px}.theorem{padding:15px 13px}.theorem-head{gap:7px}.theorem h3{font-size:16px}.status{font-size:9px}.topmobile{display:block;position:sticky;top:0;z-index:10;background:#142d4f;color:#fff;padding:8px 19px;font-size:12px}.topmobile a{color:white;margin-right:10px}}@media print{body{background:#fff;font-size:12px}.sidebar,.topmobile,.hero-actions,.filters,.slider-box{display:none!important}.layout{display:block}.main{width:100%;max-width:none;padding:0 11mm}.hero{padding:22px 0}.hero h1{font-size:30px}.chapter{page-break-before:auto;break-inside:auto;padding:23px 0}.chapter h2{font-size:23px}.theorem,.panel,.map-wrap,.idea{box-shadow:none;break-inside:avoid}.theorem details{display:block}.theorem details>summary{display:none}.theorem details:not([open])>*{display:block}.theorem.is-hidden{display:block}.eq{background:#f8f9fb}.map-wrap svg{min-width:0}.page-break{page-break-before:always}}
+
+/* mobile overflow guards (added for the in-app iframe) */
+.matrix-figure{overflow-x:auto}
+html,body{max-width:100%;overflow-x:hidden}
+</style><script>window.MathJax={tex:{inlineMath:[["\\(","\\)"],["$","$"]],displayMath:[["\\[","\\]"]]},svg:{fontCache:"global"},options:{enableMenu:false}};</script><script defer src="mathjax/tex-svg.js"></script></head><body><div class="topmobile"><a href="#kids">小学生版</a><a href="#map">路线图</a><a href="#theorems">中间定理</a><a href="#audit">证据表</a></div><div class="layout"><aside class="sidebar"><div class="sidetitle">RH / PROOF ATLAS</div><div class="sub">目录</div><a href="#kids">小学生版：猜想在说什么</a><a href="#start">问题与目标</a><a href="#map">完整证明路线图</a><a href="#notation">四个基本概念</a><a href="#analytic">零点 → 素数求和</a><a href="#cheb">Chebyshev → theta lifts</a><a href="#theorems">12 个中间定理</a><a href="#bridges">5 个桥接定理</a><a href="#prime-table">角色表格和平均</a><a href="#balance">为什么是平方根</a><a href="#audit">Part III 状态表</a><a href="#deep">本科生阅读路线</a><a href="#questions">学习检查</a><a href="#appendix">术语与参考资料</a><div class="sub">资料</div><a href="zeta-paper.pdf" target="_blank">附带原始 PDF（下载包）</a><a href="https://nasqret.github.io/riemann-rev/guide/proof-guide.pdf" target="_blank">11 页证明指南</a></aside><main class="main">
+<header class="hero" id="top">
+  <div class="eyebrow">中文研读版 · 根据 2026-11-21 working draft 与证明架构指南整理</div>
+  <h1>Alpöge–Claude 黎曼猜想证明<br><em>从问题到中间定理</em></h1>
+    <div class="hero-actions"><a class="primary" href="#kids">先看小学生版</a><a href="#map">证明路线图</a><a href="#theorems">查看中间定理</a><a href="#audit">查看尚未展开证明的部分</a></div>
+  <div class="meta">原讲义：Michael O. Rubinstein 发起的 164 页工作稿《The Alpöge–Claude proof of the Riemann hypothesis explained for the Riemann zeta function》 · 2026-11-21。原稿署名模型：Claude Fable 5.2、Codex Astra 6.2 与 Gemini Carbon。</div>
+</header>
+<section class="notice"><strong>阅读范围与学术边界。</strong>这是一份<strong>按原文 Part I 翻译、重组并加入解释的中文学习版</strong>，并根据原文 Part II–III 抽取、翻译主要的引理、定理及证明依赖；<strong>不是 164 页逐句逐式的完整翻译</strong>。不改变原稿关于证明完整性的声明：原稿虽称有形式化证明，但这篇人类可读讲义尚<strong>没有完整证明主不等式 (M)</strong>，许多算术几何输入仍从 Lean 代码引用。文中“已证明”专指该工作稿在所列前提与引文之下给出的推导；不能将之读成一次新的独立数学认证。</section>
+
+<section id="kids" class="chapter"><div class="kicker">00 · 小学生版</div><h2>黎曼猜想到底在说什么？</h2>
+<h3>先认识素数</h3>
+<p>素数就是只能被 1 和它自己整除的数：2、3、5、7、11、13、17、19……它们是数字世界的积木，别的数都是用素数乘出来的，比如 12 = 2 × 2 × 3。</p>
+<p>数学家从两千多年前就知道素数有无穷多个，但它们出现得<strong>越来越稀</strong>：100 以内有 25 个素数，1000 以内只有 168 个，一百万以内只有 78498 个。</p>
+<h3>一个“大约”里藏着的问题</h3>
+<p>数一数 1 到 x 之间有多少个素数，高斯发现有一个很准的估计：大约是 x ÷ ln x 个。（ln x 可以先理解成“x 大概有多少位数”再乘一个常数。）</p>
+<p>可是“大约”到底差多少？真实的素数个数，和这个估计之间的误差，是会一直很小，还是偶尔会突然变得很大？<strong>黎曼猜想回答的就是这个问题。</strong></p>
+<div class="twocol"><div class="panel"><h3>抛硬币的比方</h3><p>抛 x 次硬币，正面和反面的次数不会刚好一样多，但两者的差通常只有 √x 那么大。抛一万次，差大约一百次，而不是几千次。</p></div><div class="panel"><h3>黎曼猜想 · 小学生版</h3><p><strong>素数就像抛硬币一样随机：数到 x 的时候，素数个数和估计值的误差，顶多也就 √x 那么大（再多一点点）。</strong>它不会突然大段大段地扎堆，也不会突然大段大段地消失。</p></div></div>
+<h3>黎曼的那台“机器”</h3>
+<p>1859 年黎曼发现了一个函数，后来叫 zeta 函数。它像一台机器：把所有素数的信息压缩进去，而它的“零点”（让机器输出 0 的那些点）决定了素数误差有多大。每个零点都有一个横坐标 β（在 0 和 1 之间），它贡献的误差大约是 x 的 β 次方：</p>
+<div class="eq">零点横坐标 β 越大 → 误差 x<sup>β</sup> 越大。β = 1/2 时，x<sup>1/2</sup> 就是 √x。</div>
+<p>黎曼猜测：<strong>所有零点的横坐标都恰好是 1/2</strong>。这句话和上面的“误差顶多 √x”其实是同一句话的两种说法，一种讲零点，一种讲素数。</p>
+<div class="idea"><b>为什么证明可以反过来做：</b>既然“零点都在 1/2”等价于“素数误差不超过 √x”，那就不必直接去找零点。只要能证明一个关于<strong>素数求和的上界</strong>（误差不超过 x<sup>1/2+ε</sup>），黎曼猜想就跟着成立。这篇证明走的正是这条路。下一节开始用正式记号把这座桥搭出来。</div>
+</section>
+
+<section id="start" class="chapter"><div class="kicker">01 · 问题</div><h2>为什么黎曼猜想会化成素数求和的上界？</h2>
+<p>上一节用抛硬币讲了直觉，这一节换成正式记号。黎曼 zeta 函数在 <span class="math-inline">\(\Re(s)>1\)</span> 时由 Dirichlet 级数给出，并经解析延拓扩展到复平面（在 \(s=1\) 有极点）：</p>
+<div class="eq">\[\zeta(s)=\sum_{n=1}^{\infty}n^{-s}=\prod_p(1-p^{-s})^{-1},\qquad \Re(s)>1.\]</div>
+<p>黎曼猜想（RH）断言：所有位于临界带 \(0<\Re(\rho)<1\) 的非平凡零点都满足 \(\Re(\rho)=1/2\)。对于一个寻找证明的 agent，这里的最终目标是一个有关复函数零点的命题；但构造中真正可以利用的是素数的算术结构。如何搭桥？<strong>Von Mangoldt 函数与 Mellin 变换</strong>就是第一座桥。</p>
+<div class="twocol"><div class="panel"><h3>原问题 · 零点</h3><div class="eq">\[\forall\rho,\; \zeta(\rho)=0,\;0<\Re\rho<1\Rightarrow\Re\rho=\tfrac12.\]</div></div><div class="panel"><h3>可攻目标 · 素数误差</h3><div class="eq">\[G(x)\le x^{1/2+\varepsilon}\]</div><p class="fine">只要求在任意靠后的长区间内成立，且只要求<strong>单侧</strong>上界。</p></div></div>
+<p class="where">对应原稿 Part I §I.0–I.1，PDF 第 3–5 页；Part II §1，第 26–27 页。<a href="#th-landau">跳至关键引理：局部化 Landau 定理</a></p>
+</section>
+
+<section id="map" class="chapter"><div class="kicker">02 · 核心路线图</div><h2>先倒着理解目标，再正着理解构造</h2>
+<p>下面根据你提供的 <a href="https://nasqret.github.io/riemann-rev/guide/proof-guide.pdf" target="_blank" rel="noopener">11 页 Proof Architecture Guide</a> 重新绘制。颜色表示数学工作在链条中的角色，而不是证明质量评级。点击任何模块可直接读中间定理。</p>
+<div class="map-wrap"><svg viewBox="0 0 960 548" role="img" aria-label="从 Galois 表示、Iwasawa 理论、theta lift、角色平均、局部化 Landau 到 RH 的证明路线图">
+<defs><marker id="arr" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0L9 4.5L0 9Z" fill="#8a9aaf"/></marker></defs>
+<g class="edge"><path d="M186 140V214"/><path d="M210 271H343"/><path d="M186 347H343"/><path d="M570 271H667"/><path d="M570 347H667"/><path d="M789 308V390"/><path d="M789 459V482"/><path d="M452 140V214"/></g>
+<g><a href="#th-auto"><rect x="30" y="40" width="330" height="101" rx="14" fill="#fff3eb" stroke="#db8659" stroke-width="1.5"/><text x="48" y="66" class="nodehead">① 自守形式 / Galois 表示</text><text x="48" y="91" class="nodesmall">提供 theta lift 与数论上同调的</text><text x="48" y="112" class="nodesmall">基础输入、trace 和局部对应</text></a></g>
+<g><a href="#th-iwasawa"><rect x="30" y="214" width="330" height="132" rx="14" fill="#fff3eb" stroke="#db8659" stroke-width="1.5"/><text x="48" y="240" class="nodehead">② Iwasawa / 上同调窗口</text><text x="48" y="268" class="nodesmall">控制除法、分母与同调损耗</text><text x="48" y="290" class="nodesmall">在一整个区间取得统一上界</text><text x="48" y="313" class="nodesmall">VWinAt → 分母误差预算</text></a></g>
+<g><a href="#th-M"><rect x="384" y="214" width="243" height="132" rx="14" fill="#f4efff" stroke="#8b6add" stroke-width="1.5"/><text x="402" y="240" class="nodehead">③ theta lifts 链</text><text x="402" y="266" class="nodesmall">整除性 + 范数 / slope</text><text x="402" y="291" class="nodesmall">m ≍ √x 次组合</text><text x="402" y="315" class="nodesmall">产出主不等式 (M)</text></a></g>
+<g><a href="#th-characters"><rect x="667" y="214" width="255" height="132" rx="14" fill="#f4efff" stroke="#8b6add" stroke-width="1.5"/><text x="685" y="240" class="nodehead">④ 角色平均 + 辅助素数</text><text x="685" y="267" class="nodesmall">Estimate B、C，控制扭曲项</text><text x="685" y="291" class="nodesmall">由 (M) 推出 G(x) 上界</text><text x="685" y="316" class="nodesmall">核心：Estimate A</text></a></g>
+<g><a href="#th-landau"><rect x="667" y="390" width="255" height="80" rx="14" fill="#e9f7fb" stroke="#3691a8" stroke-width="1.5"/><text x="685" y="416" class="nodehead">⑤ 局部化 Landau</text><text x="685" y="442" class="nodesmall">长窗口内单侧上界 → 无零点半平面</text></a></g>
+<g><a href="#th-reflection"><rect x="667" y="482" width="255" height="52" rx="14" fill="#ffedf0" stroke="#cb5573" stroke-width="1.5"/><text x="686" y="514" class="nodehead">⑥ 函数方程 → RH</text></a></g>
+<g><rect x="383" y="40" width="244" height="101" rx="14" fill="#f4efff" stroke="#8b6add" stroke-width="1.5"/><text x="401" y="65" class="nodehead">结构：模形式与 theta 对应</text><text x="401" y="90" class="nodesmall">Stepanov 思路的</text><text x="401" y="112" class="nodesmall">算术数域版本</text></g>
+<g fill="#5f697d" font-size="13"><text x="45" y="379">算术基础</text><text x="385" y="379">关键不等式</text><text x="668" y="379">解析推理</text></g>
+</svg></div>
+<p>整条推理可以压成一句公式：</p>
+<div class="eq dark">\[\underbrace{(M)+B+C}_{\text{算术输入}}\;\Longrightarrow\;\underbrace{A\Longrightarrow G(x)\ll_\varepsilon x^{1/2+O(\varepsilon)}}_{\text{素数求和}}\;\Longrightarrow\;\underbrace{\zeta(s)\neq0\;(\Re s>\tfrac12)}_{\text{Landau}}\;\Longrightarrow\;\mathrm{RH}.\]</div>
+<p>注意：这是一条<strong>逻辑依赖链</strong>。证明链条后半段的蕴含，并不意味着自动证明前半段最难的输入。本讲义的中心任务是把这些输入一一暴露出来。</p>
+</section>
+
+<section id="notation" class="chapter"><div class="kicker">03 · 必要概念</div><h2>读懂公式之前的四个定义</h2>
+<div class="grid4">
+<div class="mini"><h3>Von Mangoldt 函数</h3><div class="eq">\[\Lambda(n)=\begin{cases}\log p,&n=p^k\\0,&\text{其他}\end{cases}\]</div><p>用一项求和统一表示素数与素数幂。</p></div>
+<div class="mini"><h3>平滑 ramp 权重</h3><div class="eq">\[(u)_+=\max(u,0),\quad (x/n-1)_+\]</div><p>在 \(n=x\) 截断，靠前的素数幂权重大。</p></div>
+<div class="mini"><h3>Dirichlet 角色</h3><div class="eq">\[\chi(ab)=\chi(a)\chi(b)\]</div><p>利用模数上的乘法结构追踪算术级数及其扭曲项。</p></div>
+<div class="mini"><h3>p-adic valuation</h3><div class="eq">\[v_p(N)=\max\{e:p^e\mid N\}\]</div><p>衡量一个数能被素数 \(p\) 整除多少次。</p></div>
+</div>
+</section>
+
+<section id="analytic" class="chapter"><div class="kicker">04 · Part I §I.1 中文展开</div><h2>从 zeta 零点到单侧素数误差</h2>
+<h3>4.1 为什么选这个奇特的 \(G(x)\)？</h3>
+<p>先定义：</p><div class="eq">\[S(x)=\sum_{n\le x}\Lambda(n)\Big(\frac{x}{n}-1\Big),\qquad G(x)=S(x)-x\log x+(1+\gamma)x,\]</div>
+<p>其中 \(\gamma\) 是 Euler–Mascheroni 常数。原稿指出，\(S(x)\) 相当于把 Chebyshev 的 \(\psi(x)=\sum_{n\le x}\Lambda(n)\) 再做一次积分平滑：</p>
+<div class="eq">\[S(x)=x\int_1^x\frac{\psi(t)}{t^2}\,dt.\]</div>
+<p>扣除 \(x\log x-(1+\gamma)x\) 是为了消掉 zeta 函数在 \(s=1\) 的主要贡献。它不是随便定义的统计量：其 Mellin 变换和 \(\zeta'/\zeta\) 直接相连。</p>
+<div class="eq">\[\int_1^\infty G(x)x^{-s-1}\,dx=-\frac{1}{s(s-1)}\frac{\zeta'(s)}{\zeta(s)}-\frac{1}{(s-1)^2}+\frac{1+\gamma}{s-1},\quad \Re s>1.\]</div>
+<p>zeta 的非平凡零点会成为这个变换的极点。逆变换得到显式公式（以原稿记法）：</p>
+<div class="eq">\[G(x)=\log(2\pi)-\sum_{\rho}\frac{x^\rho}{\rho(\rho-1)}+O(x^{-2}).\]</div>
+<p>这就解释了平方根：当零点 \(\rho\) 的实部为 \(1/2\) 时，\(|x^\rho|=x^{1/2}\)。如果存在 \(\Re\rho=\beta>1/2\) 的零点，它会提供 \(x^\beta\) 尺度的振荡项。</p>
+<div class="idea"><b>理解难点：</b>“存在一个 \(x^\beta\) 项”并不足以凭直觉证明它永远不能被其他零点抵消。原文使用 Landau 定理与高阶导数来排除这种抵消，而不是直接根据显式公式下结论。</div>
+<h3>4.2 为什么单侧上界就够了？为什么不必对所有 x 成立？</h3>
+<p>如果某个 Mellin 变换来自最终非负的函数，那么它在收敛横坐标的实边界必须有奇点，这是 Landau 的思想。对 \(x^\theta-G(x)\) 应用这一思想，可以由单侧上界得到 \(\Re s>\theta\) 的零点排除结论。</p>
+<p>原稿真正需要的是更强的<strong>局部化</strong>形式：仅有任意靠后的多个整段区间 \([Y,Y^{3/2}]\) 上的上界，仍足够推出零点不在 \(\Re s>\theta\)。后面的算术构造恰好只能在选好的窗口里工作，所以这是整个证明可以闭环的关键。</p>
+</section>
+
+<section id="cheb" class="chapter"><div class="kicker">05 · Part I §I.2–I.4 中文展开</div><h2>从 Chebyshev 到 theta lift：为什么需要新的整除对象？</h2>
+<h3>5.1 经典 Chebyshev 技巧</h3>
+<p>取中央二项式系数 \(N=\binom{2n}{n}\)。每个满足 \(n<p\le2n\) 的素数都整除它，同时 \(N\le4^n\)。故：</p>
+<div class="eq">\[\sum_{n<p\le2n}\log p\le\log\binom{2n}{n}\le2n\log 2.\]</div>
+<p>抽象成一般原理：如果非零整数 \(\Delta\) 被 \(p^{e_p}\) 整除，就有 \(\sum_p e_p\log p\le\log|\Delta|\)。</p>
+<div class="twocol"><div class="panel"><h3>整除性 / Finite places</h3><p>某些素数必须以多大指数出现？</p><div class="eq">\[\sum_p e_p\log p\]</div></div><div class="panel"><h3>大小 / Infinite places</h3><p>这个对象本身能有多大？</p><div class="eq">\[\log|\Delta|\]</div></div></div>
+<p>难题在于精度。对 \(n!\)，Legendre 公式为：</p><div class="eq">\[v_p(n!)=\sum_{h\ge1}\left\lfloor\frac{n}{p^h}\right\rfloor.\]</div>
+<p>舍入误差合计可达线性尺度 \(O(n)\)，恰恰遮蔽了我们希望测量的素数分布精细误差。简单使用阶乘，只能得到粗略素数界，无法靠这一比较抵达 RH 的平方根精度。</p>
+<h3>5.2 CM 椭圆曲线提供“更平滑”的 p-adic 整除性</h3>
+<p>原稿采用 lemniscate sine \(\mathrm{sl}(z)\) 的导数系数作为动机：它来自 \(y^2=1-x^4\) 的复乘结构。对 \(p\equiv3\pmod4\) 这类惰性素数，导数系数的素因子指数近似呈现：</p>
+<div class="eq">\[e_p(a)\gtrsim a\Big(\frac1p+\frac1{p^3}+\frac1{p^5}+\cdots\Big)=a\frac{p}{p^2-1}.\]</div>
+<p>这比阶乘的取整公式平滑：重要部分是 \(a/p\) 一类连续尺度。直觉上，椭圆曲线的形式群在惰性素数附近是高度为 2 的结构，于是 \(p,p^3,p^5,\dots\) 的幂次自然出现。<strong>但这个最简单的例子仍不够：</strong></p>
+<div class="defects"><div><span>D1</span><b>舍入</b><p>每个素数相差约常数的误差，合计仍会达到线性量级。</p></div><div><span>D2</span><b>只覆盖部分素数</b><p>复乘场里的惰性素数约占一半；剩下的不能自动忽略。</p></div><div><span>D3</span><b>对象太大</b><p>普通导数系数的大小与整除指数主项不匹配，比较失去精度。</p></div></div>
+<h3>5.3 原稿怎样修补三个缺陷？</h3>
+<p><b>修补 D3：</b>改为来自 Hermitian 格与 theta 核的线性映射，以平方 Gaussian 范数测量大小。多项式的模型等式是：</p><div class="eq">\[\|z^a\|^2=\frac1\pi\int_{\mathbb C}|z|^{2a}e^{-|z|^2}\,dz=a!.\]</div>
+<p>这使“整除性给出的大小下界”和“theta lift 的大小上界”有机会在 \(a\log a\) 的首项上匹配，并比较其线性项。真正的 theta 核还要先除去周期因子，控制代数整数性。</p>
+<p><b>修补 D1：</b>选一个非常大的放大系数 \(b=\exp(x^\varepsilon)\)，让 \(a\approx xb\)、权重 \(w\approx b\)。随后：</p>
+<div class="eq">\[\left(\frac{a}{p^h}-w\right)_+=w\left(\frac{x}{p^h}-1\right)_+,\qquad x=\frac aw.\]</div>
+<p>右边恰好是第一节的 ramp 权重乘以 \(w\)。在整体除以巨大的 \(b\) 之后，若能控制累积损失，个别素数的整数舍入就变得相对微小。</p>
+<p><b>修补 D2：</b>用二次 Dirichlet 角色追踪哪些素数在数域中惰性：</p><div class="eq">\[1-\chi_d(p^h)=\begin{cases}2,&p\text{ 惰性且 }h\text{ 为奇数},\\0,&\text{其他非例外情形}.\end{cases}\]</div>
+<p>于是算术构造先得到“所有素数和 − 角色扭曲素数和”，再通过辅助素数及平均技术把不想要的扭曲项消去。</p>
+<div class="idea"><b>这里真正使用了新的数学对象，而不只是更复杂的计算。</b>从阶乘换成 theta lifts、格之间的映射和 slope inequality，是为了同时实现：足够强的整除性、正确的大小主项、以及可控的误差。这就是整篇证明的算术核心。</div>
+</section>
+
+<section id="theorems" class="chapter"><div class="kicker">06 · 中间定理详解</div><h2>把证明拆成 12 个可检查的数学节点</h2>
+<p>每张卡片都写明：<b>命题是什么 → 为什么需要它 → 从哪里来 → 与下一步怎样相接</b>。状态是根据原稿第 25 页与第 54–55 页的说明标注，不是由本中文版重新验证。</p>
+<div class="filters" role="group" aria-label="按证明状态筛选"><button class="filter is-active" data-filter="all">全部定理</button><button class="filter" data-filter="proved">讲义有证明</button><button class="filter" data-filter="conditional">依赖列明的前提</button><button class="filter" data-filter="quoted">直接引用 Lean</button></div>
+
+<article class="theorem" id="th-ramp" data-status="proved"><div class="theorem-head"><span class="thno">T1</span><div><h3>Ramp–Mellin 变换与显式公式</h3><span class="thsource">原稿 I.1；Part II §1 · PDF 第 4–5、26–27 页</span></div><span class="status proved">讲义展开</span></div>
+<div class="eq">\[\mathcal M\big[(x/n-1)_+\big](s)=\frac{n^{-s}}{s(s-1)},\quad \Re s>1;\qquad G(x)=\log 2\pi-\sum_\rho\frac{x^\rho}{\rho(\rho-1)}+O(x^{-2}).\]</div>
+<p><b>为什么需要：</b>原问题谈 zeta 零点，算术方法却只能产生素数和不等式。Mellin 变换让两者共享同一个解析函数及其极点。</p><details><summary>核心思路和可检验问题</summary><p>因为 \(\Lambda(n)\) 是 \(-\zeta'/\zeta\) 的 Dirichlet 系数，Mellin 变换中的因子 \(1/[s(s-1)]\) 使 zeta 的零点变成极点，且让零点和绝对收敛更容易处理。<b>检查：</b>为什么要减去 \(x\log x-(1+\gamma)x\)？这些项消除 \(s=1\) 的极部。</p></details></article>
+
+<article class="theorem" id="th-landau" data-status="proved"><div class="theorem-head"><span class="thno">T2</span><div><h3>单侧零点排除判据与“长窗口”版本</h3><span class="thsource">原稿 I.1，Part II §1 · PDF 第 4–5、26–27 页；Guide §3</span></div><span class="status proved">讲义有证明</span></div>
+<div class="eq">\[\Big(\exists Y_j\to\infty:\ \forall x\in[Y_j,Y_j^{3/2}],\ G(x)\le x^\theta\Big)\Longrightarrow\zeta(s)\ne0\quad(\Re s>\theta),\quad 0<\theta<1.\]</div>
+<p><b>为什么需要：</b>构造并不能对每个足够大的 \(x\) 都产生同一套算术数据；它只在任意靠后的“窗口”内一致有效。普通 Landau 定理的全局单侧条件必须被替换成局部版本。</p>
+<details><summary>证明是怎样绕过“只能在窗口上控制”的？</summary><p>将 \(x=e^u\)，把 Mellin 积分转成 Laplace 积分。对变换取足够高阶导数，会使一个非负的核高度集中到选定的 \([\log Y,\tfrac32\log Y]\) 窗口内。如果存在实部大于 \(\theta\) 的零点，其极点对高阶导数强制贡献更快的增长，与窗口给出的单侧控制冲突。原稿 Part II §1 给出技术估计与量词选择。</p><p><b>特别注意：</b>“任意靠后”不是“任意稀疏的一串单点”，必须是宽度与 \(Y\) 成幂关系的整段区间；这一点不能省略。</p></details></article>
+
+<article class="theorem" id="th-cheb" data-status="proved"><div class="theorem-head"><span class="thno">T3</span><div><h3>整除性 → 素数求和上界（Chebyshev / Stepanov 原理）</h3><span class="thsource">原稿 I.2–I.3，Part II §2 · PDF 第 5–7、28 页</span></div><span class="status proved">基本部分已证明</span></div>
+<div class="eq">\[\big(p^{e_p}\mid\Delta\text{ 对相关的 }p\big)\ \Longrightarrow\ \sum_p e_p\log p\le\log|\Delta|,\qquad \Delta\in\mathbb Z\setminus\{0\}.\]</div>
+<p><b>为什么需要：</b>它是整个“代数构造 → 解析素数界”的枢纽。有限域上 Stepanov 的“高重零点 ≤ 多项式次数”，在数域中被换成“高整除指数 ≤ 格映射大小”。</p><details><summary>类比精确到哪一层？</summary><p>在有限域，构造函数在每个有理点至少消失 \(m\) 阶，于是点数乘 \(m\) 不超过总次数。在整数或代数整数场景，许多素数分别高次整除一个非零代数对象，其 \(p\)-adic 贡献要受到无穷处范数的约束。它们都是把局部的“多重性”换成一个可计数的全局上界。</p></details></article>
+
+<article class="theorem" id="th-division" data-status="conditional"><div class="theorem-head"><span class="thno">T4</span><div><h3>惰性素数处的 theta 核局部整除性</h3><span class="thsource">原稿 I.3–I.4, III.5 · PDF 第 6–12、80–91 页</span></div><span class="status conditional">条件性证明</span></div>
+<div class="eq">\[v_p(\text{theta lift 数据})\ \gtrsim\ \sum_{h\text{ 奇}}\Big(\frac a{p^h}-w_h\Big)_+\ -\ \text{可控损失}.\]</div>
+<p><b>为什么需要：</b>这是把 ramp 形状从纯粹设计变为真实整除性定理的地方。无此结论，就无法通过“整除指数总和”估计素数。</p><details><summary>关键输入和完整性状态</summary><p>原文 §III.5 在<strong>Hypothesis (B)</strong>（theta 核在高度为 2 的形式群对数所需坐标中整系数）的假设下，证明轨道长度为 2 的幂级数局部估计；较长轨道还要使用来自 Lean 的对偶性输入。原文<strong>没有在普通数学语言中证明 theta 核满足 (B)</strong>，这一桥梁仍引用 Lean。因而不能把 §III.5 表述为无条件闭合的完整证明。</p></details></article>
+
+<article class="theorem" id="th-size" data-status="conditional"><div class="theorem-head"><span class="thno">T5</span><div><h3>Theta lift 的 Gaussian 大小估计与 Bost slope</h3><span class="thsource">原稿 I.4, I.7, III.4, III.7 · PDF 第 8–18、66–80、111–129 页</span></div><span class="status conditional">若干输入未展开</span></div>
+<div class="eq">\[\text{finite-place divisibility}\ \le\ \text{archimedean size} + \text{lattice/index losses}.\]</div>
+<p><b>为什么需要：</b>有整除性仍不够：要让“全部素数的贡献”成为紧的上界，必须计算映射的范数至 <em>线性项</em> 的精度，光知道 \(a\log a\) 首项不够。</p><details><summary>哪些部分讲义已经做到？</summary><p>§III.4 在抽象框架里证明了单一核与链条的若干解析范数估计，但“四次衔接”有条件，且需要把实际构造识别成这些抽象对象；§III.7 证明在列明 11 个输入成立时，目标大小不等式成立，并计算在一定条件下的周期平均。这 11 个输入包含内积公式、格 covolume、局部 index bound 与 levels 间比较，未全部在人类文本中证明。</p></details></article>
+
+<article class="theorem" id="th-M" data-status="quoted"><div class="theorem-head"><span class="thno">T6</span><div><h3>主不等式 (M)：整个证明的算术核心</h3><span class="thsource">原稿 I.5, II §4, III.4–9 · PDF 第 13–14、30–33、54–55 页</span></div><span class="status quoted">整体直接引用 Lean</span></div>
+<div class="eq">\[\frac{1}{B}\frac1n\sum_{u\in H}\sum_{t\in T}\sum_{j=1}^{m}\big(P_{u,t,j}-M_{u,t,j}\big)\ \le\ x^{C\varepsilon}\left(\frac xm+\frac{xm}{k}+m+\frac{k}{n^2}\right).\tag{M}\]</div>
+<p>\(P\) 是真实素数幂贡献（整除性一侧），\(M\) 是假设各角色平均分布时的主要项；\(m\) 是 theta lift 链长，\(k\) 是秩参数，\(n\) 是列数，\(B\) 是正规化因子。</p>
+<div class="alert"><b>这一项不是讲义中已给出完整证明的定理。</b>原稿在第 55 页明确承认 (M) 仍是从 Lean development 引用；Part III 只拆解了它的若干零件，而映射和权重的完整构造、组合成 (M) 的步骤仍未展开。</div>
+<details><summary>如何读懂右侧四个误差？</summary><p>\(x/m\)：链首尾的大小误差经 \(m\) 次整除性收益摊薄；\(m\)：逐步累积的秩、权重、分母等损失；\(xm/k\) 与 \(k/n^2\)：引入秩和角色表规模的代价。只有四项全部足够小才能达到平方根尺度，不能仅展示前两项并忽略后两项。</p></details></article>
+
+<article class="theorem" id="th-B" data-status="proved"><div class="theorem-head"><span class="thno">T7</span><div><h3>Estimate B：选择好辅助素数，压制三个二次扭曲项</h3><span class="thsource">原稿 I.6(e), III.1 Theorem III.1.1 · PDF 第 15–16、55–61 页</span></div><span class="status proved">引用文献后有证明</span></div>
+<div class="eq">\[|G_{\chi}(x)|\ \le\ x^{1/2+\varepsilon},\qquad \chi\in\{\chi_q,\chi_d,\chi_q\chi_d\},\quad x\in[Y,Y^{3/2}].\]</div>
+<p><b>为什么需要：</b>平均之后得到的不是单独的 \(G(x)\)，而是 \(G(x)+G_{\chi_q}(x)-G_{\chi_d}(x)-G_{\chi_q\chi_d}(x)\)。要恢复真正的 zeta 素数和，必须让三个扭曲和都小。</p><details><summary>为什么这不是循环地假定 GRH？</summary><p>\(q,d\) 可依赖窗口 \(Y\) 自由选择，而且极大；相关的求和长度相对于模数仍很短。作者使用平均平方、零密度估计与避免 exceptional zero 的筛选结果，证明存在一对好素数，而不是声称每一对素数的 Dirichlet L 函数都满足 GRH。§III.1 依赖四项标为 Q1–Q4 的已发表定理。</p></details></article>
+
+<article class="theorem" id="th-C" data-status="proved"><div class="theorem-head"><span class="thno">T8</span><div><h3>Estimate C：在指数级的大尺度上消除其他表格单元</h3><span class="thsource">原稿 I.6(b),(e), III.2 Theorem III.2.1 · PDF 第 14–16、61–64 页</span></div><span class="status proved">引用文献后有证明</span></div>
+<div class="eq">\[|G_\chi(y)|\ \le\ y\exp(-\kappa x^{\varepsilon/8}),\quad y\ge13\exp(x^{\varepsilon/3}).\]</div>
+<p><b>为什么需要：</b>有限的角色表里并非只有要测量 \(x\) 尺度的单元。其他单元被赋予很小的权重，其截断点 \(a/w_i\) 变得巨大。只有在这个巨大尺度，现有零点自由区与素数定理误差才足够强。</p><details><summary>和 Estimate B 的分工</summary><p>B：在目标尺度 \(x\) 控制极少数可选的角色。C：在远大于 \(x\) 的尺度上，对表格展开产生的许多角色给出统一控制。C 依赖三个标为 Z1–Z3 的经典结论及 B 的辅助素数附加条件。</p></details></article>
+
+<article class="theorem" id="th-characters" data-status="proved"><div class="theorem-head"><span class="thno">T9</span><div><h3>角色正交与平均：由 (M) 得到 Estimate A</h3><span class="thsource">原稿 I.6, Part II §3–5 · PDF 第 14–16、29–37 页；Guide §5</span></div><span class="status proved">从 (M), B, C 推导</span></div>
+<div class="eq">\[(1+\chi_q)(1-\chi_d)=1+\chi_q-\chi_d-\chi_q\chi_d.\]</div>
+<div class="eq">\[R_{q,d}(x)=G(x)+G_{\chi_q}(x)-G_{\chi_d}(x)-G_{\chi_q\chi_d}(x),\qquad R_{q,d}(x)\ll x^{1/2+O(\varepsilon)}.\]</div>
+<p><b>为什么需要：</b>主不等式数的是某些剩余类中的素数幂，而 RH 想控制的是不带角色标记的总和。角色正交性让大量“表格列”的细节被平均掉。</p><details><summary>从表格到一个素数和，具体发生了什么？</summary><p>把模 \(N=4n\) 的余数 \(r\sim-r\) 看成 \(n\) 列，每列分成 \(\chi_q\) 的两个行。用平移把“高权重单元”轮流放到所有列，非平凡角色在组平均下抵消，只留下指定角色和三个扭曲项。估计 C 消除大尺度单元；估计 B 消除剩余的三个扭曲和。于是获得 Estimate A。若缺少 T、T₂ 的组合性质，平均后产生的误差未必可控。</p></details></article>
+
+<article class="theorem" id="th-behrend" data-status="proved"><div class="theorem-head"><span class="thno">T10</span><div><h3>Behrend 型稠密集：构造 T₂ 和 T</h3><span class="thsource">原稿 III.3 Theorems III.3.1–2 · PDF 第 64–66 页；Guide §5</span></div><span class="status proved">集合构造有证明</span></div>
+<p><b>为什么需要：</b>想让多次 theta lifts 的作用与角色平均同时成功，必须有“足够稠密、但短线性关系稀少”的权重位置。这里的组合学不是装饰，而是在控制 Frobenius 轨道重复访问同一位置带来的损失。</p><div class="eq">\[|T_2|/n\ \gtrsim\ x^{-\varepsilon},\qquad \text{短 Frobenius 轨道段内，命中一个平移后的 }T_2\text{ 的次数受限}.\]</div>
+<details><summary>为什么会用到三项等差数列？</summary><p>Behrend 通过高维整数球面构造没有短线性关系的较大集合。其中禁止三项等差数列是一个特例。将其移植到有限循环群上的列指标，就能避免多个轨道点在短时间内发生不受控制的碰撞。原稿完成集合存在性证明，但<strong>在 (M) 整体构造中怎样使用它们仍被引用</strong>。</p></details></article>
+
+<article class="theorem" id="th-iwasawa" data-status="quoted"><div class="theorem-head"><span class="thno">T11</span><div><h3>Iwasawa 上同调窗口与分母控制</h3><span class="thsource">原稿 I.7, III.9 · PDF 第 17–18、144–161 页；Guide §6</span></div><span class="status quoted">主要窗口界引用 Lean</span></div>
+<div class="eq">\[\sum_{\ell}\log\ell\sum_{1\le h<x^{401}}\operatorname{len}\,\Sha^1_\ell(E,h)\ \le\ \exp(x^{\varepsilon/2})\quad\text{（选定长窗口内）}.\]</div>
+<p><b>为什么需要：</b>局部整除性并不能无损地传遍长链，每一次 lift 都可能带来理想、格指标与分母的损失。Galois 上同调量化某些“局部可以、全局不一定”的障碍；需要这些群的总长度足够小，才能把分母误差控制在 \(b\) 以下。</p>
+<details><summary>原稿到底证明了哪一步？</summary><p>§III.9 证明“<strong>给定上同调长度的上界</strong> → 分母损失上界”的若干步骤，并讨论某些 \(\mathbb Q\) 例子的消失定理；但<strong>窗口上的上同调长度上界本身</strong>依然直接引用 Lean。Guide 的 §6 用 Ferrero–Washington、Iwasawa 模与 interval lemma 解释为什么挑得出好窗口，但这些是原项目的证据链描述，而不是本中文版重新导出的定理。</p></details></article>
+
+<article class="theorem" id="th-reflection" data-status="proved"><div class="theorem-head"><span class="thno">T12</span><div><h3>函数方程与最后的反射：从半平面到临界线</h3><span class="thsource">原稿 I.1、I.10；Guide §1 · PDF 第 4–5、21–22 页</span></div><span class="status proved">标准解析理论</span></div>
+<div class="eq">\[\Lambda(s,\chi)=W(\chi)\Lambda(1-s,\overline\chi)\quad\text{（在适当的完成 L 函数与共轭记号下）}.\]</div>
+<p><b>为什么需要：</b>若已排除所有 \(\Re(s)>1/2\) 的非平凡零点，那么由函数方程的对称性，\(\Re(s)<1/2\) 也不能有非平凡零点；零点只能落在 \(\Re(s)=1/2\)。</p><details><summary>常被忽略的两步</summary><p>需要先把非 primitive 角色的有限 Euler 因子处理掉，并注意 Dirichlet \(L\) 函数一般的函数方程会把 \(\chi\) 与共轭角色联系起来。仅有 zeta 的情况更简单，但原形式化证明声称处理所有 Dirichlet 角色。</p></details></article>
+</section>
+
+
+<section id="bridges" class="chapter"><span id="th-auto" style="position:relative;top:-25px"></span><div class="kicker">06B · 证明的桥接定理</div><h2>最容易被路线图省略的五道门</h2>
+<p>如果目标不止是知道“用了 theta lifts”，而是要阅读中间 theorem，那么最重要的是追问每一次从某类对象到另一类对象，究竟凭什么合法。下面是 Part II §6 与 Part III §III.4–III.9 之间的关键接口。</p>
+<div class="bridge"><h3>B1 · 局部 p-adic 估计 → 全局格的整除性</h3><div class="eq">\[\text{局部系数估计}\quad+\quad\text{整数性 / 赋值控制}\quad\Longrightarrow\quad\text{格指数的下界}.\]</div>
+<p>最初在一个惰性素数处求得 \(v_p\) 的下界，描述的只是某些坐标下的系数。要把它用在整个 theta lift 链上，还需要确认：采用的是实际构造中对应的坐标；不同 places 上的整数性成立；格的粘合没有丢失不可忽略的指数。</p><p><b>原稿中间结果：</b>§III.6 的 L1–L3 是格局部化、理想乘法与整性引理；<b>Theorem L4（glued lattice）</b> 在两个指定的 Lean 来源陈述成立时推导出粘合格性质；随后 L6、L7–L14 把素数和拆开并估计其中几类损失。这里不是完整的 (M)。</p><div class="bridge-ref">定位：PDF 第 91–111 页，特别是 §III.6 的 L1–L4、L11–L14。</div></div>
+<div class="bridge"><h3>B2 · Theta 核范数 → 尺度精确到线性项的大小界</h3><div class="eq">\[\text{Gaussian analytic estimate}+\text{period / covolume / index data}\quad\Longrightarrow\quad\text{size inequality}.\]</div>
+<p>仅知道映射的范数有界是不够的，因为我们需要比较的是两个都约为 \(a\log a\) 的大数，真正有信息的是被减后剩下的线性项及更小的误差。原稿 §III.7 的 <b>Theorem III.7.1</b> 将这个步骤整理为一条明确的条件性定理：</p>
+<div class="eq">\[(S1)\land\cdots\land(S8)\land(W1)\land(W2)\land(G)\ \Longrightarrow\ \text{所需 size bound}.\]</div>
+<p>这 11 个输入分别承载周期、格、内积、层级比较与几何大小参数；其中不少输入在该人类稿中未独立推导。<b>因此定理 III.7.1 是条件推导正确性，不是 11 个输入的真实性证明。</b></p><div class="bridge-ref">定位：PDF 第 111–129 页，尤其 Theorem III.7.1 及其 11 个输入列表。</div></div>
+<div class="bridge"><h3>B3 · 迹公式与秩估计 → 有效非零维数</h3><p>把 theta lift 视为一条格映射链，必须知道像空间不会退化到使整除性无意义。这里需要对迹、秩和配对作精细估计，以控制每一步的维数与可用方向。</p><p><b>原稿中间结果：</b>§III.8 从三个明确列出的 Lean 来源陈述（关于 traces、ranks、pairings）以及尺寸、子空间条件，推导所需的 dimension bound，并在有限模型中检验相关迹估计。<b>三个输入本身尚作为来源陈述引用。</b></p><div class="bridge-ref">定位：PDF 第 129–144 页，§III.8。</div></div>
+<div class="bridge"><h3>B4 · Galois 上同调窗口 → 分母损失可控</h3><p>局部整除性“在每个素数处很强”，并不自动保证组合成全局映射以后仍然保留。某些分母与扩张障碍由 \(\Sha^1_\ell(E,h)\) 的长度衡量。</p><div class="eq">\[\text{window estimate for }\operatorname{len}\Sha^1_\ell(E,h)\quad\Longrightarrow\quad\text{denominator bound}.\]</div>
+<p>原稿 §III.9 的主要贡献是清楚写出右箭头的推导，以及它需要的 LinkN 型输入；然而左侧最强的上同调窗口估计（VWinAt）仍引用 Lean development。对读者而言，<b>这应被视为最重要的独立核查节点之一</b>。</p><div class="bridge-ref">定位：PDF 第 144–161 页，§III.9；Guide §6–7。</div></div>
+<div class="bridge"><h3>B5 · 全部局部与整体估计 → 装配成主不等式 (M)</h3><p>只有同时控制 local divisibility、Gaussian size、格指数、维数、分母、角色表的权重与 Behrend 集合，才能把各个输入合成 (M)。这一步还包含不同符号定义之间的身份识别、正规化常数和所有误差的一致量词。</p><div class="eq">\[\text{B1+B2+B3+B4+权重/映射构造+损失总和}\quad\Longrightarrow\quad (M).\]</div><div class="alert"><b>原文边界：</b>第 55 页明确写道，“映射和权重的构造、这些抽象对象与实际构造的识别、以及 (M) 的总装配”在这份人类可读稿中尚未开始。以上依赖图是解释性的数学拆分，<strong>不能当成已补全该空白的证明</strong>。</div><div class="bridge-ref">定位：PDF 第 54–55 页的状态表、第 13–18 页的主线说明。</div></div>
+</section>
+
+<section id="prime-table" class="chapter"><div class="kicker">07 · Part I §I.5–I.6</div><h2>一个 2×n 表格，为什么最后能留下 G(x)？</h2>
+<p>原稿的具体构造中，取 \(n\) 为足够大的 2 的幂、\(N=4n\)，并把 \(r\) 与 \(-r\) 的模 \(N\) 剩余类看成同一列 \([r]\)，再通过 \(\chi_q(r)\) 确定行。由此，每个素数幂 \(r=p^h\) 在表格中有一个位置。</p>
+<div class="matrix-figure"><div class="figure-title">简化示意：高权重只放在一部分“特别单元”，其余单元转移到非常大的尺度</div><div class="cells"><div class="corner">行 / 列</div><div>[1]</div><div>[3]</div><div>[5]</div><div>[7]</div><div>χq = −1</div><div>小权重</div><div>小权重</div><div>小权重</div><div>小权重</div><div>χq = +1</div><div class="hot">高权重 b</div><div>小权重</div><div>小权重</div><div>小权重</div></div><p class="fine">仅展示原稿第 14 页 n=4 小例子的权重布局思想；真实证明的 n 远远更大，另有 T/T₂、u/t/j 的平移与重复索引。</p></div>
+<h3>Step A：用权重把不同单元送到不同尺度</h3><p>一个单元的素数权重相当于 \(w_i\,(a/(w_i r)-1)_+\)。若 \(w_i\approx b\)，截止尺度 \(a/w_i\approx x\)；若 \(w_i\ll b\)，截止尺度极大，可由 Estimate C 控制。</p>
+<h3>Step B：在列上求平均，抹除多数 Dirichlet 角色</h3><p>对平移 \(u\) 求平均使高权重单元遍历所有列，角色正交使大多数非平凡角色消失，只剩 \(1,\chi_q,\chi_d,\chi_q\chi_d\)。具体展开是 \((1+\chi_q)(1-\chi_d)\)。</p>
+<h3>Step C：好辅助素数压制剩余角色</h3><p>Estimate B 控制三个扭曲 \(G_\chi(x)\)，因此留下无角色的 \(G(x)\)；Estimate C 把其他低权重单元的贡献降到可忽略。</p>
+<div class="eq">\[\boxed{(M)+B+C\Longrightarrow R_{q,d}(x)\ll x^{1/2+O(\varepsilon)}\Longrightarrow G(x)\ll x^{1/2+O(\varepsilon)}.}\]</div>
+</section>
+
+<section id="balance" class="chapter"><div class="kicker">08 · 关键精度</div><h2>为什么偏偏是 1/2？误差预算不是魔术</h2>
+<p>在主不等式经过正规化后，四种误差中最直观的两种是 \(x/m\) 和 \(m\)。</p>
+<div class="eq">\[E(m)\approx \frac{x}{m}+m,\qquad \min_{m>0}E(m)=2\sqrt x\quad\text{当 }m=\sqrt x.\]</div>
+<p>第一次误差在链首尾产生，重复 \(m\) 次可摊薄；第二次误差每次迭代产生，重复太多又会累积。该平衡说明平方根从哪里来，但如果忽略 \(xm/k\) 和 \(k/n^2\)，就还没有完成证明。</p>
+<div class="slider-box"><label for="mx">直观实验 · 取 x = 10,000，改变 theta lift 链长度 m</label><input id="mx" type="range" min="1" max="500" value="100" step="1"><div class="slider-line"><span id="mval">m = 100</span><strong id="eval">x/m + m = 200</strong></div><div class="bars"><div class="bar-label">x/m <span id="a-val">100</span></div><div class="track"><div id="bar-a" class="fill b1" style="width:50%"></div></div><div class="bar-label">m <span id="b-val">100</span></div><div class="track"><div id="bar-b" class="fill b2" style="width:50%"></div></div></div><p class="fine">这只是两项主导误差的可视化，不展示原稿复杂的 ε 损耗或 k、n 误差。</p></div>
+<p>原稿选择 \(m\approx x^{1/2+O(\varepsilon)}\)、\(k\approx x^{9/2+O(\varepsilon)}\)、\(n\approx x^{2+8\varepsilon}\)，使右侧四项都落在 \(x^{1/2+O(\varepsilon)}\) 尺度。若逐步损失不是 \(m\) 而成为 \(m^2\)，最优平衡点会变成 \(m\asymp x^{1/3}\)，误差变为 \(x^{2/3}\)：这足以说明“控制每一步的损失”为什么重要。</p>
+</section>
+
+<section id="audit" class="chapter"><div class="kicker">09 · Part III 证据清单</div><h2>原稿 Part III 每章具体完成了什么？</h2>
+<p>这里把原文第 25、54–55 页的状态表合并成一个中文追踪表；建议阅读时把“条件性成立”和“已证明前提”分开。</p>
+<div class="table-wrap"><table><thead><tr><th>章节 / PDF 页</th><th>希望证明的中间结果</th><th>在人类可读稿中的状态</th><th>最值得核查的缺口</th></tr></thead><tbody>
+<tr><td>Part II §1<br>26–27</td><td>窗口版单侧 Landau 判据</td><td><span class="tdyes">直接给出证明</span></td><td>导数集中到窗口的估计、量词次序</td></tr>
+<tr><td>Part II §3–5<br>29–37</td><td>(M), B, C → Estimate A → RH</td><td><span class="tdyes">给出条件性蕴含证明</span></td><td>不能反向认为 M 已因此成立</td></tr>
+<tr><td>III.1<br>55–61</td><td>Estimate B；存在好的 q,d</td><td><span class="tdyes">由文献 Q1–Q4 推导</span></td><td>零密度、平均平方及统一窗口</td></tr>
+<tr><td>III.2<br>61–64</td><td>Estimate C；超大尺度角色界</td><td><span class="tdyes">由文献 Z1–Z3 推导</span></td><td>是否满足所选模数上的统一性</td></tr>
+<tr><td>III.3<br>64–66</td><td>Behrend 型 T、T₂ 集合构造</td><td><span class="tdyes">集合存在性证明</span></td><td>进入 (M) 的应用仍引用 Lean</td></tr>
+<tr><td>III.4<br>66–80</td><td>theta 核与链的大小界</td><td><span class="tdmaybe">部分证明 + 四处条件性过渡</span></td><td>具体映射、参考平方平均、配对与特征值</td></tr>
+<tr><td>III.5<br>80–91</td><td>惰性素数局部整除性</td><td><span class="tdmaybe">在 Hypothesis (B) 下证明若干情形</span></td><td>theta 核满足 (B)；长轨道对偶性</td></tr>
+<tr><td>III.6<br>91–111</td><td>导数整除性 → 格及素数和</td><td><span class="tdmaybe">格引理、部分和证明；glued lattice 条件性</span></td><td>原始 valuation、两个 Lean 输入、11 个损耗和的完整上界</td></tr>
+<tr><td>III.7<br>111–129</td><td>大小界中的算术输入</td><td><span class="tdmaybe">从 11 个列明输入推导</span></td><td>内积公式、covolume、局部 indices、levels</td></tr>
+<tr><td>III.8<br>129–144</td><td>迹公式、秩与维数界</td><td><span class="tdmaybe">从 3 个 Lean 输入及大小条件推导</span></td><td>迹 / 秩 / 配对原定理的独立推导</td></tr>
+<tr><td>III.9<br>144–161</td><td>Galois 上同调长度 → 分母上界</td><td><span class="tdmaybe">传递步骤证明；窗口界本身引用 Lean</span></td><td>完整 VWinAt 上同调窗口界</td></tr>
+<tr><td>总装配<br>54–55</td><td>映射、权重、各模块识别及 (M)</td><td><span class="tdno">明确尚未开始传统写作</span></td><td>完整证明最主要的未展开部分</td></tr>
+</tbody></table></div>
+<div class="idea"><b>如何理解“形式化证明”和“人类讲义不完整”同时成立？</b>前者是关于某个形式系统与 checker 接受完整证明对象的声明；后者是关于作者是否已经把该对象中的关键论证拆解为可供人类逐项审核的数学文本。它们是不同的验证任务。</div>
+</section>
+
+<section id="deep" class="chapter"><div class="kicker">10 · 针对本科生的重点路线</div><h2>如果只精读四条数学链条</h2>
+<div class="reading"><div><b>路线 A · 解析数论主线（最适合先读）</b><p>von Mangoldt → ramp kernel → Mellin 变换 → 零点极点 → Landau 单侧窗口判据。目标是完全理解为什么只需证明 \(G(x)\) 的一个单侧、稀疏窗口上界。</p><span>原稿 PDF 3–5、26–27 页；对应 T1、T2</span></div>
+<div><b>路线 B · 初等数论与 p-adic 动机</b><p>二项式系数 → Legendre 公式 → floor error → CM 曲线高度为 2 的形式群 → 惰性素数整除性。目标是理解为什么传统阶乘不够，为什么需要“平滑”的整除指数。</p><span>原稿 PDF 5–12、28 页；对应 T3、T4</span></div>
+<div><b>路线 C · 线性代数与表示论桥梁</b><p>Gaussian 范数 → theta 映射 → 格、slope inequality → 角色正交与平均 → Estimate A。这里数学背景要求明显升高；先只理解输入输出，不要期望本科阶段独立重证所有 theta 对应。</p><span>原稿 PDF 8–18、30–52 页；对应 T5、T6、T9</span></div>
+<div><b>路线 D · 真正困难的数论输入</b><p>好辅助素数 B、巨大尺度 C、Behrend 稠密集、Galois 上同调窗口和分母控制，最终汇合到 (M)。这条路线最适合作为“论文精读与审查计划”，不是短期基础练习。</p><span>原稿 PDF 54–161 页；对应 T7、T8、T10、T11</span></div></div>
+</section>
+
+<section id="questions" class="chapter"><div class="kicker">11 · 学习检查</div><h2>读完后，试着不用看答案回答</h2>
+<div class="qa"><details><summary>Q1. 为什么把 \(\psi(x)\) 改成 ramp 加权的 \(S(x)\)？</summary><p>为了让 Mellin 变换出现 \(1/[s(s-1)]\)，使零点在显式公式中的权重更可控，同时令右侧与精心构造的整除指数产生相同的 ramp 权重。</p></details>
+<details><summary>Q2. 证明 \(G(x)=O(x^{1/2+\varepsilon})\) 为什么困难？</summary><p>它要求对所有相关素数幂的加权总和获得几乎平方根级误差控制；单凭素数定理或经典阶乘分解，舍入误差就已经达到线性尺度。</p></details>
+<details><summary>Q3. 为什么只需一侧上界，但必须在整段窗口上成立？</summary><p>单侧上界可借 Landau 型正性与极点论证推出无零点半平面；算术输入只在特别的尺度存在，窗口版引理使这些特殊尺度也足够。孤立单点不满足该引理的假设。</p></details>
+<details><summary>Q4. 如果只证明 (M) 的右侧有 \(x/m+m\)，是否已经证明 RH？</summary><p>没有。还要实际证明 (M)，控制 \(xm/k,k/n^2\)、角色扭曲和、各类损耗，并保证 q、d 与整段窗口兼容。</p></details>
+<details><summary>Q5. 为什么 Estimated B 的 \(x^{1/2+\varepsilon}\) 不等于提前假设 RH？</summary><p>因为对 q,d 有选择自由，仅需存在一对好参数；通过短 Dirichlet 多项式的平均平方等标准结果实现，而不是对所有角色宣称 GRH。</p></details>
+<details><summary>Q6. 主不等式 (M) 在这份 164 页 PDF 里完成了吗？</summary><p>没有。作者明确引用 Lean development 作为 (M) 的完整证明来源，Part III 逐步写出其组成部分，并列明了仍未展开的关键连接。</p></details></div>
+</section>
+
+<section id="appendix" class="chapter"><div class="kicker">12 · 原文结构与术语</div><h2>对照原稿阅读</h2>
+<div class="twocol"><div class="panel"><h3>Part I — How the proof works</h3><p>§I.0 总策略；I.1 从零点到素数和；I.2 Chebyshev 的瓶颈；I.3 平滑整除指数；I.4 修复三个缺陷；I.5 (M)；I.6 扭曲角色与 G；I.7 (M) 的来源；I.8 1/2 的来源；I.9–I.12 对照、推广、文献与完成情况。</p><p class="fine">PDF 第 3–25 页。本学习版重点翻译、解释了这些内容的核心论证。</p></div><div class="panel"><h3>Part II / III — Details and proofs</h3><p>Part II 给出解析论证、素数和恒等式及主不等式的使用方法；Part III 逐章写 B、C、组合集合及 (M) 各个算术几何部件的部分证明和依赖清单。</p><p class="fine">PDF 第 26–161 页。建议以本文“12 个定理卡片”和“Part III 证据清单”为索引精读。</p></div></div>
+<div class="table-wrap"><table><thead><tr><th>英文</th><th>中文</th><th>阅读提示</th></tr></thead><tbody>
+<tr><td>Riemann zeta function</td><td>黎曼 zeta 函数</td><td>不要与 Dirichlet L 函数混为一谈</td></tr>
+<tr><td>von Mangoldt function</td><td>冯·曼戈尔特函数</td><td>把素数和素数幂统一进一个和式</td></tr>
+<tr><td>Mellin transform</td><td>Mellin 变换</td><td>素数和与复平面极点之间的桥梁</td></tr>
+<tr><td>one-sided bound</td><td>单侧上界</td><td>不是绝对值界</td></tr>
+<tr><td>window / localized Landau</td><td>长窗口 / 局部化 Landau 判据</td><td>窗口内每个点都要成立</td></tr>
+<tr><td>inert / split prime</td><td>惰性 / 分裂素数</td><td>在指定数域中描述素数的行为</td></tr>
+<tr><td>complex multiplication (CM)</td><td>复乘</td><td>椭圆曲线或数域具有额外的自同态</td></tr>
+<tr><td>theta kernel / theta lift</td><td>theta 核 / theta 提升</td><td>核心代数映射，反复组合形成链</td></tr>
+<tr><td>Bost slope inequality</td><td>Bost 斜率不等式</td><td>把有限处与无穷处的信息整合</td></tr>
+<tr><td>Dirichlet character twist</td><td>Dirichlet 角色扭曲</td><td>需要 B/C 控制的额外素数和</td></tr>
+<tr><td>covolume / lattice index</td><td>共体积 / 格指标</td><td>大小比较中的精细算术损失</td></tr>
+<tr><td>Galois cohomology / Iwasawa theory</td><td>Galois 上同调 / Iwasawa 理论</td><td>衡量长链中的分母与局部–整体障碍</td></tr>
+<tr><td>hypothesis / quoted / proved</td><td>假设 / 引用 / 讲义证明</td><td>精读时必须保持不同证据等级</td></tr>
+</tbody></table></div>
+<h3>原始资料</h3><div class="sources"><p><b>[1] 164 页工作稿</b>：<a href="https://www.math.uwaterloo.ca/~mrubinst/alpoge_claude_grh/zeta-paper.pdf" target="_blank" rel="noopener">Rubinstein 发起的 zeta-paper.pdf</a>（2026-11-21）。下载包内也附有你上传的原稿，文件名为 <code>zeta-paper.pdf</code>。</p><p><b>[2] 11 页证明架构指南</b>：<a href="https://nasqret.github.io/riemann-rev/guide/proof-guide.pdf" target="_blank" rel="noopener">The proof of the Riemann hypothesis announced by L. Alpöge: a guide to its architecture</a>。本页面流程图根据其结构重绘，并对 zeta 案例作了适当简化。</p><p><b>[3] 交互式证明地图</b>：<a href="https://nasqret.github.io/riemann-rev/book/intro.html" target="_blank" rel="noopener">Architecture of the announced RH proof</a>，包括 Lean 定理声明指针和验证状态清单。</p></div>
+</section>
+<footer><p>中文学习版 · 2026 年 11 月 · 供个人学习与讨论 · 引述公式和证明状态以所附原稿为准</p><a href="#top">返回首页 ↑</a></footer>
+</main></div><script>
+document.querySelectorAll('.filter').forEach(btn=>btn.addEventListener('click',()=>{
+ document.querySelectorAll('.filter').forEach(e=>e.classList.toggle('is-active',e===btn));
+ let v=btn.dataset.filter;
+ document.querySelectorAll('.theorem').forEach(t=>t.classList.toggle('is-hidden',v!=='all' && t.dataset.status!==v));
+}));
+const range=document.getElementById('mx');
+function updateM(){let m=+range.value,x=10000,a=x/m,b=m;document.getElementById('mval').textContent='m = '+m;document.getElementById('eval').textContent='x/m + m = '+(a+b).toFixed(1);document.getElementById('a-val').textContent=a.toFixed(1);document.getElementById('b-val').textContent=b.toFixed(1);document.getElementById('bar-a').style.width=Math.min(100,a/500*100)+'%';document.getElementById('bar-b').style.width=Math.min(100,b/500*100)+'%';}
+range.addEventListener('input',updateM);updateM();
+</script></body></html>

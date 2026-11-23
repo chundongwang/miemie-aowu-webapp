@@ -9,6 +9,7 @@ import NewListModal from "@/components/NewListModal";
 import PullIndicator from "@/components/PullIndicator";
 import CheckInModal from "@/components/CheckInModal";
 import CursorMinionsFAB from "@/components/CursorMinionsFAB";
+import RiemannFAB from "@/components/RiemannFAB";
 import ArchiveMenu from "@/components/ArchiveMenu";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useSwipeBack } from "@/hooks/useSwipeBack";
@@ -228,6 +229,7 @@ export default function ListsPage() {
       </main>
 
       <div className="fixed bottom-6 right-6 sm:right-[calc(50%-208px)] z-20 flex flex-col items-center gap-3">
+        <RiemannFAB />
         <CursorMinionsFAB />
       </div>
 
